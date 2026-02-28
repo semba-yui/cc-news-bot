@@ -883,7 +883,7 @@
 - Agents and bash commands can run asynchronously and send messages to wake up the main agent
 - /stats now provides users with interesting CC stats, such as favorite model, usage graph, usage streak
 - Added named session support: use `/rename` to name sessions, `/resume <name>` in REPL or `claude --resume <name>` from the terminal to resume them
-- Added support for .claude/rules/`. See https://code.claude.com/docs/en/memory for details.
+- Added support for .claude/rules/`.  See https://code.claude.com/docs/en/memory for details.
 - Added image dimension metadata when images are resized, enabling accurate coordinate mappings for large images
 - Fixed auto-loading .env when using native installer
 - Fixed `--system-prompt` being ignored when using `--continue` or `--resume` flags
