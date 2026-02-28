@@ -92,5 +92,3 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update changelog snapshots"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git push
-
-

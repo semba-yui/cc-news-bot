@@ -6,10 +6,7 @@ import {
   postSummary as postSummaryImpl,
   postThreadReplies as postThreadRepliesImpl,
 } from "../services/slack-service.js";
-import {
-  readFileSafe,
-  saveSnapshot as saveSnapshotImpl,
-} from "../services/state-service.js";
+import { readFileSafe, saveSnapshot as saveSnapshotImpl } from "../services/state-service.js";
 import type { RunResultData } from "./fetch-and-diff.js";
 
 export interface NotifyDeps {
