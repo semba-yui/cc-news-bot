@@ -1,7 +1,7 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { SourceConfig } from "../config/sources.js";
-import { DATA_DIR, SOURCES } from "../config/sources.js";
+import { DATA_DIR, SLACK_CHANNEL, SOURCES } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
 import type { DiffResult } from "../services/diff-service.js";
 import {
@@ -19,8 +19,6 @@ import {
   saveSnapshot as saveSnapshotImpl,
   saveState as saveStateImpl,
 } from "../services/state-service.js";
-
-const CHANNEL = "C0AHQ59G8HJ";
 
 export interface RunResultData {
   changedSources: string[];
@@ -112,8 +110,10 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
 
   const hasChanges = changedSources.length > 0 || firstRunSources.length > 0;
 
-  state.lastRunAt = now;
-  await saveState(state, dataRoot);
+  if (hasChanges) {
+    state.lastRunAt = now;
+    await saveState(state, dataRoot);
+  }
 
   const runResult: RunResultData = {
     changedSources,
@@ -139,7 +139,7 @@ async function main(): Promise<void> {
     snapshotsDir: DATA_DIR.snapshots,
     diffsDir: DATA_DIR.diffs,
     currentDir: DATA_DIR.current,
-    channel: CHANNEL,
+    channel: SLACK_CHANNEL,
     slackToken,
     fetchAll: (sources) => fetchAllImpl(sources, { githubToken }),
     loadSnapshot: loadSnapshotImpl,

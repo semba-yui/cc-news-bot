@@ -1,15 +1,16 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { DATA_DIR } from "../config/sources.js";
+import { DATA_DIR, SLACK_CHANNEL } from "../config/sources.js";
 import type { PostResult } from "../services/slack-service.js";
 import {
   postSummary as postSummaryImpl,
   postThreadReplies as postThreadRepliesImpl,
 } from "../services/slack-service.js";
-import { saveSnapshot as saveSnapshotImpl } from "../services/state-service.js";
+import {
+  readFileSafe,
+  saveSnapshot as saveSnapshotImpl,
+} from "../services/state-service.js";
 import type { RunResultData } from "./fetch-and-diff.js";
-
-const CHANNEL = "C0AHQ59G8HJ";
 
 export interface NotifyDeps {
   dataRoot: string;
@@ -23,14 +24,6 @@ export interface NotifyDeps {
   postSummary: (ch: string, src: string, summary: string, token: string) => Promise<PostResult>;
   postThreadReplies: (ch: string, ts: string, text: string, token: string) => Promise<PostResult[]>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
-}
-
-function readFileSafe(path: string): string | null {
-  try {
-    return readFileSync(path, "utf-8");
-  } catch {
-    return null;
-  }
 }
 
 export async function notifySlack(deps: NotifyDeps): Promise<void> {
@@ -79,7 +72,7 @@ async function main(): Promise<void> {
     diffsDir: DATA_DIR.diffs,
     summariesDir: DATA_DIR.summaries,
     currentDir: DATA_DIR.current,
-    channel: CHANNEL,
+    channel: SLACK_CHANNEL,
     slackToken,
     postSummary: postSummaryImpl,
     postThreadReplies: postThreadRepliesImpl,

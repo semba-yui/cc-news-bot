@@ -386,11 +386,10 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       expect(state.sources["source-alpha"].hash).not.toBe(state.sources["source-beta"].hash);
     });
 
-    it("差分なしの場合も state.json の lastRunAt は更新される", async () => {
+    it("差分なしの場合は state.json が更新されない", async () => {
       setupSnapshots(OLD_CONTENTS);
-      const beforeRun = new Date().toISOString();
 
-      await fetchAndDiff({
+      const result = await fetchAndDiff({
         sources: TEST_SOURCES,
         dataRoot: TEST_ROOT,
         snapshotsDir: SNAPSHOTS_DIR,
@@ -414,10 +413,8 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
       });
 
-      const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"));
-      expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(
-        new Date(beforeRun).getTime(),
-      );
+      expect(result.hasChanges).toBe(false);
+      expect(existsSync(resolve(TEST_ROOT, "state.json"))).toBe(false);
     });
   });
 });

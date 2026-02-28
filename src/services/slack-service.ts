@@ -103,8 +103,19 @@ export function splitText(text: string): string[] {
   const chunks: string[] = [];
   let offset = 0;
   while (offset < text.length) {
-    chunks.push(text.slice(offset, offset + MAX_MESSAGE_LENGTH));
-    offset += MAX_MESSAGE_LENGTH;
+    if (offset + MAX_MESSAGE_LENGTH >= text.length) {
+      chunks.push(text.slice(offset));
+      break;
+    }
+    const slice = text.slice(offset, offset + MAX_MESSAGE_LENGTH);
+    const lastNewline = slice.lastIndexOf("\n");
+    if (lastNewline > 0) {
+      chunks.push(slice.slice(0, lastNewline));
+      offset += lastNewline + 1;
+    } else {
+      chunks.push(slice);
+      offset += MAX_MESSAGE_LENGTH;
+    }
   }
   return chunks;
 }
@@ -118,8 +129,9 @@ export async function postThreadReplies(
 ): Promise<PostResult[]> {
   const chunks = splitText(text);
   const results: PostResult[] = [];
-  for (const chunk of chunks) {
-    const result = await postThreadReply(channel, threadTs, chunk, token, options);
+  for (let i = 0; i < chunks.length; i++) {
+    const opts = i === 0 ? { ...options, delayMs: 0 } : options;
+    const result = await postThreadReply(channel, threadTs, chunks[i], token, opts);
     results.push(result);
   }
   return results;

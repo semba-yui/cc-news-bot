@@ -1,5 +1,9 @@
 node_modules/
 
+# env
+.env
+.env.local
+
 # data: snapshots/ と state.json のみコミット対象
 data/current/
 data/diffs/

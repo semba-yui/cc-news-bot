@@ -28,6 +28,8 @@ export const SOURCES: SourceConfig[] = [
   },
 ];
 
+export const SLACK_CHANNEL = process.env.SLACK_CHANNEL_ID ?? "";
+
 const DATA_ROOT = resolve(import.meta.dirname, "../../data");
 
 export const DATA_DIR = {

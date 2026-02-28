@@ -14,6 +14,14 @@ export interface SnapshotState {
 
 const EMPTY_STATE: SnapshotState = { lastRunAt: "", sources: {} };
 
+export function readFileSafe(path: string): string | null {
+  try {
+    return readFileSync(path, "utf-8");
+  } catch {
+    return null;
+  }
+}
+
 function snapshotPath(source: string, snapshotsDir: string): string {
   return resolve(snapshotsDir, `${source}.md`);
 }
@@ -26,11 +34,7 @@ export async function loadSnapshot(
   source: string,
   snapshotsDir: string = DATA_DIR.snapshots,
 ): Promise<string | null> {
-  try {
-    return readFileSync(snapshotPath(source, snapshotsDir), "utf-8");
-  } catch {
-    return null;
-  }
+  return readFileSafe(snapshotPath(source, snapshotsDir));
 }
 
 export async function saveSnapshot(
