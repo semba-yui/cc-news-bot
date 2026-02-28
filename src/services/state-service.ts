@@ -6,6 +6,7 @@ import { DATA_DIR } from "../config/sources.js";
 export interface SourceState {
   hash: string;
   lastCheckedAt: string; // ISO 8601
+  latestReleasedAt?: string; // ISO 8601、github_releases ソース用
 }
 
 export interface SnapshotState {

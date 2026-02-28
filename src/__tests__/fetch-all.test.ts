@@ -54,6 +54,7 @@ describe("fetchAll", () => {
       source: "source-b",
       success: true,
       content: "## v1.0.0 (2026-01-01T00:00:00Z)\nRelease notes",
+      latestReleasedAt: "2026-01-01T00:00:00Z",
     });
     expect(results[2]).toEqual({
       source: "source-c",

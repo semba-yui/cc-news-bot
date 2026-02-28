@@ -121,10 +121,11 @@ describe("結合テスト: エラーハンドリング", () => {
     // エラーのソースは firstRunSources に含まれない
     expect(result.firstRunSources).not.toContain("source-alpha");
 
-    // 正常なソースのスナップショットが保存される
+    // raw_markdown ソース (source-beta) のスナップショットが保存される
     expect(existsSync(resolve(SNAPSHOTS_DIR, "source-beta.md"))).toBe(true);
-    expect(existsSync(resolve(SNAPSHOTS_DIR, "source-gamma.md"))).toBe(true);
     expect(readFileSync(resolve(SNAPSHOTS_DIR, "source-beta.md"), "utf-8")).toBe("beta content");
+    // github_releases ソース (source-gamma) はスナップショットファイルを使わない
+    expect(existsSync(resolve(SNAPSHOTS_DIR, "source-gamma.md"))).toBe(false);
 
     // エラーのソースのスナップショットは作成されない
     expect(existsSync(resolve(SNAPSHOTS_DIR, "source-alpha.md"))).toBe(false);
@@ -160,11 +161,12 @@ describe("結合テスト: エラーハンドリング", () => {
 
     const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
 
-    // 正常なソースの状態が記録される
+    // raw_markdown ソースの状態が記録される
     expect(state.sources["source-beta"]).toBeDefined();
     expect(state.sources["source-beta"].hash).toBeTruthy();
+    // github_releases ソース: hash は使わない（latestReleasedAt でトラッキング）
     expect(state.sources["source-gamma"]).toBeDefined();
-    expect(state.sources["source-gamma"].hash).toBeTruthy();
+    expect(state.sources["source-gamma"].hash).toBe("");
 
     // エラーのソースは state に記録されない
     expect(state.sources["source-alpha"]).toBeUndefined();

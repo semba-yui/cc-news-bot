@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import type { DiffResult } from "../services/diff-service.js";
-import type { FetchResult } from "../services/fetch-service.js";
+import type { FetchAllOptions, FetchResult } from "../services/fetch-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import type { SnapshotState } from "../services/state-service.js";
 import {
@@ -28,10 +28,12 @@ function makeDeps(overrides: Partial<FetchAndDiffDeps> = {}): FetchAndDiffDeps {
     currentDir: resolve(TEST_ROOT, "current"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
-    fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
-      { source: "source-a", success: true, content: "content-a" },
-      { source: "source-b", success: true, content: "content-b" },
-    ]),
+    fetchAll: vi
+      .fn<(sources: SourceConfig[], options?: FetchAllOptions) => Promise<FetchResult[]>>()
+      .mockResolvedValue([
+        { source: "source-a", success: true, content: "content-a" },
+        { source: "source-b", success: true, content: "content-b" },
+      ]),
     loadSnapshot: vi.fn<() => Promise<string | null>>().mockResolvedValue(null),
     saveSnapshot: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     detectChanges: vi
@@ -208,6 +210,118 @@ describe("fetchAndDiff", () => {
       expect(savedState.lastRunAt).toBeTruthy();
       expect(savedState.sources["source-a"]).toBeDefined();
       expect(savedState.sources["source-b"]).toBeDefined();
+    });
+  });
+
+  describe("github_releases 型のタイムスタンプベース差分検出", () => {
+    const GH_SOURCES: SourceConfig[] = [
+      {
+        name: "codex",
+        type: "github_releases",
+        url: "https://api.github.com/repos/openai/codex/releases",
+        owner: "openai",
+        repo: "codex",
+      },
+    ];
+
+    it("初回実行（latestReleasedAt なし）: firstRunSources に記録し latestReleasedAt を state に保存する", async () => {
+      const deps = makeDeps({
+        sources: GH_SOURCES,
+        fetchAll: vi.fn().mockResolvedValue([
+          {
+            source: "codex",
+            success: true,
+            content: "## v1.0.0 (2026-02-28T12:00:00Z)\n- Initial release",
+            latestReleasedAt: "2026-02-28T12:00:00Z",
+          },
+        ]),
+      });
+
+      const result = await fetchAndDiff(deps);
+
+      expect(result.firstRunSources).toEqual(["codex"]);
+      expect(result.changedSources).toEqual([]);
+
+      const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as SnapshotState;
+      expect(savedState.sources["codex"].latestReleasedAt).toBe("2026-02-28T12:00:00Z");
+    });
+
+    it("新規リリースなし（空コンテンツ）: changedSources 空、latestReleasedAt を既存値で保持する", async () => {
+      const deps = makeDeps({
+        sources: GH_SOURCES,
+        fetchAll: vi.fn().mockResolvedValue([
+          { source: "codex", success: true, content: "", latestReleasedAt: undefined },
+        ]),
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: { codex: { hash: "", lastCheckedAt: "2026-02-28T00:00:00Z", latestReleasedAt: "2026-02-28T12:00:00Z" } },
+        }),
+      });
+
+      const result = await fetchAndDiff(deps);
+
+      expect(result.changedSources).toEqual([]);
+      expect(result.firstRunSources).toEqual([]);
+      expect(result.hasChanges).toBe(false);
+
+      // saveState は hasChanges=false なので呼ばれない
+      expect(deps.saveState).not.toHaveBeenCalled();
+    });
+
+    it("新規リリースあり: changedSources に記録し diff ファイルを書き出す", async () => {
+      const deps = makeDeps({
+        sources: GH_SOURCES,
+        fetchAll: vi.fn().mockResolvedValue([
+          {
+            source: "codex",
+            success: true,
+            content: "## v1.1.0 (2026-03-01T10:00:00Z)\n- New feature",
+            latestReleasedAt: "2026-03-01T10:00:00Z",
+          },
+        ]),
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: { codex: { hash: "", lastCheckedAt: "2026-02-28T00:00:00Z", latestReleasedAt: "2026-02-28T12:00:00Z" } },
+        }),
+      });
+
+      const result = await fetchAndDiff(deps);
+
+      expect(result.changedSources).toEqual(["codex"]);
+      expect(result.hasChanges).toBe(true);
+
+      // diff ファイルに新規リリース内容が書き出される
+      const diffContent = readFileSync(resolve(TEST_ROOT, "diffs/codex.md"), "utf-8");
+      expect(diffContent).toBe("## v1.1.0 (2026-03-01T10:00:00Z)\n- New feature");
+
+      // latestReleasedAt が更新される
+      const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as SnapshotState;
+      expect(savedState.sources["codex"].latestReleasedAt).toBe("2026-03-01T10:00:00Z");
+    });
+
+    it("state の sourceStates を fetchAll に渡す", async () => {
+      let capturedOptions: FetchAllOptions | undefined;
+      const deps = makeDeps({
+        sources: GH_SOURCES,
+        fetchAll: vi.fn().mockImplementation((_sources, options) => {
+          capturedOptions = options;
+          return Promise.resolve([
+            { source: "codex", success: true, content: "", latestReleasedAt: undefined },
+          ]);
+        }),
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: { codex: { hash: "", lastCheckedAt: "2026-02-28T00:00:00Z", latestReleasedAt: "2026-02-28T12:00:00Z" } },
+        }),
+      });
+
+      await fetchAndDiff(deps);
+
+      expect(capturedOptions?.sourceStates?.["codex"]?.latestReleasedAt).toBe(
+        "2026-02-28T12:00:00Z",
+      );
     });
   });
 });

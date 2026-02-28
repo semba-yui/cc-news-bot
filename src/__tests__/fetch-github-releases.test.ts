@@ -116,6 +116,54 @@ describe("fetchGitHubReleases", () => {
     await expect(fetchGitHubReleases("openai", "codex")).rejects.toThrow("403");
   });
 
+  it("since より古いリリースは除外される", async () => {
+    server.use(
+      http.get(RELEASES_URL, () => {
+        return HttpResponse.json([
+          makeRelease("v1.2.0", "2026-03-01T10:00:00Z", "- New feature"),
+          makeRelease("v1.1.0", "2026-02-28T12:00:00Z", "- Bug fix"),
+          makeRelease("v1.0.0", "2026-02-20T10:00:00Z", "- Initial release"),
+        ]);
+      }),
+    );
+
+    const result = await fetchGitHubReleases("openai", "codex", undefined, {
+      since: "2026-02-28T12:00:00Z",
+    });
+    expect(result).toBe("## v1.2.0 (2026-03-01T10:00:00Z)\n- New feature");
+  });
+
+  it("since が未指定の場合は全件返す", async () => {
+    server.use(
+      http.get(RELEASES_URL, () => {
+        return HttpResponse.json([
+          makeRelease("v1.1.0", "2026-02-28T12:00:00Z", "- Bug fix"),
+          makeRelease("v1.0.0", "2026-02-20T10:00:00Z", "- Initial release"),
+        ]);
+      }),
+    );
+
+    const result = await fetchGitHubReleases("openai", "codex");
+    expect(result).toBe(
+      "## v1.1.0 (2026-02-28T12:00:00Z)\n- Bug fix\n\n## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release",
+    );
+  });
+
+  it("since より新しいリリースが存在しない場合は空文字列を返す", async () => {
+    server.use(
+      http.get(RELEASES_URL, () => {
+        return HttpResponse.json([
+          makeRelease("v1.0.0", "2026-02-20T10:00:00Z", "- Initial release"),
+        ]);
+      }),
+    );
+
+    const result = await fetchGitHubReleases("openai", "codex", undefined, {
+      since: "2026-02-20T10:00:00Z",
+    });
+    expect(result).toBe("");
+  });
+
   it("ネットワークエラーの場合はエラーをスローする", async () => {
     server.use(
       http.get(RELEASES_URL, () => {
