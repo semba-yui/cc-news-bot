@@ -1,0 +1,48 @@
+{
+  "name": "@lc-semba-ryuichiro/github-actions-usage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "homepage": "https://github.com/lc-semba-ryuichiro/github-actions-usage#readme",
+  "bugs": {
+    "url": "https://github.com/lc-semba-ryuichiro/github-actions-usage/issues"
+  },
+  "license": "MIT",
+  "author": "lc-semba-ryuichiro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lc-semba-ryuichiro/github-actions-usage.git"
+  },
+  "type": "module",
+  "scripts": {
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "lint:typecheck": "oxlint --type-aware --type-check",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "diff": "catalog:"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "@secretlint/secretlint-rule-preset-recommend": "catalog:",
+    "lefthook": "catalog:",
+    "msw": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "secretlint": "catalog:",
+    "takt": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
+}

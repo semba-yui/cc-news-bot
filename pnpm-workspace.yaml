@@ -1,0 +1,36 @@
+blockExoticSubdeps: true
+
+catalog:
+  "@commitlint/cli": 20.4.2
+  "@commitlint/config-conventional": 20.4.2
+  "@secretlint/secretlint-rule-preset-recommend": 11.3.1
+  diff: 8.0.3
+  lefthook: 2.1.1
+  msw: 2.12.10
+  oxfmt: 0.35.0
+  oxlint: 1.50.0
+  oxlint-tsgolint: 0.15.0
+  secretlint: 11.3.1
+  takt: 0.25.0
+  tsx: 4.21.0
+  typescript: 5.9.3
+  vitest: 4.0.18
+
+catalogMode: strict
+
+engineStrict: true
+
+onlyBuiltDependencies:
+  - lefthook
+
+packageManagerStrictVersion: true
+
+saveExact: true
+
+strictDepBuilds: true
+
+strictPeerDependencies: true
+
+trustPolicy: no-downgrade
+
+trustPolicyIgnoreAfter: 10080
