@@ -35,6 +35,7 @@ interface GitHubRelease {
   tag_name: string;
   published_at: string;
   body: string;
+  prerelease: boolean;
 }
 
 export async function fetchGitHubReleases(
@@ -66,7 +67,10 @@ export async function fetchGitHubReleases(
 
   const releases = (await response.json()) as GitHubRelease[];
 
-  return releases.map((r) => `## ${r.tag_name} (${r.published_at})\n${r.body}`).join("\n\n");
+  return releases
+    .filter((r) => !r.prerelease)
+    .map((r) => `## ${r.tag_name} (${r.published_at})\n${r.body}`)
+    .join("\n\n");
 }
 
 async function fetchOne(source: SourceConfig, options?: FetchAllOptions): Promise<FetchResult> {
