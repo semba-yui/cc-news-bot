@@ -42,7 +42,7 @@ describe("fetchGitHubReleases", () => {
     );
 
     await fetchGitHubReleases("openai", "codex");
-    expect(capturedUrl?.searchParams.get("per_page")).toBe("10");
+    expect(capturedUrl?.searchParams.get("per_page")).toBe("50");
   });
 
   it("GITHUB_TOKEN が指定された場合 Authorization ヘッダーを送信する", async () => {

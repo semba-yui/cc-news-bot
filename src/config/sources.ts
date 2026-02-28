@@ -30,7 +30,7 @@ export const SOURCES: SourceConfig[] = [
 
 export function getChannelsForSource(sourceName: string): string[] {
   const envKey = `SLACK_CHANNEL_ID_${sourceName.toUpperCase().replace(/-/g, "_")}`;
-  const raw = process.env[envKey] ?? process.env.SLACK_CHANNEL_ID ?? "";
+  const raw = process.env[envKey] || process.env.SLACK_CHANNEL_ID || "";
   return raw
     .split(",")
     .map((ch) => ch.trim())

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { DATA_DIR, SOURCES } from "../config/sources.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { DATA_DIR, SOURCES, getChannelsForSource } from "../config/sources.js";
 
 describe("SOURCES", () => {
   it("3つの監視対象ソースが定義されている", () => {
@@ -36,6 +36,38 @@ describe("SOURCES", () => {
     for (const source of SOURCES) {
       expect(source.name).toBeTruthy();
     }
+  });
+});
+
+describe("getChannelsForSource", () => {
+  afterEach(() => {
+    delete process.env.SLACK_CHANNEL_ID;
+    delete process.env.SLACK_CHANNEL_ID_CLAUDE_CODE;
+  });
+
+  it("ソース固有のチャンネルIDが設定されている場合はそれを使う", () => {
+    process.env.SLACK_CHANNEL_ID_CLAUDE_CODE = "C_SPECIFIC";
+    expect(getChannelsForSource("claude-code")).toEqual(["C_SPECIFIC"]);
+  });
+
+  it("ソース固有のIDが空文字列のとき SLACK_CHANNEL_ID にフォールバックする", () => {
+    process.env.SLACK_CHANNEL_ID_CLAUDE_CODE = "";
+    process.env.SLACK_CHANNEL_ID = "C_DEFAULT";
+    expect(getChannelsForSource("claude-code")).toEqual(["C_DEFAULT"]);
+  });
+
+  it("ソース固有のIDが未定義のとき SLACK_CHANNEL_ID にフォールバックする", () => {
+    process.env.SLACK_CHANNEL_ID = "C_DEFAULT";
+    expect(getChannelsForSource("claude-code")).toEqual(["C_DEFAULT"]);
+  });
+
+  it("複数チャンネルをカンマ区切りで返す", () => {
+    process.env.SLACK_CHANNEL_ID_CLAUDE_CODE = "C1, C2, C3";
+    expect(getChannelsForSource("claude-code")).toEqual(["C1", "C2", "C3"]);
+  });
+
+  it("両方未設定の場合は空配列を返す", () => {
+    expect(getChannelsForSource("claude-code")).toEqual([]);
   });
 });
 

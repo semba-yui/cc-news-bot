@@ -45,7 +45,7 @@ export async function fetchGitHubReleases(
   options?: FetchOptions,
 ): Promise<string> {
   const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const url = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=10`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=50`;
 
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
