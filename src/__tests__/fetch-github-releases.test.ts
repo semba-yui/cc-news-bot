@@ -11,8 +11,8 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function makeRelease(tag: string, publishedAt: string, body: string) {
-  return { tag_name: tag, published_at: publishedAt, body };
+function makeRelease(tag: string, publishedAt: string, body: string, prerelease = false) {
+  return { tag_name: tag, published_at: publishedAt, body, prerelease };
 }
 
 describe("fetchGitHubReleases", () => {
@@ -69,6 +69,20 @@ describe("fetchGitHubReleases", () => {
 
     await fetchGitHubReleases("openai", "codex");
     expect(capturedAuth).toBeNull();
+  });
+
+  it("prerelease が true のリリースは除外される", async () => {
+    server.use(
+      http.get(RELEASES_URL, () => {
+        return HttpResponse.json([
+          makeRelease("v1.1.0-rc.1", "2026-02-28T12:00:00Z", "- RC", true),
+          makeRelease("v1.0.0", "2026-02-20T10:00:00Z", "- Initial release"),
+        ]);
+      }),
+    );
+
+    const result = await fetchGitHubReleases("openai", "codex");
+    expect(result).toBe("## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release");
   });
 
   it("リリースが空の場合は空文字列を返す", async () => {

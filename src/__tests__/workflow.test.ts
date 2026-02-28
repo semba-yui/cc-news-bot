@@ -78,9 +78,9 @@ describe("changelog-notifier ワークフロー", () => {
       expect(content).toContain("claude_code_oauth_token:");
     });
 
-    it("Claude Code Action の allowed_tools が設定されている", () => {
+    it("Claude Code Action の allowedTools が claude_args に設定されている", () => {
       const content = loadWorkflow();
-      expect(content).toContain("allowed_tools:");
+      expect(content).toContain("--allowedTools");
     });
 
     it("Slack 通知ステップが差分検出時のみ実行される", () => {
