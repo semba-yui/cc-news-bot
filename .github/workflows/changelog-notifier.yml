@@ -71,7 +71,7 @@ jobs:
 
             各ソースの要約を data/summaries/{source-name}.md に書き出してください。
             source-name は diff ファイル名から拡張子を除いた値です。
-          claude_args: "--max-turns 15 --allowedTools Read,Write,Edit,Glob"
+          claude_args: "--max-turns 30 --allowedTools Read,Write,Edit,Glob"
 
       - name: Post notifications to Slack
         if: steps.fetch-diff.outputs.has_changes == 'true'
@@ -92,4 +92,5 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update changelog snapshots"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git push
+
 
