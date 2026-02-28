@@ -1,4 +1,4 @@
-# Design Document: changelog-slack-notifier
+# Design Document: cc-news-bot
 
 ## Overview
 

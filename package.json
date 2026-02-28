@@ -1,17 +1,17 @@
 {
-  "name": "@lc-semba-ryuichiro/github-actions-usage",
+  "name": "cc-news-bot",
   "version": "1.0.0",
   "private": true,
   "description": "",
-  "homepage": "https://github.com/lc-semba-ryuichiro/github-actions-usage#readme",
+  "homepage": "https://github.com/semba-yui/cc-news-bot#readme",
   "bugs": {
-    "url": "https://github.com/lc-semba-ryuichiro/github-actions-usage/issues"
+    "url": "https://github.com/semba-yui/cc-news-bot/issues"
   },
   "license": "MIT",
-  "author": "lc-semba-ryuichiro",
+  "author": "semba-yui",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lc-semba-ryuichiro/github-actions-usage.git"
+    "url": "https://github.com/semba-yui/cc-news-bot.git"
   },
   "type": "module",
   "scripts": {

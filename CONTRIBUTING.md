@@ -204,7 +204,7 @@ export const SOURCES: SourceConfig[] = [
 │   ├── tech.md                        # 技術スタック・開発標準
 │   └── structure.md                   # ディレクトリ構成・命名規則
 └── specs/
-    └── changelog-slack-notifier/      # 機能仕様
+    └── cc-news-bot/      # 機能仕様
         ├── requirements.md            # 要件定義
         ├── design.md                  # 設計ドキュメント
         ├── tasks.md                   # 実装タスク一覧

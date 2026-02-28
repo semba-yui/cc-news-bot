@@ -2,7 +2,7 @@
 
 ## Introduction
 
-本ドキュメントは「changelog-slack-notifier」の要件を定義する。GitHub Actions の cron スケジュールで AI コーディングツール（Claude Code, OpenAI Codex, GitHub Copilot CLI）の changelog を定期的に監視し、更新があった場合に Claude Code Action で日本語要約を生成して Slack に通知するシステムである。
+本ドキュメントは「cc-news-bot」の要件を定義する。GitHub Actions の cron スケジュールで AI コーディングツール（Claude Code, OpenAI Codex, GitHub Copilot CLI）の changelog を定期的に監視し、更新があった場合に Claude Code Action で日本語要約を生成して Slack に通知するシステムである。
 
 ### 収集済み変数
 

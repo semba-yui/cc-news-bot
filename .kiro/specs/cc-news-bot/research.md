@@ -2,7 +2,7 @@
 
 ## Summary
 
-- **Feature**: `changelog-slack-notifier`
+- **Feature**: `cc-news-bot`
 - **Discovery Scope**: New Feature
 - **Key Findings**:
   - Claude Code Action は cron ワークフローで prompt パラメータ指定により自動実行可能。ファイル書き出しで出力をキャプチャ可能
