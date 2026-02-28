@@ -122,7 +122,9 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       expect(state.sources["source-beta"]).toBeDefined();
 
       // run-result.json が正しく出力されている
-      const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8")) as RunResultData;
+      const runResult = JSON.parse(
+        readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8"),
+      ) as RunResultData;
       expect(runResult.changedSources).toEqual(["source-alpha"]);
 
       // Phase 2: notifySlack
@@ -371,7 +373,9 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
       });
 
-      const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
+      const state = JSON.parse(
+        readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"),
+      ) as SnapshotState;
 
       // lastRunAt が実行時刻以降
       expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(

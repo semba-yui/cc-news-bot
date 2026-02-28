@@ -94,7 +94,9 @@ describe.skipIf(SKIP)("E2E: 実データによる fetchAndDiff パイプライ�
 
     // state.json が生成されている
     expect(existsSync(resolve(TEST_ROOT, "state.json"))).toBe(true);
-    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
+    const state = JSON.parse(
+      readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"),
+    ) as SnapshotState;
     expect(state.lastRunAt).toBeTruthy();
 
     // 成功したソースの state エントリがある

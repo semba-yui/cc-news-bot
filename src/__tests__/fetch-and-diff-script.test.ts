@@ -250,12 +250,20 @@ describe("fetchAndDiff", () => {
     it("新規リリースなし（空コンテンツ）: changedSources 空、latestReleasedAt を既存値で保持する", async () => {
       const deps = makeDeps({
         sources: GH_SOURCES,
-        fetchAll: vi.fn().mockResolvedValue([
-          { source: "codex", success: true, content: "", latestReleasedAt: undefined },
-        ]),
+        fetchAll: vi
+          .fn()
+          .mockResolvedValue([
+            { source: "codex", success: true, content: "", latestReleasedAt: undefined },
+          ]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
-          sources: { codex: { hash: "", lastCheckedAt: "2026-02-28T00:00:00Z", latestReleasedAt: "2026-02-28T12:00:00Z" } },
+          sources: {
+            codex: {
+              hash: "",
+              lastCheckedAt: "2026-02-28T00:00:00Z",
+              latestReleasedAt: "2026-02-28T12:00:00Z",
+            },
+          },
         }),
       });
 
@@ -282,7 +290,13 @@ describe("fetchAndDiff", () => {
         ]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
-          sources: { codex: { hash: "", lastCheckedAt: "2026-02-28T00:00:00Z", latestReleasedAt: "2026-02-28T12:00:00Z" } },
+          sources: {
+            codex: {
+              hash: "",
+              lastCheckedAt: "2026-02-28T00:00:00Z",
+              latestReleasedAt: "2026-02-28T12:00:00Z",
+            },
+          },
         }),
       });
 
@@ -313,7 +327,13 @@ describe("fetchAndDiff", () => {
         }),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
-          sources: { codex: { hash: "", lastCheckedAt: "2026-02-28T00:00:00Z", latestReleasedAt: "2026-02-28T12:00:00Z" } },
+          sources: {
+            codex: {
+              hash: "",
+              lastCheckedAt: "2026-02-28T00:00:00Z",
+              latestReleasedAt: "2026-02-28T12:00:00Z",
+            },
+          },
         }),
       });
 

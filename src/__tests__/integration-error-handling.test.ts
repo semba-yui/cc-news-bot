@@ -159,7 +159,9 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
+    const state = JSON.parse(
+      readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"),
+    ) as SnapshotState;
 
     // raw_markdown ソースの状態が記録される
     expect(state.sources["source-beta"]).toBeDefined();
@@ -195,7 +197,9 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8")) as RunResultData;
+    const runResult = JSON.parse(
+      readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8"),
+    ) as RunResultData;
 
     expect(runResult.errors).toEqual([
       { source: "source-alpha", error: "HTTP 500 Internal Server Error" },
