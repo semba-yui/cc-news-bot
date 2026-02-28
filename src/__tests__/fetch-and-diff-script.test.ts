@@ -26,7 +26,7 @@ function makeDeps(overrides: Partial<FetchAndDiffDeps> = {}): FetchAndDiffDeps {
     snapshotsDir: resolve(TEST_ROOT, "snapshots"),
     diffsDir: resolve(TEST_ROOT, "diffs"),
     currentDir: resolve(TEST_ROOT, "current"),
-    channel: "C_TEST",
+    getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
     fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
       { source: "source-a", success: true, content: "content-a" },

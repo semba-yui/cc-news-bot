@@ -78,7 +78,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         snapshotsDir: SNAPSHOTS_DIR,
         diffsDir: DIFFS_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
           TEST_SOURCES.map((s) => ({
@@ -140,7 +140,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         diffsDir: DIFFS_DIR,
         summariesDir: SUMMARIES_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         postSummary: mockPostSummary,
         postThreadReplies: mockPostThreadReplies,
@@ -182,7 +182,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         snapshotsDir: SNAPSHOTS_DIR,
         diffsDir: DIFFS_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
           TEST_SOURCES.map((s) => ({
@@ -224,7 +224,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         diffsDir: DIFFS_DIR,
         summariesDir: SUMMARIES_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         postSummary: mockPostSummary,
         postThreadReplies: mockPostThreadReplies,
@@ -244,7 +244,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         snapshotsDir: SNAPSHOTS_DIR,
         diffsDir: DIFFS_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
           TEST_SOURCES.map((s) => ({
@@ -287,7 +287,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         snapshotsDir: SNAPSHOTS_DIR,
         diffsDir: DIFFS_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         fetchAll: vi
           .fn<() => Promise<FetchResult[]>>()
@@ -327,7 +327,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         diffsDir: DIFFS_DIR,
         summariesDir: SUMMARIES_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         postSummary: mockPostSummary,
         postThreadReplies: mockPostThreadReplies,
@@ -351,7 +351,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         snapshotsDir: SNAPSHOTS_DIR,
         diffsDir: DIFFS_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
           TEST_SOURCES.map((s) => ({
@@ -395,7 +395,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         snapshotsDir: SNAPSHOTS_DIR,
         diffsDir: DIFFS_DIR,
         currentDir: CURRENT_DIR,
-        channel: "C_TEST",
+        getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
         fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
           TEST_SOURCES.map((s) => ({

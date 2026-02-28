@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { DATA_DIR, SLACK_CHANNEL } from "../config/sources.js";
+import { DATA_DIR, getChannelsForSource } from "../config/sources.js";
 import type { PostResult } from "../services/slack-service.js";
 import {
   postSummary as postSummaryImpl,
@@ -18,7 +18,7 @@ export interface NotifyDeps {
   diffsDir: string;
   summariesDir: string;
   currentDir: string;
-  channel: string;
+  getChannels: (source: string) => string[];
   slackToken: string;
 
   postSummary: (ch: string, src: string, summary: string, token: string) => Promise<PostResult>;
@@ -33,7 +33,7 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
     diffsDir,
     summariesDir,
     currentDir,
-    channel,
+    getChannels,
     slackToken,
     postSummary,
     postThreadReplies,
@@ -48,10 +48,12 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
     const diffText = readFileSafe(resolve(diffsDir, `${source}.md`)) ?? "";
     const summary = readFileSafe(resolve(summariesDir, `${source}.md`)) ?? diffText;
 
-    const result = await postSummary(channel, source, summary, slackToken);
+    for (const ch of getChannels(source)) {
+      const result = await postSummary(ch, source, summary, slackToken);
 
-    if (result.success && result.ts && diffText) {
-      await postThreadReplies(channel, result.ts, diffText, slackToken);
+      if (result.success && result.ts && diffText) {
+        await postThreadReplies(ch, result.ts, diffText, slackToken);
+      }
     }
 
     // current のコンテンツでスナップショットを更新
@@ -72,7 +74,7 @@ async function main(): Promise<void> {
     diffsDir: DATA_DIR.diffs,
     summariesDir: DATA_DIR.summaries,
     currentDir: DATA_DIR.current,
-    channel: SLACK_CHANNEL,
+    getChannels: getChannelsForSource,
     slackToken,
     postSummary: postSummaryImpl,
     postThreadReplies: postThreadRepliesImpl,

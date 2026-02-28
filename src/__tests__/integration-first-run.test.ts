@@ -57,7 +57,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
         TEST_SOURCES.map((s) => ({
@@ -102,7 +102,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
         TEST_SOURCES.map((s) => ({
@@ -131,7 +131,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
         TEST_SOURCES.map((s) => ({
@@ -165,7 +165,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
         TEST_SOURCES.map((s) => ({
@@ -213,7 +213,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
         TEST_SOURCES.map((s) => ({
@@ -248,7 +248,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue(
         TEST_SOURCES.map((s) => ({

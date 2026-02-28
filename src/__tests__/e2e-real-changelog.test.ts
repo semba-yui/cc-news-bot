@@ -45,7 +45,7 @@ function makeFetchAndDiffDeps(overrides: Record<string, unknown> = {}) {
     snapshotsDir: SNAPSHOTS_DIR,
     diffsDir: DIFFS_DIR,
     currentDir: CURRENT_DIR,
-    channel: "C_TEST",
+    getChannels: () => ["C_TEST"],
     slackToken: "xoxb-fake",
     fetchAll: (sources: SourceConfig[]) =>
       fetchAll(sources, { githubToken: process.env.GITHUB_TOKEN }),

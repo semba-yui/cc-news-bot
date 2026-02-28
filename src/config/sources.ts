@@ -28,7 +28,14 @@ export const SOURCES: SourceConfig[] = [
   },
 ];
 
-export const SLACK_CHANNEL = process.env.SLACK_CHANNEL_ID ?? "";
+export function getChannelsForSource(sourceName: string): string[] {
+  const envKey = `SLACK_CHANNEL_ID_${sourceName.toUpperCase().replace(/-/g, "_")}`;
+  const raw = process.env[envKey] ?? process.env.SLACK_CHANNEL_ID ?? "";
+  return raw
+    .split(",")
+    .map((ch) => ch.trim())
+    .filter(Boolean);
+}
 
 const DATA_ROOT = resolve(import.meta.dirname, "../../data");
 

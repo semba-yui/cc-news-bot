@@ -32,6 +32,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_CHANNEL_ID_CLAUDE_CODE: ${{ secrets.SLACK_CHANNEL_ID_CLAUDE_CODE }}
+          SLACK_CHANNEL_ID_CODEX: ${{ secrets.SLACK_CHANNEL_ID_CODEX }}
+          SLACK_CHANNEL_ID_COPILOT_CLI: ${{ secrets.SLACK_CHANNEL_ID_COPILOT_CLI }}
 
       - name: Generate summaries with Claude
         if: steps.fetch-diff.outputs.has_changes == 'true'
@@ -77,6 +80,9 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_CHANNEL_ID_CLAUDE_CODE: ${{ secrets.SLACK_CHANNEL_ID_CLAUDE_CODE }}
+          SLACK_CHANNEL_ID_CODEX: ${{ secrets.SLACK_CHANNEL_ID_CODEX }}
+          SLACK_CHANNEL_ID_COPILOT_CLI: ${{ secrets.SLACK_CHANNEL_ID_COPILOT_CLI }}
 
       - name: Commit and push changes
         if: steps.fetch-diff.outputs.has_changes == 'true'

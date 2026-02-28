@@ -1,7 +1,7 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { SourceConfig } from "../config/sources.js";
-import { DATA_DIR, SLACK_CHANNEL, SOURCES } from "../config/sources.js";
+import { DATA_DIR, SOURCES, getChannelsForSource } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
 import type { DiffResult } from "../services/diff-service.js";
 import {
@@ -33,7 +33,7 @@ export interface FetchAndDiffDeps {
   snapshotsDir: string;
   diffsDir: string;
   currentDir: string;
-  channel: string;
+  getChannels: (source: string) => string[];
   slackToken?: string;
 
   fetchAll: (sources: SourceConfig[]) => Promise<FetchResult[]>;
@@ -53,7 +53,7 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     snapshotsDir,
     diffsDir,
     currentDir,
-    channel,
+    getChannels,
     slackToken,
     fetchAll,
     loadSnapshot,
@@ -79,7 +79,9 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     if (!fetchResult.success) {
       errors.push({ source: sourceName, error: fetchResult.error ?? "Unknown error" });
       if (slackToken) {
-        await postError(channel, sourceName, fetchResult.error ?? "Unknown error", slackToken);
+        for (const ch of getChannels(sourceName)) {
+          await postError(ch, sourceName, fetchResult.error ?? "Unknown error", slackToken);
+        }
       }
       continue;
     }
@@ -139,7 +141,7 @@ async function main(): Promise<void> {
     snapshotsDir: DATA_DIR.snapshots,
     diffsDir: DATA_DIR.diffs,
     currentDir: DATA_DIR.current,
-    channel: SLACK_CHANNEL,
+    getChannels: getChannelsForSource,
     slackToken,
     fetchAll: (sources) => fetchAllImpl(sources, { githubToken }),
     loadSnapshot: loadSnapshotImpl,

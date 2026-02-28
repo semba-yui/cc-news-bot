@@ -13,7 +13,7 @@ function makeDeps(overrides: Partial<NotifyDeps> = {}): NotifyDeps {
     diffsDir: resolve(TEST_ROOT, "diffs"),
     summariesDir: resolve(TEST_ROOT, "summaries"),
     currentDir: resolve(TEST_ROOT, "current"),
-    channel: "C_TEST",
+    getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
     postSummary: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,

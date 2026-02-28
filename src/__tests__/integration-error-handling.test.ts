@@ -49,7 +49,7 @@ describe("結合テスト: エラーハンドリング", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
         { source: "source-alpha", success: false, error: "HTTP 404 Not Found" },
@@ -94,7 +94,7 @@ describe("結合テスト: エラーハンドリング", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
         { source: "source-alpha", success: false, error: "Network timeout" },
@@ -140,7 +140,7 @@ describe("結合テスト: エラーハンドリング", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
         { source: "source-alpha", success: false, error: "Connection refused" },
@@ -175,7 +175,7 @@ describe("結合テスト: エラーハンドリング", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
         { source: "source-alpha", success: false, error: "HTTP 500 Internal Server Error" },
@@ -210,7 +210,7 @@ describe("結合テスト: エラーハンドリング", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
         { source: "source-alpha", success: false, error: "Error A" },
@@ -247,7 +247,7 @@ describe("結合テスト: エラーハンドリング", () => {
       snapshotsDir: SNAPSHOTS_DIR,
       diffsDir: DIFFS_DIR,
       currentDir: CURRENT_DIR,
-      channel: "C_TEST",
+      getChannels: () => ["C_TEST"],
       slackToken: "xoxb-test",
       fetchAll: vi.fn<() => Promise<FetchResult[]>>().mockResolvedValue([
         { source: "source-alpha", success: false, error: "Fetch error A" },

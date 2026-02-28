@@ -18,7 +18,7 @@ export interface RunResult {
 
 export interface RunDeps {
   sources: SourceConfig[];
-  channel: string;
+  getChannels: (source: string) => string[];
   slackToken: string;
   dataRoot: string;
   snapshotsDir: string;
@@ -54,7 +54,7 @@ export interface RunDeps {
 export async function run(deps: RunDeps): Promise<RunResult> {
   const {
     sources,
-    channel,
+    getChannels,
     slackToken,
     dataRoot,
     snapshotsDir,
@@ -82,7 +82,9 @@ export async function run(deps: RunDeps): Promise<RunResult> {
     const sourceName = fetchResult.source;
 
     if (!fetchResult.success) {
-      await postError(channel, sourceName, fetchResult.error ?? "Unknown error", slackToken);
+      for (const ch of getChannels(sourceName)) {
+        await postError(ch, sourceName, fetchResult.error ?? "Unknown error", slackToken);
+      }
       processed.push({
         source: sourceName,
         hasChanges: false,
@@ -113,12 +115,13 @@ export async function run(deps: RunDeps): Promise<RunResult> {
     await writeDiff(diffResult, diffsDir);
 
     const summary = (await readSummary(sourceName)) ?? diffResult.diffText ?? "";
-    const postResult = await postSummary(channel, sourceName, summary, slackToken);
-
     let notified = false;
-    if (postResult.success && postResult.ts && diffResult.diffText) {
-      await postThreadReplies(channel, postResult.ts, diffResult.diffText, slackToken);
-      notified = true;
+    for (const ch of getChannels(sourceName)) {
+      const postResult = await postSummary(ch, sourceName, summary, slackToken);
+      if (postResult.success && postResult.ts && diffResult.diffText) {
+        await postThreadReplies(ch, postResult.ts, diffResult.diffText, slackToken);
+        notified = true;
+      }
     }
 
     await saveSnapshot(sourceName, diffResult.newContent, snapshotsDir);

@@ -18,7 +18,7 @@ const SOURCES: SourceConfig[] = [
 function makeTestDeps(overrides: Partial<Parameters<typeof run>[0]> = {}) {
   return {
     sources: SOURCES,
-    channel: "C_TEST",
+    getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
     dataRoot: TEST_DATA_ROOT,
     snapshotsDir: resolve(TEST_DATA_ROOT, "snapshots"),
