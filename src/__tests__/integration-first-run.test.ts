@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
+import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
+import type { RunResultData } from "../scripts/fetch-and-diff.js";
 import type { FetchResult } from "../services/fetch-service.js";
 
 /**
@@ -64,6 +66,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
           source: s.name,
           success: true,
           content: FAKE_CONTENTS[s.name],
+          ...(s.type === "github_releases" && { latestReleasedAt: "2026-02-28T00:00:00Z" }),
         })),
       ),
       loadSnapshot,
@@ -84,13 +87,15 @@ describe("結合テスト: 初回実行シナリオ", () => {
     // hasChanges は true（初回スナップショット保存のため）
     expect(result.hasChanges).toBe(true);
 
-    // 各ソースのスナップショットファイルが実際に作成されている
-    for (const source of TEST_SOURCES) {
+    // raw_markdown ソースはスナップショットファイルが作成される
+    for (const source of TEST_SOURCES.filter((s) => s.type === "raw_markdown")) {
       const snapshotFile = resolve(SNAPSHOTS_DIR, `${source.name}.md`);
       expect(existsSync(snapshotFile)).toBe(true);
       const content = readFileSync(snapshotFile, "utf-8");
       expect(content).toBe(FAKE_CONTENTS[source.name]);
     }
+    // github_releases ソースはスナップショットファイルを使わない（latestReleasedAt で管理）
+    expect(existsSync(resolve(SNAPSHOTS_DIR, "source-gamma.md"))).toBe(false);
   });
 
   it("初回実行時に Slack 通知（postError）が呼ばれない", async () => {
@@ -109,6 +114,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
           source: s.name,
           success: true,
           content: FAKE_CONTENTS[s.name],
+          ...(s.type === "github_releases" && { latestReleasedAt: "2026-02-28T00:00:00Z" }),
         })),
       ),
       loadSnapshot,
@@ -138,6 +144,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
           source: s.name,
           success: true,
           content: FAKE_CONTENTS[s.name],
+          ...(s.type === "github_releases" && { latestReleasedAt: "2026-02-28T00:00:00Z" }),
         })),
       ),
       loadSnapshot,
@@ -172,6 +179,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
           source: s.name,
           success: true,
           content: FAKE_CONTENTS[s.name],
+          ...(s.type === "github_releases" && { latestReleasedAt: "2026-02-28T00:00:00Z" }),
         })),
       ),
       loadSnapshot,
@@ -187,7 +195,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
     const stateFile = resolve(TEST_ROOT, "state.json");
     expect(existsSync(stateFile)).toBe(true);
 
-    const state = JSON.parse(readFileSync(stateFile, "utf-8"));
+    const state = JSON.parse(readFileSync(stateFile, "utf-8")) as SnapshotState;
 
     // lastRunAt が実行時刻以降
     expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(
@@ -197,8 +205,13 @@ describe("結合テスト: 初回実行シナリオ", () => {
     // 全ソースのエントリが存在する
     for (const source of TEST_SOURCES) {
       expect(state.sources[source.name]).toBeDefined();
-      // hash が空でない
-      expect(state.sources[source.name].hash).toBeTruthy();
+      if (source.type === "github_releases") {
+        // github_releases: latestReleasedAt でトラッキング（hash は使わない）
+        expect(state.sources[source.name].latestReleasedAt).toBe("2026-02-28T00:00:00Z");
+      } else {
+        // raw_markdown: hash が空でない
+        expect(state.sources[source.name].hash).toBeTruthy();
+      }
       // lastCheckedAt が ISO 8601 形式で設定されている
       expect(new Date(state.sources[source.name].lastCheckedAt).toISOString()).toBe(
         state.sources[source.name].lastCheckedAt,
@@ -220,6 +233,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
           source: s.name,
           success: true,
           content: FAKE_CONTENTS[s.name],
+          ...(s.type === "github_releases" && { latestReleasedAt: "2026-02-28T00:00:00Z" }),
         })),
       ),
       loadSnapshot,
@@ -234,7 +248,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
     const runResultFile = resolve(TEST_ROOT, "run-result.json");
     expect(existsSync(runResultFile)).toBe(true);
 
-    const runResult = JSON.parse(readFileSync(runResultFile, "utf-8"));
+    const runResult = JSON.parse(readFileSync(runResultFile, "utf-8")) as RunResultData;
     expect(runResult.firstRunSources).toEqual(["source-alpha", "source-beta", "source-gamma"]);
     expect(runResult.changedSources).toEqual([]);
     expect(runResult.errors).toEqual([]);
@@ -255,6 +269,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
           source: s.name,
           success: true,
           content: FAKE_CONTENTS[s.name],
+          ...(s.type === "github_releases" && { latestReleasedAt: "2026-02-28T00:00:00Z" }),
         })),
       ),
       loadSnapshot,

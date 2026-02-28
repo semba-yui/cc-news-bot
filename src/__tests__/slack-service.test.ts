@@ -80,7 +80,7 @@ describe("postSummary", () => {
   it("Authorization ヘッダーに Bearer トークンを設定する", async () => {
     let authHeader = "";
     server.use(
-      http.post(SLACK_API, async ({ request }) => {
+      http.post(SLACK_API, ({ request }) => {
         authHeader = request.headers.get("Authorization") ?? "";
         return HttpResponse.json({ ok: true, ts: "1234567890.000000" });
       }),

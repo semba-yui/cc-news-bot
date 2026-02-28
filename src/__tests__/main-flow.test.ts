@@ -30,7 +30,7 @@ function makeTestDeps(overrides: Partial<Parameters<typeof run>[0]> = {}) {
     loadSnapshot: vi.fn<() => Promise<string | null>>().mockResolvedValue(null),
     saveSnapshot: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     detectChanges: vi
-      .fn<() => DiffResult>()
+      .fn<(source: string, currentContent: string, prev: string | null) => DiffResult>()
       .mockImplementation((source: string, currentContent: string, _prev: string | null) => ({
         source,
         hasChanges: false,
@@ -281,7 +281,7 @@ describe("run (メインフロー制御)", () => {
       await run(deps);
 
       expect(deps.saveState).toHaveBeenCalledTimes(1);
-      const savedState = deps.saveState.mock.calls[0][0] as SnapshotState;
+      const savedState = vi.mocked(deps.saveState).mock.calls[0][0];
       expect(savedState.lastRunAt).toBeTruthy();
       expect(savedState.sources["source-a"]).toBeDefined();
       expect(savedState.sources["source-a"].hash).toBe("hash-a");
@@ -331,7 +331,7 @@ describe("run (メインフロー制御)", () => {
       await run(deps);
 
       expect(deps.saveState).toHaveBeenCalledTimes(1);
-      const savedState = deps.saveState.mock.calls[0][0] as SnapshotState;
+      const savedState = vi.mocked(deps.saveState).mock.calls[0][0];
       expect(savedState.sources["source-a"].hash).toBe("new-a");
       expect(savedState.sources["source-b"].hash).toBe("same-b");
     });

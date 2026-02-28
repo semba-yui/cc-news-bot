@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
+import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import type { FetchResult } from "../services/fetch-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
+import type { RunResultData } from "../scripts/fetch-and-diff.js";
 
 /**
  * 結合テスト: エラーハンドリングの検証
@@ -119,10 +121,11 @@ describe("結合テスト: エラーハンドリング", () => {
     // エラーのソースは firstRunSources に含まれない
     expect(result.firstRunSources).not.toContain("source-alpha");
 
-    // 正常なソースのスナップショットが保存される
+    // raw_markdown ソース (source-beta) のスナップショットが保存される
     expect(existsSync(resolve(SNAPSHOTS_DIR, "source-beta.md"))).toBe(true);
-    expect(existsSync(resolve(SNAPSHOTS_DIR, "source-gamma.md"))).toBe(true);
     expect(readFileSync(resolve(SNAPSHOTS_DIR, "source-beta.md"), "utf-8")).toBe("beta content");
+    // github_releases ソース (source-gamma) はスナップショットファイルを使わない
+    expect(existsSync(resolve(SNAPSHOTS_DIR, "source-gamma.md"))).toBe(false);
 
     // エラーのソースのスナップショットは作成されない
     expect(existsSync(resolve(SNAPSHOTS_DIR, "source-alpha.md"))).toBe(false);
@@ -156,13 +159,16 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"));
+    const state = JSON.parse(
+      readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"),
+    ) as SnapshotState;
 
-    // 正常なソースの状態が記録される
+    // raw_markdown ソースの状態が記録される
     expect(state.sources["source-beta"]).toBeDefined();
     expect(state.sources["source-beta"].hash).toBeTruthy();
+    // github_releases ソース: hash は使わない（latestReleasedAt でトラッキング）
     expect(state.sources["source-gamma"]).toBeDefined();
-    expect(state.sources["source-gamma"].hash).toBeTruthy();
+    expect(state.sources["source-gamma"].hash).toBe("");
 
     // エラーのソースは state に記録されない
     expect(state.sources["source-alpha"]).toBeUndefined();
@@ -191,7 +197,9 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8"));
+    const runResult = JSON.parse(
+      readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8"),
+    ) as RunResultData;
 
     expect(runResult.errors).toEqual([
       { source: "source-alpha", error: "HTTP 500 Internal Server Error" },

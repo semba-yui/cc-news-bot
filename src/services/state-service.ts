@@ -1,10 +1,12 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { DATA_DIR } from "../config/sources.js";
 
 export interface SourceState {
   hash: string;
   lastCheckedAt: string; // ISO 8601
+  latestReleasedAt?: string; // ISO 8601、github_releases ソース用
 }
 
 export interface SnapshotState {
@@ -34,7 +36,11 @@ export async function loadSnapshot(
   source: string,
   snapshotsDir: string = DATA_DIR.snapshots,
 ): Promise<string | null> {
-  return readFileSafe(snapshotPath(source, snapshotsDir));
+  try {
+    return await readFile(snapshotPath(source, snapshotsDir), "utf-8");
+  } catch {
+    return null;
+  }
 }
 
 export async function saveSnapshot(
@@ -42,12 +48,12 @@ export async function saveSnapshot(
   content: string,
   snapshotsDir: string = DATA_DIR.snapshots,
 ): Promise<void> {
-  writeFileSync(snapshotPath(source, snapshotsDir), content);
+  await writeFile(snapshotPath(source, snapshotsDir), content);
 }
 
 export async function loadState(dataRoot: string = DATA_DIR.root): Promise<SnapshotState> {
   try {
-    const raw = readFileSync(statePath(dataRoot), "utf-8");
+    const raw = await readFile(statePath(dataRoot), "utf-8");
     return JSON.parse(raw) as SnapshotState;
   } catch {
     return { ...EMPTY_STATE, sources: {} };
@@ -58,5 +64,5 @@ export async function saveState(
   state: SnapshotState,
   dataRoot: string = DATA_DIR.root,
 ): Promise<void> {
-  writeFileSync(statePath(dataRoot), JSON.stringify(state, null, 2));
+  await writeFile(statePath(dataRoot), JSON.stringify(state, null, 2));
 }

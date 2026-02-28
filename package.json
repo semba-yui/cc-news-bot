@@ -30,6 +30,7 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@secretlint/secretlint-rule-preset-recommend": "catalog:",
+    "@types/node": "catalog:",
     "lefthook": "catalog:",
     "msw": "catalog:",
     "oxfmt": "catalog:",

@@ -9,7 +9,7 @@ import {
   writeDiff as writeDiffImpl,
 } from "../services/diff-service.js";
 import { fetchAll as fetchAllImpl } from "../services/fetch-service.js";
-import type { FetchResult } from "../services/fetch-service.js";
+import type { FetchAllOptions, FetchResult } from "../services/fetch-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import { postError as postErrorImpl } from "../services/slack-service.js";
 import type { SnapshotState } from "../services/state-service.js";
@@ -36,7 +36,7 @@ export interface FetchAndDiffDeps {
   getChannels: (source: string) => string[];
   slackToken?: string;
 
-  fetchAll: (sources: SourceConfig[]) => Promise<FetchResult[]>;
+  fetchAll: (sources: SourceConfig[], options?: FetchAllOptions) => Promise<FetchResult[]>;
   loadSnapshot: (source: string, dir: string) => Promise<string | null>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
   detectChanges: (source: string, current: string, prev: string | null) => DiffResult;
@@ -65,8 +65,8 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     postError,
   } = deps;
 
-  const fetchResults = await fetchAll(sources);
   const state = await loadState(dataRoot);
+  const fetchResults = await fetchAll(sources, { sourceStates: state.sources });
   const now = new Date().toISOString();
 
   const changedSources: string[] = [];
@@ -88,6 +88,32 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
 
     const content = fetchResult.content!;
 
+    // github_releases 型: タイムスタンプベース差分検出（スナップショット比較を使わない）
+    const sourceConfig = sources.find((s) => s.name === sourceName)!;
+    if (sourceConfig.type === "github_releases") {
+      const prevLatestReleasedAt = state.sources[sourceName]?.latestReleasedAt;
+      const newLatestReleasedAt = fetchResult.latestReleasedAt;
+
+      writeFileSync(resolve(currentDir, `${sourceName}.md`), content);
+
+      if (prevLatestReleasedAt === undefined) {
+        // 初回: latestReleasedAt を記録するのみ、通知なし
+        firstRunSources.push(sourceName);
+      } else if (content.trim() !== "") {
+        // 新規リリースあり: diff ファイルとして書き出す
+        changedSources.push(sourceName);
+        writeFileSync(resolve(diffsDir, `${sourceName}.md`), content);
+      }
+
+      state.sources[sourceName] = {
+        hash: state.sources[sourceName]?.hash ?? "",
+        lastCheckedAt: now,
+        latestReleasedAt: newLatestReleasedAt ?? prevLatestReleasedAt,
+      };
+      continue;
+    }
+
+    // raw_markdown 型: 既存のスナップショット比較
     // current ディレクトリにコンテンツを書き出す
     writeFileSync(resolve(currentDir, `${sourceName}.md`), content);
 
@@ -143,7 +169,7 @@ async function main(): Promise<void> {
     currentDir: DATA_DIR.current,
     getChannels: getChannelsForSource,
     slackToken,
-    fetchAll: (sources) => fetchAllImpl(sources, { githubToken }),
+    fetchAll: (sources, options) => fetchAllImpl(sources, { githubToken, ...options }),
     loadSnapshot: loadSnapshotImpl,
     saveSnapshot: saveSnapshotImpl,
     detectChanges: detectChangesImpl,
