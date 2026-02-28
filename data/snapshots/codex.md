@@ -1,33 +1,3 @@
-## rust-v0.107.0-alpha.8 (2026-02-28T02:50:51Z)
-Release 0.107.0-alpha.8
-
-
-
-## rust-v0.107.0-alpha.7 (2026-02-28T01:53:50Z)
-Release 0.107.0-alpha.7
-
-
-
-## rust-v0.107.0-alpha.5 (2026-02-27T13:39:19Z)
-Release 0.107.0-alpha.5
-
-
-
-## rust-v0.107.0-alpha.4 (2026-02-27T07:39:08Z)
-Release 0.107.0-alpha.4
-
-
-
-## rust-v0.107.0-alpha.3 (2026-02-27T02:17:52Z)
-Release 0.107.0-alpha.3
-
-
-
-## rust-v0.107.0-alpha.2 (2026-02-27T00:34:43Z)
-Release 0.107.0-alpha.2
-
-
-
 ## rust-v0.106.0 (2026-02-26T23:11:50Z)
 ## New Features
 - Added a direct install script for macOS and Linux and publish it as a GitHub release asset, using the existing platform payload (including `codex` and `rg`) (#12740)
@@ -105,19 +75,4 @@ Full Changelog: https://github.com/openai/codex/compare/rust-v0.105.0...rust-v0.
 - #12911 fix: ctrl c sub agent @jif-oai
 - #12873 Use model catalog default for reasoning summary fallback @pakrym-oai
 
-
-
-
-## rust-v0.107.0-alpha.1 (2026-02-26T23:47:57Z)
-Release 0.107.0-alpha.1
-
-
-
-## rust-v0.106.0-alpha.9 (2026-02-26T13:01:29Z)
-Release 0.106.0-alpha.9
-
-
-
-## rust-v0.106.0-alpha.8 (2026-02-26T06:17:02Z)
-Release 0.106.0-alpha.8
 
