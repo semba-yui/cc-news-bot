@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createPatch } from "diff";
 import { DATA_DIR } from "../config/sources.js";
@@ -71,5 +71,5 @@ export async function writeDiff(
   if (!result.hasChanges || !result.diffText) {
     return;
   }
-  writeFileSync(resolve(diffsDir, `${result.source}.md`), result.diffText);
+  await writeFile(resolve(diffsDir, `${result.source}.md`), result.diffText);
 }

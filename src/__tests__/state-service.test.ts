@@ -156,7 +156,7 @@ describe("saveState", () => {
 
     await saveState(state, testDataRoot);
 
-    const saved = JSON.parse(readFileSync(resolve(testDataRoot, "state.json"), "utf-8"));
+    const saved = JSON.parse(readFileSync(resolve(testDataRoot, "state.json"), "utf-8")) as SnapshotState;
     expect(saved).toEqual(state);
   });
 
@@ -178,7 +178,7 @@ describe("saveState", () => {
     };
     await saveState(newState, testDataRoot);
 
-    const saved = JSON.parse(readFileSync(resolve(testDataRoot, "state.json"), "utf-8"));
+    const saved = JSON.parse(readFileSync(resolve(testDataRoot, "state.json"), "utf-8")) as SnapshotState;
     expect(saved).toEqual(newState);
   });
 
@@ -190,7 +190,7 @@ describe("saveState", () => {
 
     await saveState(state, testDataRoot);
 
-    const saved = JSON.parse(readFileSync(resolve(testDataRoot, "state.json"), "utf-8"));
+    const saved = JSON.parse(readFileSync(resolve(testDataRoot, "state.json"), "utf-8")) as SnapshotState;
     expect(saved.lastRunAt).toBe("2026-02-28T15:30:00Z");
   });
 

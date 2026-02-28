@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
+import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import type { FetchResult } from "../services/fetch-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
+import type { RunResultData } from "../scripts/fetch-and-diff.js";
 
 /**
  * 結合テスト: エラーハンドリングの検証
@@ -156,7 +158,7 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"));
+    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
 
     // 正常なソースの状態が記録される
     expect(state.sources["source-beta"]).toBeDefined();
@@ -191,7 +193,7 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8"));
+    const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8")) as RunResultData;
 
     expect(runResult.errors).toEqual([
       { source: "source-alpha", error: "HTTP 500 Internal Server Error" },

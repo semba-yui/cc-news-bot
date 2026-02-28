@@ -35,7 +35,7 @@ function makeDeps(overrides: Partial<FetchAndDiffDeps> = {}): FetchAndDiffDeps {
     loadSnapshot: vi.fn<() => Promise<string | null>>().mockResolvedValue(null),
     saveSnapshot: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     detectChanges: vi
-      .fn<() => DiffResult>()
+      .fn<(source: string, currentContent: string, prev: string | null) => DiffResult>()
       .mockImplementation((source: string, currentContent: string) => ({
         source,
         hasChanges: false,

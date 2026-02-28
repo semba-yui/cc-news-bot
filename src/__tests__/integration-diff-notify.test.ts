@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
+import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import type { FetchResult } from "../services/fetch-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
+import type { RunResultData } from "../scripts/fetch-and-diff.js";
 import { notifySlack } from "../scripts/notify.js";
 
 /**
@@ -115,12 +117,12 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       // state.json が更新されている
       const stateFile = resolve(TEST_ROOT, "state.json");
       expect(existsSync(stateFile)).toBe(true);
-      const state = JSON.parse(readFileSync(stateFile, "utf-8"));
+      const state = JSON.parse(readFileSync(stateFile, "utf-8")) as SnapshotState;
       expect(state.sources["source-alpha"]).toBeDefined();
       expect(state.sources["source-beta"]).toBeDefined();
 
       // run-result.json が正しく出力されている
-      const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8"));
+      const runResult = JSON.parse(readFileSync(resolve(TEST_ROOT, "run-result.json"), "utf-8")) as RunResultData;
       expect(runResult.changedSources).toEqual(["source-alpha"]);
 
       // Phase 2: notifySlack
@@ -315,10 +317,10 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       });
       const receivedTexts: string[] = [];
       const mockPostThreadReplies = vi
-        .fn<() => Promise<PostResult[]>>()
-        .mockImplementation(async (_ch, _ts, text) => {
+        .fn<(ch: string, ts: string, text: string, token: string) => Promise<PostResult[]>>()
+        .mockImplementation((_ch: string, _ts: string, text: string) => {
           receivedTexts.push(text);
-          return [{ success: true }];
+          return Promise.resolve([{ success: true }]);
         });
 
       await notifySlack({
@@ -369,7 +371,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
       });
 
-      const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"));
+      const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
 
       // lastRunAt が実行時刻以降
       expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(

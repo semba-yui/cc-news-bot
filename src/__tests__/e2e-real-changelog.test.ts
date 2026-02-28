@@ -6,6 +6,7 @@ import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { fetchAll } from "../services/fetch-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
+import type { SnapshotState } from "../services/state-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
 
 /**
@@ -93,7 +94,7 @@ describe.skipIf(SKIP)("E2E: 実データによる fetchAndDiff パイプライ�
 
     // state.json が生成されている
     expect(existsSync(resolve(TEST_ROOT, "state.json"))).toBe(true);
-    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"));
+    const state = JSON.parse(readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8")) as SnapshotState;
     expect(state.lastRunAt).toBeTruthy();
 
     // 成功したソースの state エントリがある
@@ -107,7 +108,7 @@ describe.skipIf(SKIP)("E2E: 実データによる fetchAndDiff パイプライ�
 
     // postError は成功ソースに対しては呼ばれない
     const postErrorCalls = (deps.postError as ReturnType<typeof vi.fn>).mock.calls;
-    const errorSources = postErrorCalls.map((c) => c[1]);
+    const errorSources = postErrorCalls.map((c) => c[1] as string);
     for (const source of result.firstRunSources) {
       expect(errorSources).not.toContain(source);
     }

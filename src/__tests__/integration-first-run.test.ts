@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
+import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
+import type { RunResultData } from "../scripts/fetch-and-diff.js";
 import type { FetchResult } from "../services/fetch-service.js";
 
 /**
@@ -187,7 +189,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
     const stateFile = resolve(TEST_ROOT, "state.json");
     expect(existsSync(stateFile)).toBe(true);
 
-    const state = JSON.parse(readFileSync(stateFile, "utf-8"));
+    const state = JSON.parse(readFileSync(stateFile, "utf-8")) as SnapshotState;
 
     // lastRunAt が実行時刻以降
     expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(
@@ -234,7 +236,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
     const runResultFile = resolve(TEST_ROOT, "run-result.json");
     expect(existsSync(runResultFile)).toBe(true);
 
-    const runResult = JSON.parse(readFileSync(runResultFile, "utf-8"));
+    const runResult = JSON.parse(readFileSync(runResultFile, "utf-8")) as RunResultData;
     expect(runResult.firstRunSources).toEqual(["source-alpha", "source-beta", "source-gamma"]);
     expect(runResult.changedSources).toEqual([]);
     expect(runResult.errors).toEqual([]);
