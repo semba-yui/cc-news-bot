@@ -57,21 +57,38 @@ jobs:
 
             ## 変更内容
 
-            ### 新規追加
+            （該当する変更があるカテゴリのみ、以下の順序で出力する。該当なしのカテゴリは省略する）
 
-            - xxx
+            ### 破壊的変更
+            - xxx  ← 後方互換性のない変更（Breaking change キーワード）
+
+            ### セキュリティ
+            - xxx  ← セキュリティ修正・脆弱性対応（Security, CVE, vulnerability, sandbox 関連）
+
+            ### 新規追加
+            - xxx  ← 新機能・新コマンドの追加（Added, Add, New, Introduce）
 
             ### 修正
-
-            - xxx
+            - xxx  ← バグ修正（Fixed, Fix, Patched, Resolved）
 
             ### 改善
+            - xxx  ← 既存機能の使い勝手・UX 改善（Improved, Improve, Enhanced, Enhance）
 
-            - xxx
+            ### パフォーマンス
+            - xxx  ← 速度・メモリ・効率の改善（Performance, Speed, Memory, overhead）
+
+            ### 削除
+            - xxx  ← 機能・オプションの削除（Removed, Remove, Dropped）
+
+            ### 非推奨
+            - xxx  ← 将来的に削除予定（Deprecated, Deprecate）
+
+            ### その他
+            - xxx  ← 上記のどれにも属さない変更
 
             ## 用語解説
 
-            - 特殊な用語があればピックアップして解説
+            - 特殊な用語があればピックアップして解説（なければこのセクションごと省略）
 
             例: `data/diffs/claude-code-2.1.63.md` → `data/summaries/claude-code-2.1.63.md` に書き出す。
             ファイルが複数ある場合はすべて処理してください。
