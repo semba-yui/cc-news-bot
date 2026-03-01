@@ -45,13 +45,14 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
     const diffText = readFileSafe(resolve(diffsDir, `${source}.md`)) ?? "";
     const summary = readFileSafe(resolve(summariesDir, `${source}.md`)) ?? diffText;
 
-    for (const ch of getChannels(source)) {
-      const result = await postSummary(ch, source, summary, slackToken);
-
-      if (result.success && result.ts && diffText) {
-        await postThreadReplies(ch, result.ts, diffText, slackToken);
-      }
-    }
+    await Promise.all(
+      getChannels(source).map(async (ch) => {
+        const result = await postSummary(ch, source, summary, slackToken);
+        if (result.success && result.ts && diffText) {
+          await postThreadReplies(ch, result.ts, diffText, slackToken);
+        }
+      }),
+    );
 
     // current のコンテンツでスナップショットを更新
     const currentContent = readFileSync(resolve(currentDir, `${source}.md`), "utf-8");

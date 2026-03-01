@@ -71,8 +71,7 @@ export async function fetchGitHubReleases(
   const releases = (await response.json()) as GitHubRelease[];
 
   return releases
-    .filter((r) => !r.prerelease)
-    .filter((r) => !options?.since || r.published_at > options.since)
+    .filter((r) => !r.prerelease && (!options?.since || r.published_at > options.since))
     .map((r) => `## ${r.tag_name} (${r.published_at})\n${r.body}`)
     .join("\n\n");
 }

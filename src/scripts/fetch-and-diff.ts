@@ -79,9 +79,11 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     if (!fetchResult.success) {
       errors.push({ source: sourceName, error: fetchResult.error ?? "Unknown error" });
       if (slackToken) {
-        for (const ch of getChannels(sourceName)) {
-          await postError(ch, sourceName, fetchResult.error ?? "Unknown error", slackToken);
-        }
+        await Promise.all(
+          getChannels(sourceName).map((ch) =>
+            postError(ch, sourceName, fetchResult.error ?? "Unknown error", slackToken),
+          ),
+        );
       }
       continue;
     }
