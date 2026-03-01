@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { DATA_DIR, getChannelsForSource } from "../config/sources.js";
-import type { PostResult } from "../services/slack-service.js";
+import { DATA_DIR, getBotProfileForSource, getChannelsForSource } from "../config/sources.js";
+import type { BotProfile, PostOptions, PostResult } from "../services/slack-service.js";
 import {
   postSummary as postSummaryImpl,
   postThreadReplies as postThreadRepliesImpl,
@@ -19,8 +19,8 @@ export interface NotifyDeps {
   slackToken: string;
   listDiffFiles: (diffsDir: string, source: string) => string[];
 
-  postSummary: (ch: string, src: string, version: string, summary: string, token: string) => Promise<PostResult>;
-  postThreadReplies: (ch: string, ts: string, text: string, token: string) => Promise<PostResult[]>;
+  postSummary: (ch: string, src: string, version: string, summary: string, token: string, botProfile?: BotProfile) => Promise<PostResult>;
+  postThreadReplies: (ch: string, ts: string, text: string, token: string, options?: PostOptions) => Promise<PostResult[]>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
 }
 
@@ -51,11 +51,12 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
       const diffText = readFileSafe(diffFilePath) ?? "";
       const summary = readFileSafe(resolve(summariesDir, `${source}-${version}.md`)) ?? diffText;
 
+      const botProfile = getBotProfileForSource(source);
       await Promise.all(
         getChannels(source).map(async (ch) => {
-          const result = await postSummary(ch, source, version, summary, slackToken);
+          const result = await postSummary(ch, source, version, summary, slackToken, botProfile);
           if (result.success && result.ts && diffText) {
-            await postThreadReplies(ch, result.ts, diffText, slackToken);
+            await postThreadReplies(ch, result.ts, diffText, slackToken, { botProfile });
           }
         }),
       );
@@ -86,8 +87,10 @@ async function main(): Promise<void> {
         .filter((f) => f.startsWith(`${src}-`) && f.endsWith(".md"))
         .sort()
         .map((f) => resolve(dir, f)),
-    postSummary: postSummaryImpl,
-    postThreadReplies: postThreadRepliesImpl,
+    postSummary: (ch, src, version, summary, token, botProfile) =>
+      postSummaryImpl(ch, src, version, summary, token, botProfile),
+    postThreadReplies: (ch, ts, text, token, options) =>
+      postThreadRepliesImpl(ch, ts, text, token, options),
     saveSnapshot: saveSnapshotImpl,
   });
 

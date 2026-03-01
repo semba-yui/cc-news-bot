@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import type { BotProfile } from "../services/slack-service.js";
 
 export interface SourceConfig {
   name: string;
@@ -6,6 +7,8 @@ export interface SourceConfig {
   url: string;
   owner?: string;
   repo?: string;
+  botName: string;
+  botEmoji: string;
 }
 
 export const SOURCES: SourceConfig[] = [
@@ -13,6 +16,8 @@ export const SOURCES: SourceConfig[] = [
     name: "claude-code",
     type: "raw_markdown",
     url: "https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md",
+    botName: "Claude Code Changelog",
+    botEmoji: ":claude:",
   },
   {
     name: "codex",
@@ -20,13 +25,23 @@ export const SOURCES: SourceConfig[] = [
     url: "https://api.github.com/repos/openai/codex/releases",
     owner: "openai",
     repo: "codex",
+    botName: "Codex Releases",
+    botEmoji: ":openai-chatgpt:",
   },
   {
     name: "copilot-cli",
     type: "raw_markdown",
     url: "https://raw.githubusercontent.com/github/copilot-cli/main/changelog.md",
+    botName: "Copilot CLI Changelog",
+    botEmoji: ":github:",
   },
 ];
+
+export function getBotProfileForSource(name: string): BotProfile | undefined {
+  const source = SOURCES.find((s) => s.name === name);
+  if (!source) return undefined;
+  return { name: source.botName, emoji: source.botEmoji };
+}
 
 export function getChannelsForSource(sourceName: string): string[] {
   const envKey = `SLACK_CHANNEL_ID_${sourceName.toUpperCase().replace(/-/g, "_")}`;

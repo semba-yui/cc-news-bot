@@ -7,6 +7,7 @@ import {
   postThreadReplies,
   postError,
   splitText,
+  summaryToBlocks,
   MAX_MESSAGE_LENGTH,
 } from "../services/slack-service.js";
 
@@ -88,6 +89,37 @@ describe("postSummary", () => {
 
     await postSummary(CHANNEL, "claude-code", "1.0.0", "要約", TOKEN);
     expect(authHeader).toBe(`Bearer ${TOKEN}`);
+  });
+
+  it("botProfile を渡した場合、username と icon_emoji がペイロードに含まれる", async () => {
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.000000" });
+      }),
+    );
+
+    await postSummary(CHANNEL, "claude-code", "1.0.0", "要約", TOKEN, {
+      name: "Claude Code Changelog",
+      emoji: ":claude:",
+    });
+    expect(capturedBody.username).toBe("Claude Code Changelog");
+    expect(capturedBody.icon_emoji).toBe(":claude:");
+  });
+
+  it("botProfile を渡さない場合、username と icon_emoji がペイロードに含まれない", async () => {
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.000000" });
+      }),
+    );
+
+    await postSummary(CHANNEL, "claude-code", "1.0.0", "要約", TOKEN);
+    expect(capturedBody.username).toBeUndefined();
+    expect(capturedBody.icon_emoji).toBeUndefined();
   });
 });
 
@@ -251,6 +283,126 @@ describe("postThreadReplies", () => {
     expect(results[0].success).toBe(false);
     expect(results[1].success).toBe(true);
     expect(results[2].success).toBe(true);
+  });
+});
+
+describe("summaryToBlocks", () => {
+  const SAMPLE_SUMMARY = `## ひとこと
+- 自動更新がバイナリまで対象に
+
+## 変更内容
+
+### 新規追加
+- #入力で GitHub Issue 参照機能を追加
+
+### 修正
+- 502 エラーを自動リトライ
+
+## 用語解説
+- 自動更新: ツールが起動時に新しいバージョンを取得する機能`;
+
+  it("header ブロックに source と version が含まれる", () => {
+    const blocks = summaryToBlocks("claude-code", "1.0.0", SAMPLE_SUMMARY);
+    const header = blocks.find((b) => b.type === "header");
+    expect(header).toBeDefined();
+    expect(header?.type === "header" && header.text.text).toContain("claude-code");
+    expect(header?.type === "header" && header.text.text).toContain("1.0.0");
+  });
+
+  it("ひとこと セクションに 💬 絵文字が付く", () => {
+    const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
+    const section = blocks.find(
+      (b) => b.type === "section" && b.text.text.includes("💬"),
+    );
+    expect(section).toBeDefined();
+  });
+
+  it("存在しないカテゴリのブロックは生成しない", () => {
+    const blocks = summaryToBlocks("src", "1.0", "## ひとこと\n- only this");
+    const blockTexts = blocks
+      .filter((b) => b.type === "section")
+      .map((b) => b.text.text);
+    expect(blockTexts.some((t) => t.includes("🆕"))).toBe(false);
+    expect(blockTexts.some((t) => t.includes("🔧"))).toBe(false);
+  });
+
+  it("divider が ひとこと とカテゴリ群の間に挿入される", () => {
+    const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
+    const hitokotoIdx = blocks.findIndex(
+      (b) => b.type === "section" && b.text.text.includes("💬"),
+    );
+    const dividerIdx = blocks.findIndex((b) => b.type === "divider");
+    expect(dividerIdx).toBeGreaterThan(hitokotoIdx);
+  });
+
+  it("- xxx を • xxx に変換する", () => {
+    const blocks = summaryToBlocks("src", "1.0", "## ひとこと\n- テスト行");
+    const section = blocks.find(
+      (b) => b.type === "section" && b.text.text.includes("ひとこと"),
+    );
+    expect(section?.text.text).toContain("• テスト行");
+    expect(section?.text.text).not.toContain("- テスト行");
+  });
+
+  it("空の summary でも header ブロックが生成される", () => {
+    const blocks = summaryToBlocks("src", "1.0", "");
+    expect(blocks.some((b) => b.type === "header")).toBe(true);
+  });
+
+  it("section text が 3000 文字を超えない", () => {
+    const longLines = Array.from({ length: 100 }, (_, i) => `- ${"x".repeat(50)} ${i}`).join("\n");
+    const summary = `## 新規追加\n${longLines}`;
+    const blocks = summaryToBlocks("src", "1.0", summary);
+    for (const block of blocks) {
+      if (block.type === "section") {
+        expect(block.text.text.length).toBeLessThanOrEqual(3000);
+      }
+    }
+  });
+});
+
+describe("postSummary (Block Kit)", () => {
+  it("blocks フィールドが付与される", async () => {
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.000000" });
+      }),
+    );
+
+    await postSummary(CHANNEL, "claude-code", "1.0.0", "## ひとこと\n- テスト", TOKEN);
+    expect(capturedBody.blocks).toBeDefined();
+    expect(Array.isArray(capturedBody.blocks)).toBe(true);
+  });
+
+  it("空の summary でもフォールバックして投稿できる", async () => {
+    server.use(
+      http.post(SLACK_API, () => {
+        return HttpResponse.json({ ok: true, ts: "1234567890.000000" });
+      }),
+    );
+
+    const result = await postSummary(CHANNEL, "claude-code", "1.0.0", "", TOKEN);
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("postThreadReply (Block Kit)", () => {
+  it("blocks フィールドが付与される", async () => {
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.000000" });
+      }),
+    );
+
+    await postThreadReply(CHANNEL, "1234567890.123456", "## 1.0.0\n- Fixed bug", TOKEN, {
+      delayMs: 0,
+    });
+    expect(capturedBody.blocks).toBeDefined();
+    expect(Array.isArray(capturedBody.blocks)).toBe(true);
   });
 });
 

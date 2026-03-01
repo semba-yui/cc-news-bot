@@ -25,7 +25,9 @@ function makeDeps(overrides: Partial<NotifyDeps> = {}): NotifyDeps {
       success: true,
       ts: "1234567890.123456",
     }),
-    postThreadReplies: vi.fn<() => Promise<PostResult[]>>().mockResolvedValue([{ success: true }]),
+    postThreadReplies: vi.fn<() => Promise<PostResult[]>>().mockResolvedValue([
+      { success: true },
+    ]),
     saveSnapshot: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -67,6 +69,7 @@ describe("notifySlack", () => {
         "v1.0.0",
         "要約テキスト",
         "xoxb-test",
+        undefined,
       );
     });
 
@@ -93,6 +96,7 @@ describe("notifySlack", () => {
         "v1.0.0",
         "+diff text",
         "xoxb-test",
+        undefined,
       );
     });
   });
@@ -120,6 +124,7 @@ describe("notifySlack", () => {
         "1234567890.123456",
         "+diff content",
         "xoxb-test",
+        { botProfile: undefined },
       );
     });
 
