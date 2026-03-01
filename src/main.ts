@@ -1,5 +1,6 @@
 import type { SourceConfig } from "./config/sources.js";
 import type { DiffResult } from "./services/diff-service.js";
+import { splitIntoVersions } from "./services/diff-service.js";
 import type { FetchResult } from "./services/fetch-service.js";
 import type { PostResult } from "./services/slack-service.js";
 import type { SnapshotState } from "./services/state-service.js";
@@ -32,12 +33,13 @@ export interface RunDeps {
     currentContent: string,
     previousSnapshot: string | null,
   ) => DiffResult;
-  writeDiff: (result: DiffResult, diffsDir: string) => Promise<void>;
+  writeDiff: (result: DiffResult, diffsDir: string, sourceType: "raw_markdown" | "github_releases") => Promise<void>;
   loadState: (dataRoot: string) => Promise<SnapshotState>;
   saveState: (state: SnapshotState, dataRoot: string) => Promise<void>;
   postSummary: (
     channel: string,
     source: string,
+    version: string,
     summary: string,
     token: string,
   ) => Promise<PostResult>;
@@ -48,7 +50,7 @@ export interface RunDeps {
     token: string,
   ) => Promise<PostResult[]>;
   postError: (channel: string, source: string, error: string, token: string) => Promise<PostResult>;
-  readSummary: (source: string) => Promise<string | null>;
+  readSummary: (sourceAndVersion: string) => Promise<string | null>;
 }
 
 export async function run(deps: RunDeps): Promise<RunResult> {
@@ -112,15 +114,19 @@ export async function run(deps: RunDeps): Promise<RunResult> {
     }
 
     hasAnyChanges = true;
-    await writeDiff(diffResult, diffsDir);
+    const sourceConfig = sources.find((s) => s.name === sourceName)!;
+    await writeDiff(diffResult, diffsDir, sourceConfig.type);
 
-    const summary = (await readSummary(sourceName)) ?? diffResult.diffText ?? "";
+    const versions = splitIntoVersions(diffResult.diffText ?? "", sourceConfig.type);
     let notified = false;
-    for (const ch of getChannels(sourceName)) {
-      const postResult = await postSummary(ch, sourceName, summary, slackToken);
-      if (postResult.success && postResult.ts && diffResult.diffText) {
-        await postThreadReplies(ch, postResult.ts, diffResult.diffText, slackToken);
-        notified = true;
+    for (const { version, safeVersion, content: vContent } of versions) {
+      const summary = (await readSummary(`${sourceName}-${safeVersion}`)) ?? vContent;
+      for (const ch of getChannels(sourceName)) {
+        const postResult = await postSummary(ch, sourceName, version, summary, slackToken);
+        if (postResult.success && postResult.ts) {
+          await postThreadReplies(ch, postResult.ts, vContent, slackToken);
+          notified = true;
+        }
       }
     }
 

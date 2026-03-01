@@ -119,7 +119,7 @@ describe("run (メインフロー制御)", () => {
         hasChanges: true,
         oldHash: "old",
         newHash: "new",
-        diffText: "+added line",
+        diffText: "## v2.0.0\n+added line",
         newContent: "new-content-a",
       };
 
@@ -141,23 +141,24 @@ describe("run (メインフロー制御)", () => {
       const result = await run(deps);
 
       // diff ファイル書き出し
-      expect(deps.writeDiff).toHaveBeenCalledWith(diffResult, deps.diffsDir);
+      expect(deps.writeDiff).toHaveBeenCalledWith(diffResult, deps.diffsDir, "raw_markdown");
 
       // Slack 通知（source-a のみ）
       expect(deps.postSummary).toHaveBeenCalledTimes(1);
       expect(deps.postSummary).toHaveBeenCalledWith(
         "C_TEST",
         "source-a",
+        "v2.0.0",
         "要約テキスト",
         "xoxb-test",
       );
 
-      // スレッド返信（原文 diff）
+      // スレッド返信（バージョンの原文）
       expect(deps.postThreadReplies).toHaveBeenCalledTimes(1);
       expect(deps.postThreadReplies).toHaveBeenCalledWith(
         "C_TEST",
         "1234567890.123456",
-        "+added line",
+        "## v2.0.0\n+added line",
         "xoxb-test",
       );
 
@@ -190,7 +191,7 @@ describe("run (メインフロー制御)", () => {
           hasChanges: true,
           oldHash: "old",
           newHash: "new",
-          diffText: "+diff text",
+          diffText: "## v1.0.0\n+diff text",
           newContent: "new-content",
         }),
         readSummary: vi.fn().mockResolvedValue(null),
@@ -201,7 +202,8 @@ describe("run (メインフロー制御)", () => {
       expect(deps.postSummary).toHaveBeenCalledWith(
         "C_TEST",
         "source-a",
-        "+diff text",
+        "v1.0.0",
+        "## v1.0.0\n+diff text",
         "xoxb-test",
       );
     });

@@ -35,7 +35,7 @@ describe("postSummary", () => {
       }),
     );
 
-    const result = await postSummary(CHANNEL, "claude-code", "テスト要約", TOKEN);
+    const result = await postSummary(CHANNEL, "claude-code", "1.0.0", "テスト要約", TOKEN);
     expect(result.success).toBe(true);
     expect(result.ts).toBe("1234567890.123456");
   });
@@ -49,7 +49,7 @@ describe("postSummary", () => {
       }),
     );
 
-    await postSummary(CHANNEL, "codex", "要約テキスト", TOKEN);
+    await postSummary(CHANNEL, "codex", "1.0.0", "要約テキスト", TOKEN);
     expect(capturedBody.text).toContain("codex");
   });
 
@@ -60,7 +60,7 @@ describe("postSummary", () => {
       }),
     );
 
-    const result = await postSummary(CHANNEL, "claude-code", "要約", TOKEN);
+    const result = await postSummary(CHANNEL, "claude-code", "1.0.0", "要約", TOKEN);
     expect(result.success).toBe(false);
     expect(result.error).toContain("channel_not_found");
   });
@@ -72,7 +72,7 @@ describe("postSummary", () => {
       }),
     );
 
-    const result = await postSummary(CHANNEL, "claude-code", "要約", TOKEN);
+    const result = await postSummary(CHANNEL, "claude-code", "1.0.0", "要約", TOKEN);
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
   });
@@ -86,7 +86,7 @@ describe("postSummary", () => {
       }),
     );
 
-    await postSummary(CHANNEL, "claude-code", "要約", TOKEN);
+    await postSummary(CHANNEL, "claude-code", "1.0.0", "要約", TOKEN);
     expect(authHeader).toBe(`Bearer ${TOKEN}`);
   });
 });

@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import { DATA_DIR, getChannelsForSource } from "../config/sources.js";
 import type { PostResult } from "../services/slack-service.js";
 import {
@@ -17,8 +17,9 @@ export interface NotifyDeps {
   currentDir: string;
   getChannels: (source: string) => string[];
   slackToken: string;
+  listDiffFiles: (diffsDir: string, source: string) => string[];
 
-  postSummary: (ch: string, src: string, summary: string, token: string) => Promise<PostResult>;
+  postSummary: (ch: string, src: string, version: string, summary: string, token: string) => Promise<PostResult>;
   postThreadReplies: (ch: string, ts: string, text: string, token: string) => Promise<PostResult[]>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
 }
@@ -32,6 +33,7 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
     currentDir,
     getChannels,
     slackToken,
+    listDiffFiles,
     postSummary,
     postThreadReplies,
     saveSnapshot,
@@ -42,19 +44,24 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
   ) as RunResultData;
 
   for (const source of runResult.changedSources) {
-    const diffText = readFileSafe(resolve(diffsDir, `${source}.md`)) ?? "";
-    const summary = readFileSafe(resolve(summariesDir, `${source}.md`)) ?? diffText;
+    const diffFiles = listDiffFiles(diffsDir, source).sort();
 
-    await Promise.all(
-      getChannels(source).map(async (ch) => {
-        const result = await postSummary(ch, source, summary, slackToken);
-        if (result.success && result.ts && diffText) {
-          await postThreadReplies(ch, result.ts, diffText, slackToken);
-        }
-      }),
-    );
+    for (const diffFilePath of diffFiles) {
+      const version = basename(diffFilePath, ".md").slice(source.length + 1);
+      const diffText = readFileSafe(diffFilePath) ?? "";
+      const summary = readFileSafe(resolve(summariesDir, `${source}-${version}.md`)) ?? diffText;
 
-    // current のコンテンツでスナップショットを更新
+      await Promise.all(
+        getChannels(source).map(async (ch) => {
+          const result = await postSummary(ch, source, version, summary, slackToken);
+          if (result.success && result.ts && diffText) {
+            await postThreadReplies(ch, result.ts, diffText, slackToken);
+          }
+        }),
+      );
+    }
+
+    // current のコンテンツでスナップショットを更新（バージョンごとではなくソース単位）
     const currentContent = readFileSync(resolve(currentDir, `${source}.md`), "utf-8");
     await saveSnapshot(source, currentContent, snapshotsDir);
   }
@@ -74,6 +81,11 @@ async function main(): Promise<void> {
     currentDir: DATA_DIR.current,
     getChannels: getChannelsForSource,
     slackToken,
+    listDiffFiles: (dir, src) =>
+      readdirSync(dir)
+        .filter((f) => f.startsWith(`${src}-`) && f.endsWith(".md"))
+        .sort()
+        .map((f) => resolve(dir, f)),
     postSummary: postSummaryImpl,
     postThreadReplies: postThreadRepliesImpl,
     saveSnapshot: saveSnapshotImpl,

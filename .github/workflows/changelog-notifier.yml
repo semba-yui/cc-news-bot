@@ -43,13 +43,17 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             data/diffs/ ディレクトリ内の各 Markdown ファイルを読み取り、
-            それぞれのソースについて以下のフォーマットで日本語要約を生成してください。
+            バージョンごとに日本語要約を生成してください。
+
+            ファイル名の形式は `{source}-{version}.md` です（例: `claude-code-2.1.63.md`）。
+            各ファイルを読み取り、対応する `data/summaries/{source}-{version}.md` に
+            以下のフォーマットで日本語要約を書き出してください。
 
             ## フォーマット
 
             ## ひとこと
 
-            - 差分の中で目玉機能などをピックアップし、どんな変更があったのかをわかりやすくひとことで
+            - このバージョンの目玉変更をひとことでわかりやすく
 
             ## 変更内容
 
@@ -69,9 +73,9 @@ jobs:
 
             - 特殊な用語があればピックアップして解説
 
-            各ソースの要約を data/summaries/{source-name}.md に書き出してください。
-            source-name は diff ファイル名から拡張子を除いた値です。
-          claude_args: "--max-turns 30 --allowedTools Read,Write,Edit,Glob"
+            例: `data/diffs/claude-code-2.1.63.md` → `data/summaries/claude-code-2.1.63.md` に書き出す。
+            ファイルが複数ある場合はすべて処理してください。
+          claude_args: "--max-turns 50 --allowedTools Read,Write,Edit,Glob"
 
       - name: Post notifications to Slack
         if: steps.fetch-diff.outputs.has_changes == 'true'

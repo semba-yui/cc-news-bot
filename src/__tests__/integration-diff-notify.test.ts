@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
@@ -104,15 +104,16 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       expect(fadResult.hasChanges).toBe(true);
       expect(fadResult.errors).toEqual([]);
 
-      // diff ファイルが生成されている
-      const diffFile = resolve(DIFFS_DIR, "source-alpha.md");
+      // diff ファイルが生成されている（バージョンごとのファイル名）
+      const diffFile = resolve(DIFFS_DIR, "source-alpha-v1.1.0.md");
       expect(existsSync(diffFile)).toBe(true);
       const diffText = readFileSync(diffFile, "utf-8");
-      expect(diffText).toContain("+## v1.1.0");
-      expect(diffText).toContain("+- New feature");
+      expect(diffText).toContain("## v1.1.0");
+      expect(diffText).toContain("- New feature");
+      expect(diffText).not.toContain("v1.0.0");
 
       // source-beta の diff は生成されていない
-      expect(existsSync(resolve(DIFFS_DIR, "source-beta.md"))).toBe(false);
+      expect(existsSync(resolve(DIFFS_DIR, "source-beta-v1.1.0.md"))).toBe(false);
 
       // state.json が更新されている
       const stateFile = resolve(TEST_ROOT, "state.json");
@@ -129,7 +130,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
 
       // Phase 2: notifySlack
       // 要約ファイルを配置（Claude Code Action が生成する想定）
-      writeFileSync(resolve(SUMMARIES_DIR, "source-alpha.md"), "## ひとこと\n- 新機能追加");
+      writeFileSync(resolve(SUMMARIES_DIR, "source-alpha-v1.1.0.md"), "## ひとこと\n- 新機能追加");
 
       const mockPostSummary = vi
         .fn<() => Promise<PostResult>>()
@@ -146,6 +147,11 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         currentDir: CURRENT_DIR,
         getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
+        listDiffFiles: (dir, src) =>
+          readdirSync(dir)
+            .filter((f) => f.startsWith(`${src}-`) && f.endsWith(".md"))
+            .sort()
+            .map((f) => resolve(dir, f)),
         postSummary: mockPostSummary,
         postThreadReplies: mockPostThreadReplies,
         saveSnapshot,
@@ -156,6 +162,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       expect(mockPostSummary).toHaveBeenCalledWith(
         "C_TEST",
         "source-alpha",
+        "v1.1.0",
         "## ひとこと\n- 新機能追加",
         "xoxb-test",
       );
@@ -230,6 +237,11 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         currentDir: CURRENT_DIR,
         getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
+        listDiffFiles: (dir, src) =>
+          readdirSync(dir)
+            .filter((f) => f.startsWith(`${src}-`) && f.endsWith(".md"))
+            .sort()
+            .map((f) => resolve(dir, f)),
         postSummary: mockPostSummary,
         postThreadReplies: mockPostThreadReplies,
         saveSnapshot,
@@ -307,8 +319,8 @@ describe("結合テスト: 差分検出と通知フロー", () => {
 
       expect(fadResult.changedSources).toEqual(["source-alpha"]);
 
-      // diff ファイルが生成されている
-      const diffText = readFileSync(resolve(DIFFS_DIR, "source-alpha.md"), "utf-8");
+      // diff ファイルが生成されている（バージョンごとのファイル名）
+      const diffText = readFileSync(resolve(DIFFS_DIR, "source-alpha-v2.0.0.md"), "utf-8");
       expect(diffText.length).toBeGreaterThan(3500);
 
       // Phase 2: notifySlack（splitText を内部で使う postThreadReplies の実装を検証）
@@ -333,6 +345,11 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         currentDir: CURRENT_DIR,
         getChannels: () => ["C_TEST"],
         slackToken: "xoxb-test",
+        listDiffFiles: (dir, src) =>
+          readdirSync(dir)
+            .filter((f) => f.startsWith(`${src}-`) && f.endsWith(".md"))
+            .sort()
+            .map((f) => resolve(dir, f)),
         postSummary: mockPostSummary,
         postThreadReplies: mockPostThreadReplies,
         saveSnapshot,

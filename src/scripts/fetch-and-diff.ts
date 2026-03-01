@@ -6,6 +6,7 @@ import { ensureDataDirs } from "../config/init-dirs.js";
 import type { DiffResult } from "../services/diff-service.js";
 import {
   detectChanges as detectChangesImpl,
+  splitIntoVersions,
   writeDiff as writeDiffImpl,
 } from "../services/diff-service.js";
 import { fetchAll as fetchAllImpl } from "../services/fetch-service.js";
@@ -40,7 +41,7 @@ export interface FetchAndDiffDeps {
   loadSnapshot: (source: string, dir: string) => Promise<string | null>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
   detectChanges: (source: string, current: string, prev: string | null) => DiffResult;
-  writeDiff: (result: DiffResult, dir: string) => Promise<void>;
+  writeDiff: (result: DiffResult, dir: string, sourceType: "raw_markdown" | "github_releases") => Promise<void>;
   loadState: (root: string) => Promise<SnapshotState>;
   saveState: (state: SnapshotState, root: string) => Promise<void>;
   postError: (ch: string, src: string, err: string, token: string) => Promise<PostResult>;
@@ -102,9 +103,16 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
         // 初回: latestReleasedAt を記録するのみ、通知なし
         firstRunSources.push(sourceName);
       } else if (content.trim() !== "") {
-        // 新規リリースあり: diff ファイルとして書き出す
+        // 新規リリースあり: バージョンごとに diff ファイルを書き出す
         changedSources.push(sourceName);
-        writeFileSync(resolve(diffsDir, `${sourceName}.md`), content);
+        const versions = splitIntoVersions(content, "github_releases");
+        if (versions.length === 0) {
+          writeFileSync(resolve(diffsDir, `${sourceName}-_unversioned_.md`), content);
+        } else {
+          for (const { safeVersion, content: vContent } of versions) {
+            writeFileSync(resolve(diffsDir, `${sourceName}-${safeVersion}.md`), vContent);
+          }
+        }
       }
 
       state.sources[sourceName] = {
@@ -134,7 +142,7 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     } else if (diffResult.hasChanges) {
       // 差分あり: diff ファイルを書き出す（スナップショットは notify で更新）
       changedSources.push(sourceName);
-      await writeDiff(diffResult, diffsDir);
+      await writeDiff(diffResult, diffsDir, "raw_markdown");
     }
   }
 

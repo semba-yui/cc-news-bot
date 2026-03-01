@@ -45,13 +45,14 @@ async function callPostMessage(body: Record<string, unknown>, token: string): Pr
 export async function postSummary(
   channel: string,
   source: string,
+  version: string,
   summary: string,
   token: string,
 ): Promise<PostResult> {
   return callPostMessage(
     {
       channel,
-      text: `*${source}* の changelog が更新されました\n\n${summary}`,
+      text: `*${source}* \`${version}\` の更新\n\n${summary}`,
       mrkdwn: true,
     },
     token,

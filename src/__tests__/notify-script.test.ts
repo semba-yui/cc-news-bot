@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PostResult } from "../services/slack-service.js";
@@ -7,14 +7,20 @@ import { notifySlack, type NotifyDeps } from "../scripts/notify.js";
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-notify");
 
 function makeDeps(overrides: Partial<NotifyDeps> = {}): NotifyDeps {
+  const diffsDir = resolve(TEST_ROOT, "diffs");
   return {
     dataRoot: TEST_ROOT,
     snapshotsDir: resolve(TEST_ROOT, "snapshots"),
-    diffsDir: resolve(TEST_ROOT, "diffs"),
+    diffsDir,
     summariesDir: resolve(TEST_ROOT, "summaries"),
     currentDir: resolve(TEST_ROOT, "current"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
+    listDiffFiles: (dir: string, src: string) =>
+      readdirSync(dir)
+        .filter((f) => f.startsWith(`${src}-`) && f.endsWith(".md"))
+        .sort()
+        .map((f) => resolve(dir, f)),
     postSummary: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,
       ts: "1234567890.123456",
@@ -48,8 +54,8 @@ describe("notifySlack", () => {
           hasChanges: true,
         }),
       );
-      writeFileSync(resolve(TEST_ROOT, "summaries/source-a.md"), "要約テキスト");
-      writeFileSync(resolve(TEST_ROOT, "diffs/source-a.md"), "+added line");
+      writeFileSync(resolve(TEST_ROOT, "summaries/source-a-v1.0.0.md"), "要約テキスト");
+      writeFileSync(resolve(TEST_ROOT, "diffs/source-a-v1.0.0.md"), "+added line");
       writeFileSync(resolve(TEST_ROOT, "current/source-a.md"), "new-content-a");
 
       const deps = makeDeps();
@@ -58,6 +64,7 @@ describe("notifySlack", () => {
       expect(deps.postSummary).toHaveBeenCalledWith(
         "C_TEST",
         "source-a",
+        "v1.0.0",
         "要約テキスト",
         "xoxb-test",
       );
@@ -73,8 +80,8 @@ describe("notifySlack", () => {
           hasChanges: true,
         }),
       );
-      // summaries/source-a.md は存在しない
-      writeFileSync(resolve(TEST_ROOT, "diffs/source-a.md"), "+diff text");
+      // summaries/source-a-v1.0.0.md は存在しない
+      writeFileSync(resolve(TEST_ROOT, "diffs/source-a-v1.0.0.md"), "+diff text");
       writeFileSync(resolve(TEST_ROOT, "current/source-a.md"), "new-content");
 
       const deps = makeDeps();
@@ -83,6 +90,7 @@ describe("notifySlack", () => {
       expect(deps.postSummary).toHaveBeenCalledWith(
         "C_TEST",
         "source-a",
+        "v1.0.0",
         "+diff text",
         "xoxb-test",
       );
@@ -100,8 +108,8 @@ describe("notifySlack", () => {
           hasChanges: true,
         }),
       );
-      writeFileSync(resolve(TEST_ROOT, "summaries/source-a.md"), "要約");
-      writeFileSync(resolve(TEST_ROOT, "diffs/source-a.md"), "+diff content");
+      writeFileSync(resolve(TEST_ROOT, "summaries/source-a-v1.0.0.md"), "要約");
+      writeFileSync(resolve(TEST_ROOT, "diffs/source-a-v1.0.0.md"), "+diff content");
       writeFileSync(resolve(TEST_ROOT, "current/source-a.md"), "new");
 
       const deps = makeDeps();
@@ -125,8 +133,8 @@ describe("notifySlack", () => {
           hasChanges: true,
         }),
       );
-      writeFileSync(resolve(TEST_ROOT, "summaries/source-a.md"), "要約");
-      writeFileSync(resolve(TEST_ROOT, "diffs/source-a.md"), "+diff");
+      writeFileSync(resolve(TEST_ROOT, "summaries/source-a-v1.0.0.md"), "要約");
+      writeFileSync(resolve(TEST_ROOT, "diffs/source-a-v1.0.0.md"), "+diff");
       writeFileSync(resolve(TEST_ROOT, "current/source-a.md"), "new");
 
       const deps = makeDeps({
@@ -149,8 +157,8 @@ describe("notifySlack", () => {
           hasChanges: true,
         }),
       );
-      writeFileSync(resolve(TEST_ROOT, "summaries/source-a.md"), "要約");
-      writeFileSync(resolve(TEST_ROOT, "diffs/source-a.md"), "+diff");
+      writeFileSync(resolve(TEST_ROOT, "summaries/source-a-v1.0.0.md"), "要約");
+      writeFileSync(resolve(TEST_ROOT, "diffs/source-a-v1.0.0.md"), "+diff");
       writeFileSync(resolve(TEST_ROOT, "current/source-a.md"), "updated-content");
 
       const deps = makeDeps();

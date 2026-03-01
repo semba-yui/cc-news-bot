@@ -121,7 +121,7 @@ describe("fetchAndDiff", () => {
 
       expect(result.changedSources).toEqual(["source-a"]);
       expect(result.hasChanges).toBe(true);
-      expect(deps.writeDiff).toHaveBeenCalledWith(diffResult, deps.diffsDir);
+      expect(deps.writeDiff).toHaveBeenCalledWith(diffResult, deps.diffsDir, "raw_markdown");
       // 差分ありの場合、snapshot は保存しない（notify で更新する）
       expect(deps.saveSnapshot).not.toHaveBeenCalled();
     });
@@ -305,8 +305,8 @@ describe("fetchAndDiff", () => {
       expect(result.changedSources).toEqual(["codex"]);
       expect(result.hasChanges).toBe(true);
 
-      // diff ファイルに新規リリース内容が書き出される
-      const diffContent = readFileSync(resolve(TEST_ROOT, "diffs/codex.md"), "utf-8");
+      // diff ファイルに新規リリース内容が書き出される（バージョンごとのファイル名）
+      const diffContent = readFileSync(resolve(TEST_ROOT, "diffs/codex-v1.1.0.md"), "utf-8");
       expect(diffContent).toBe("## v1.1.0 (2026-03-01T10:00:00Z)\n- New feature");
 
       // latestReleasedAt が更新される
