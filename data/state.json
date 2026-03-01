@@ -1,18 +1,18 @@
 {
-  "lastRunAt": "2026-02-28T18:36:07.529Z",
+  "lastRunAt": "2026-03-01T04:10:14.854Z",
   "sources": {
     "claude-code": {
       "hash": "dc4988f74289ebacb1d1f431cb6d6ba901bd2fd2ccdff62401926ae5ac58528b",
-      "lastCheckedAt": "2026-02-28T18:36:07.529Z"
+      "lastCheckedAt": "2026-03-01T04:10:14.854Z"
     },
     "codex": {
       "hash": "89b80305334fc4ae0f91eb6c9d18c7925ac7171b7637498680eca89213d1fe82",
       "lastCheckedAt": "2026-02-28T18:36:07.529Z",
-      "latestReleasedAt": "2026-02-26T23:11:50Z"
+      "latestReleasedAt": "2026-02-12T20:05:52Z"
     },
     "copilot-cli": {
       "hash": "898c2b9ea94d80d30ed7669bf5dcf3c57dfc971ba54889868df22c2116b3c4c2",
-      "lastCheckedAt": "2026-02-28T18:36:07.529Z"
+      "lastCheckedAt": "2026-03-01T04:10:14.854Z"
     }
   }
 }
