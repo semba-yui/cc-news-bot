@@ -349,6 +349,19 @@ describe("summaryToBlocks", () => {
     expect(blocks.some((b) => b.type === "header")).toBe(true);
   });
 
+  it("**bold** を Slack mrkdwn の *bold* に変換する", () => {
+    const blocks = summaryToBlocks(
+      "src",
+      "1.0",
+      "## 用語解説\n- **用語**: 解説テキスト",
+    );
+    const section = blocks.find(
+      (b) => b.type === "section" && b.text.text.includes("用語解説"),
+    );
+    expect(section?.text.text).toContain("*用語*");
+    expect(section?.text.text).not.toContain("**用語**");
+  });
+
   it("section text が 3000 文字を超えない", () => {
     const longLines = Array.from({ length: 100 }, (_, i) => `- ${"x".repeat(50)} ${i}`).join("\n");
     const summary = `## 新規追加\n${longLines}`;

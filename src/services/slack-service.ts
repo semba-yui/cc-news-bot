@@ -85,10 +85,17 @@ function parseSummaryMarkdown(summary: string): ParsedSection[] {
   return sections;
 }
 
+function markdownToMrkdwn(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, "*$1*");
+}
+
 function formatSectionText(heading: string, lines: string[]): string {
   const emoji = CATEGORY_EMOJI[heading] ?? "•";
   const body = lines
-    .map((line) => (line.startsWith("- ") ? `• ${line.slice(2)}` : line))
+    .map((line) => {
+      const converted = line.startsWith("- ") ? `• ${line.slice(2)}` : line;
+      return markdownToMrkdwn(converted);
+    })
     .join("\n");
   return `${emoji} *${heading}*\n${body}`;
 }
@@ -120,8 +127,8 @@ function diffTextToBlocks(text: string): SlackBlock[] {
     .split("\n")
     .map((line) => {
       if (/^## /.test(line)) return `*${line.slice(3).trim()}*`;
-      if (line.startsWith("- ")) return `• ${line.slice(2)}`;
-      return line;
+      const converted = line.startsWith("- ") ? `• ${line.slice(2)}` : line;
+      return markdownToMrkdwn(converted);
     })
     .join("\n");
   return splitBlockText(converted).map((chunk) => ({
