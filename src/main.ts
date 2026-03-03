@@ -115,9 +115,12 @@ export async function run(deps: RunDeps): Promise<RunResult> {
 
     hasAnyChanges = true;
     const sourceConfig = sources.find((s) => s.name === sourceName)!;
-    await writeDiff(diffResult, diffsDir, sourceConfig.type);
+    const sourceType = sourceConfig.type === "raw_markdown" || sourceConfig.type === "github_releases"
+      ? sourceConfig.type
+      : "raw_markdown";
+    await writeDiff(diffResult, diffsDir, sourceType);
 
-    const versions = splitIntoVersions(diffResult.diffText ?? "", sourceConfig.type);
+    const versions = splitIntoVersions(diffResult.diffText ?? "", sourceType);
     let notified = false;
     for (const { version, safeVersion, content: vContent } of versions) {
       const summary = (await readSummary(`${sourceName}-${safeVersion}`)) ?? vContent;

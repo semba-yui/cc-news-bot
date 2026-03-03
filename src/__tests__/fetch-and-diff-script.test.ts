@@ -15,8 +15,8 @@ import {
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-fad");
 
 const SOURCES: SourceConfig[] = [
-  { name: "source-a", type: "raw_markdown", url: "https://example.com/a.md" },
-  { name: "source-b", type: "raw_markdown", url: "https://example.com/b.md" },
+  { name: "source-a", type: "raw_markdown", url: "https://example.com/a.md", botName: "test", botEmoji: ":test:" },
+  { name: "source-b", type: "raw_markdown", url: "https://example.com/b.md", botName: "test", botEmoji: ":test:" },
 ];
 
 function makeDeps(overrides: Partial<FetchAndDiffDeps> = {}): FetchAndDiffDeps {
@@ -221,6 +221,8 @@ describe("fetchAndDiff", () => {
         url: "https://api.github.com/repos/openai/codex/releases",
         owner: "openai",
         repo: "codex",
+        botName: "test",
+        botEmoji: ":test:",
       },
     ];
 

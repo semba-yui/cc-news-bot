@@ -1,15 +1,47 @@
 import { resolve } from "node:path";
 import type { BotProfile } from "../services/slack-service.js";
 
-export interface SourceConfig {
-  name: string;
-  type: "raw_markdown" | "github_releases";
-  url: string;
-  owner?: string;
-  repo?: string;
-  botName: string;
-  botEmoji: string;
+export interface RawMarkdownSourceConfig {
+  readonly name: string;
+  readonly type: "raw_markdown";
+  readonly url: string;
+  readonly owner?: string;
+  readonly repo?: string;
+  readonly botName: string;
+  readonly botEmoji: string;
 }
+
+export interface GitHubReleasesSourceConfig {
+  readonly name: string;
+  readonly type: "github_releases";
+  readonly url: string;
+  readonly owner: string;
+  readonly repo: string;
+  readonly botName: string;
+  readonly botEmoji: string;
+}
+
+export interface HtmlScrapingSourceConfig {
+  readonly name: string;
+  readonly type: "html_scraping";
+  readonly url: string;
+  readonly botName: string;
+  readonly botEmoji: string;
+}
+
+export interface HtmlHeadlessSourceConfig {
+  readonly name: string;
+  readonly type: "html_headless";
+  readonly url: string;
+  readonly botName: string;
+  readonly botEmoji: string;
+}
+
+export type SourceConfig =
+  | RawMarkdownSourceConfig
+  | GitHubReleasesSourceConfig
+  | HtmlScrapingSourceConfig
+  | HtmlHeadlessSourceConfig;
 
 export const SOURCES: SourceConfig[] = [
   {
@@ -61,4 +93,6 @@ export const DATA_DIR = {
   diffs: resolve(DATA_ROOT, "diffs"),
   summaries: resolve(DATA_ROOT, "summaries"),
   current: resolve(DATA_ROOT, "current"),
+  htmlCurrent: resolve(DATA_ROOT, "html-current"),
+  htmlSummaries: resolve(DATA_ROOT, "html-summaries"),
 } as const;

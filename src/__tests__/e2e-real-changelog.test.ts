@@ -29,6 +29,8 @@ const REAL_SOURCES: SourceConfig[] = [
     name: "claude-code",
     type: "raw_markdown",
     url: "https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md",
+    botName: "test",
+    botEmoji: ":test:",
   },
   {
     name: "codex",
@@ -36,6 +38,8 @@ const REAL_SOURCES: SourceConfig[] = [
     url: "https://api.github.com/repos/openai/codex/releases",
     owner: "openai",
     repo: "codex",
+    botName: "test",
+    botEmoji: ":test:",
   },
 ];
 
@@ -175,6 +179,8 @@ describe.skipIf(SKIP)("E2E: 実データによる fetchAndDiff パイプライ�
         name: "nonexistent",
         type: "raw_markdown",
         url: "https://raw.githubusercontent.com/nonexistent-org-12345/nonexistent-repo/main/CHANGELOG.md",
+        botName: "test",
+        botEmoji: ":test:",
       },
     ];
 
@@ -206,6 +212,8 @@ describe.skipIf(SKIP)("E2E: 実データによる fetchAndDiff パイプライ�
         name: "copilot-cli",
         type: "raw_markdown",
         url: "https://raw.githubusercontent.com/github/copilot-cli/main/changelog.md",
+        botName: "test",
+        botEmoji: ":test:",
       },
     ];
 

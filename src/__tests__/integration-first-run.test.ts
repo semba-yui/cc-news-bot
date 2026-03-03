@@ -28,9 +28,9 @@ const DIFFS_DIR = resolve(TEST_ROOT, "diffs");
 const CURRENT_DIR = resolve(TEST_ROOT, "current");
 
 const TEST_SOURCES: SourceConfig[] = [
-  { name: "source-alpha", type: "raw_markdown", url: "https://example.com/alpha.md" },
-  { name: "source-beta", type: "raw_markdown", url: "https://example.com/beta.md" },
-  { name: "source-gamma", type: "github_releases", url: "", owner: "test", repo: "gamma" },
+  { name: "source-alpha", type: "raw_markdown", url: "https://example.com/alpha.md", botName: "test", botEmoji: ":test:" },
+  { name: "source-beta", type: "raw_markdown", url: "https://example.com/beta.md", botName: "test", botEmoji: ":test:" },
+  { name: "source-gamma", type: "github_releases", url: "", owner: "test", repo: "gamma", botName: "test", botEmoji: ":test:" },
 ];
 
 const FAKE_CONTENTS: Record<string, string> = {

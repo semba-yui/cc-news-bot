@@ -19,8 +19,10 @@ describe("SOURCES", () => {
     const codex = SOURCES.find((s) => s.name === "codex");
     expect(codex).toBeDefined();
     expect(codex!.type).toBe("github_releases");
-    expect(codex!.owner).toBe("openai");
-    expect(codex!.repo).toBe("codex");
+    if (codex!.type === "github_releases") {
+      expect(codex!.owner).toBe("openai");
+      expect(codex!.repo).toBe("codex");
+    }
   });
 
   it("copilot-cli ソースが raw_markdown タイプで定義されている", () => {
@@ -79,5 +81,10 @@ describe("DATA_DIR", () => {
     expect(DATA_DIR.diffs).toContain("diffs");
     expect(DATA_DIR.summaries).toContain("summaries");
     expect(DATA_DIR.current).toContain("current");
+  });
+
+  it("HTML プロバイダ用のディレクトリパスが定義されている", () => {
+    expect(DATA_DIR.htmlCurrent).toContain("html-current");
+    expect(DATA_DIR.htmlSummaries).toContain("html-summaries");
   });
 });

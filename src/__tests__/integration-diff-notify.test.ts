@@ -30,8 +30,8 @@ const SUMMARIES_DIR = resolve(TEST_ROOT, "summaries");
 const CURRENT_DIR = resolve(TEST_ROOT, "current");
 
 const TEST_SOURCES: SourceConfig[] = [
-  { name: "source-alpha", type: "raw_markdown", url: "https://example.com/alpha.md" },
-  { name: "source-beta", type: "raw_markdown", url: "https://example.com/beta.md" },
+  { name: "source-alpha", type: "raw_markdown", url: "https://example.com/alpha.md", botName: "test", botEmoji: ":test:" },
+  { name: "source-beta", type: "raw_markdown", url: "https://example.com/beta.md", botName: "test", botEmoji: ":test:" },
 ];
 
 const OLD_CONTENTS: Record<string, string> = {

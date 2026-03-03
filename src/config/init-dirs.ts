@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { DATA_DIR } from "./sources.js";
 
-const SUBDIRS = ["snapshots", "diffs", "summaries", "current"] as const;
+const SUBDIRS = ["snapshots", "diffs", "summaries", "current", "html-current", "html-summaries"] as const;
 
 export function ensureDataDirs(root: string = DATA_DIR.root): void {
   for (const subdir of SUBDIRS) {

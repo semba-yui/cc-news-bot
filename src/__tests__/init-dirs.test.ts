@@ -22,6 +22,8 @@ describe("ensureDataDirs", () => {
     expect(existsSync(resolve(testDataRoot, "diffs"))).toBe(true);
     expect(existsSync(resolve(testDataRoot, "summaries"))).toBe(true);
     expect(existsSync(resolve(testDataRoot, "current"))).toBe(true);
+    expect(existsSync(resolve(testDataRoot, "html-current"))).toBe(true);
+    expect(existsSync(resolve(testDataRoot, "html-summaries"))).toBe(true);
   });
 
   it("既にディレクトリが存在する場合もエラーにならない", () => {

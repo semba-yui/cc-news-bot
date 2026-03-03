@@ -338,7 +338,8 @@ describe("summaryToBlocks", () => {
   it("- xxx を • xxx に変換する", () => {
     const blocks = summaryToBlocks("src", "1.0", "## ひとこと\n- テスト行");
     const section = blocks.find(
-      (b) => b.type === "section" && b.text.text.includes("ひとこと"),
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("ひとこと"),
     );
     expect(section?.text.text).toContain("• テスト行");
     expect(section?.text.text).not.toContain("- テスト行");
@@ -356,7 +357,8 @@ describe("summaryToBlocks", () => {
       "## 用語解説\n- **用語**: 解説テキスト",
     );
     const section = blocks.find(
-      (b) => b.type === "section" && b.text.text.includes("用語解説"),
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("用語解説"),
     );
     expect(section?.text.text).toContain("*用語*");
     expect(section?.text.text).not.toContain("**用語**");

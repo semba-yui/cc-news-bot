@@ -204,4 +204,21 @@ describe("saveState", () => {
     await saveState({ lastRunAt: "", sources: {} }, testDataRoot);
     expect(existsSync(resolve(testDataRoot, "state.json"))).toBe(true);
   });
+
+  it("latestVersion フィールドを含む状態を保存・復元できる", async () => {
+    const state: SnapshotState = {
+      lastRunAt: "2026-03-02T06:00:00Z",
+      sources: {
+        "gemini-cli": {
+          hash: "",
+          lastCheckedAt: "2026-03-02T06:00:00Z",
+          latestVersion: "v0.31.0",
+        },
+      },
+    };
+
+    await saveState(state, testDataRoot);
+    const loaded = await loadState(testDataRoot);
+    expect(loaded.sources["gemini-cli"]?.latestVersion).toBe("v0.31.0");
+  });
 });

@@ -15,15 +15,17 @@ const RAW_URL_B = "https://raw.example.com/b/changelog.md";
 const RELEASES_URL = "https://api.github.com/repos/test-org/test-repo/releases";
 
 const sources: SourceConfig[] = [
-  { name: "source-a", type: "raw_markdown", url: RAW_URL_A },
+  { name: "source-a", type: "raw_markdown", url: RAW_URL_A, botName: "test", botEmoji: ":test:" },
   {
     name: "source-b",
     type: "github_releases",
     url: RELEASES_URL,
     owner: "test-org",
     repo: "test-repo",
+    botName: "test",
+    botEmoji: ":test:",
   },
-  { name: "source-c", type: "raw_markdown", url: RAW_URL_B },
+  { name: "source-c", type: "raw_markdown", url: RAW_URL_B, botName: "test", botEmoji: ":test:" },
 ];
 
 describe("fetchAll", () => {

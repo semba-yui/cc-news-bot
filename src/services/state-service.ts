@@ -7,6 +7,7 @@ export interface SourceState {
   hash: string;
   lastCheckedAt: string; // ISO 8601
   latestReleasedAt?: string; // ISO 8601、github_releases ソース用
+  latestVersion?: string; // html_scraping / html_headless ソース用
 }
 
 export interface SnapshotState {
