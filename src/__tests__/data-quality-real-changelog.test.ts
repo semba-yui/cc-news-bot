@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { fetchGitHubReleases, fetchRawMarkdown } from "../services/fetch-service.js";
+import {
+  fetchGitHubReleases,
+  fetchRawMarkdown,
+  formatReleasesAsText,
+} from "../services/fetch-service.js";
 import { detectChanges } from "../services/diff-service.js";
 import { MAX_MESSAGE_LENGTH, splitText } from "../services/slack-service.js";
 
@@ -61,20 +65,21 @@ describe.skipIf(SKIP)("データ品質: Claude Code CHANGELOG.md", () => {
 });
 
 describe.skipIf(SKIP)("データ品質: OpenAI Codex GitHub Releases", () => {
-  it("リリース情報を取得でき Markdown 構造を持つ", async () => {
-    const content = await fetchGitHubReleases("openai", "codex", process.env.GITHUB_TOKEN);
-    // リリースが 0 件の場合は空文字列
-    if (content.length === 0) {
-      console.warn("Codex にリリースが存在しません（空文字列）");
+  it("リリース情報を取得でき構造化データを持つ", async () => {
+    const entries = await fetchGitHubReleases("openai", "codex", process.env.GITHUB_TOKEN);
+    // リリースが 0 件の場合は空配列
+    if (entries.length === 0) {
+      console.warn("Codex にリリースが存在しません（空配列）");
       return;
     }
-    expect(content).toContain("##");
-    expect(content.length).toBeGreaterThan(10);
+    expect(entries[0].tagName).toBeDefined();
+    expect(entries[0].body).toBeDefined();
   }, 30_000);
 
   it("取得データが detectChanges で diff 可能", async () => {
-    const content = await fetchGitHubReleases("openai", "codex", process.env.GITHUB_TOKEN);
-    if (content.length === 0) return;
+    const entries = await fetchGitHubReleases("openai", "codex", process.env.GITHUB_TOKEN);
+    if (entries.length === 0) return;
+    const content = formatReleasesAsText(entries);
     const modified = "## v999.0.0 (2026-01-01T00:00:00Z)\nFake release\n\n" + content;
     const result = detectChanges("codex", modified, content);
     expect(result.hasChanges).toBe(true);

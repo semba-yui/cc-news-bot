@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GeminiCliVersionContent } from "../services/gemini-cli-parser.js";
+import type { GitHubReleaseEntry } from "../services/fetch-service.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
 import type { SnapshotState } from "../services/state-service.js";
 import {
@@ -48,8 +49,10 @@ function makeDeps(overrides: Partial<FetchHtmlGeminiCliDeps> = {}): FetchHtmlGem
       .fn<(url: string, opts?: HtmlFetchOptions) => Promise<string>>()
       .mockResolvedValue("<html>mock changelog</html>"),
     fetchGitHubReleases: vi
-      .fn<(owner: string, repo: string, token?: string) => Promise<string>>()
-      .mockResolvedValue("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes"),
+      .fn<(owner: string, repo: string, token?: string) => Promise<GitHubReleaseEntry[]>>()
+      .mockResolvedValue([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Release notes" },
+      ]),
     parseAllVersions: vi
       .fn<(html: string) => string[]>()
       .mockReturnValue(["v0.31.0", "v0.30.0", "v0.29.0"]),
@@ -108,12 +111,13 @@ describe("fetchHtmlGeminiCli", () => {
       // githubReleasesText はエントリに含まれない
       expect("githubReleasesText" in entries[0]).toBe(false);
 
-      // Then: releases テキストが別ファイルに書き出される
-      const releasesText = readFileSync(
-        resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"),
-        "utf-8",
-      );
-      expect(releasesText).toBe("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes");
+      // Then: releases データが JSON ファイルに書き出される
+      const releasesEntries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli-releases.json"), "utf-8"),
+      ) as GitHubReleaseEntry[];
+      expect(releasesEntries).toEqual([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Release notes" },
+      ]);
 
       // Then: state が更新される
       expect(deps.saveState).toHaveBeenCalledTimes(1);
@@ -160,12 +164,13 @@ describe("fetchHtmlGeminiCli", () => {
       expect("githubReleasesText" in entries[0]).toBe(false);
       expect("githubReleasesText" in entries[1]).toBe(false);
 
-      // Then: releases テキストが別ファイルに書き出される
-      const releasesText = readFileSync(
-        resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"),
-        "utf-8",
-      );
-      expect(releasesText).toBe("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes");
+      // Then: releases データが JSON ファイルに書き出される
+      const releasesEntries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli-releases.json"), "utf-8"),
+      ) as GitHubReleaseEntry[];
+      expect(releasesEntries).toEqual([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Release notes" },
+      ]);
     });
   });
 
@@ -194,7 +199,7 @@ describe("fetchHtmlGeminiCli", () => {
       }
 
       // Then: releases ファイルは存在しない
-      expect(existsSync(resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"))).toBe(false);
+      expect(existsSync(resolve(HTML_CURRENT_DIR, "gemini-cli-releases.json"))).toBe(false);
     });
   });
 
@@ -207,7 +212,9 @@ describe("fetchHtmlGeminiCli", () => {
         fetchStaticHtml: vi.fn().mockRejectedValue(new Error("geminicli.com unavailable")),
         fetchGitHubReleases: vi
           .fn()
-          .mockResolvedValue("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes"),
+          .mockResolvedValue([
+            { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Release notes" },
+          ]),
       });
 
       // When: 取得スクリプトを実行する
@@ -230,12 +237,13 @@ describe("fetchHtmlGeminiCli", () => {
       expect(entries[0].imageUrls).toEqual([]);
       expect("githubReleasesText" in entries[0]).toBe(false);
 
-      // Then: releases テキストが別ファイルに書き出される
-      const releasesText = readFileSync(
-        resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"),
-        "utf-8",
-      );
-      expect(releasesText).toBe("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes");
+      // Then: releases データが JSON ファイルに書き出される
+      const releasesEntries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli-releases.json"), "utf-8"),
+      ) as GitHubReleaseEntry[];
+      expect(releasesEntries).toEqual([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Release notes" },
+      ]);
     });
   });
 

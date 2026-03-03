@@ -9,7 +9,10 @@ import {
 } from "../services/gemini-cli-parser.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
 import { fetchStaticHtml as fetchStaticHtmlImpl } from "../services/html-fetch-service.js";
-import { fetchGitHubReleases as fetchGitHubReleasesImpl } from "../services/fetch-service.js";
+import {
+  fetchGitHubReleases as fetchGitHubReleasesImpl,
+  type GitHubReleaseEntry,
+} from "../services/fetch-service.js";
 import type { SnapshotState } from "../services/state-service.js";
 import {
   loadState as loadStateImpl,
@@ -26,7 +29,11 @@ export interface FetchHtmlGeminiCliDeps {
   readonly dataRoot: string;
   readonly htmlCurrentDir: string;
   readonly fetchStaticHtml: (url: string, opts?: HtmlFetchOptions) => Promise<string>;
-  readonly fetchGitHubReleases: (owner: string, repo: string, token?: string) => Promise<string>;
+  readonly fetchGitHubReleases: (
+    owner: string,
+    repo: string,
+    token?: string,
+  ) => Promise<GitHubReleaseEntry[]>;
   readonly parseAllVersions: (html: string) => string[];
   readonly parseVersionContent: (html: string, version: string) => GeminiCliVersionContent | null;
   readonly loadState: (root: string) => Promise<SnapshotState>;
@@ -51,10 +58,10 @@ function logError(message: string): void {
   );
 }
 
-async function fetchGitHubReleasesText(
+async function fetchGitHubReleasesEntries(
   deps: FetchHtmlGeminiCliDeps,
   token?: string,
-): Promise<string | null> {
+): Promise<GitHubReleaseEntry[] | null> {
   try {
     return await deps.fetchGitHubReleases(GITHUB_OWNER, GITHUB_REPO, token);
   } catch (err) {
@@ -90,23 +97,15 @@ export async function fetchHtmlGeminiCli(
 
   // geminicli.com からバージョン取得できない場合、GitHub Releases フォールバック
   if (allVersions.length === 0 && htmlFetchError) {
-    const ghText = await fetchGitHubReleasesText(deps);
-    if (!ghText) {
+    const ghEntries = await fetchGitHubReleasesEntries(deps);
+    if (!ghEntries || ghEntries.length === 0) {
       return {
         hasChanges: false,
         error: "Both geminicli.com and GitHub Releases fetch failed",
       };
     }
 
-    const versionMatch = ghText.match(/## (v\d+\.\d+\.\d+)/);
-    if (!versionMatch) {
-      return {
-        hasChanges: false,
-        error: "Could not extract version from GitHub Releases",
-      };
-    }
-
-    const latestVersion = versionMatch[1];
+    const latestVersion = ghEntries[0].tagName;
 
     if (existingVersion === latestVersion) {
       return { hasChanges: false };
@@ -128,10 +127,11 @@ export async function fetchHtmlGeminiCli(
       JSON.stringify(entries, null, 2),
     );
 
-    // releases テキストを別ファイルに保存
-    if (ghText) {
-      writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt"), ghText);
-    }
+    // releases データを JSON ファイルに保存
+    writeFileSync(
+      resolve(deps.htmlCurrentDir, "gemini-cli-releases.json"),
+      JSON.stringify(ghEntries, null, 2),
+    );
 
     state.sources[SOURCE_NAME] = {
       hash: "",
@@ -193,8 +193,8 @@ export async function fetchHtmlGeminiCli(
   // コンテンツ取得成功分があるかチェック
   const hasAnyContent = contentResults.some((r) => r.content !== null);
 
-  // GitHub Releases テキスト取得（最新バージョンのスレッド返信用）
-  const ghText = await fetchGitHubReleasesText(deps);
+  // GitHub Releases 構造化データ取得（各バージョンのスレッド返信用）
+  const ghEntries = await fetchGitHubReleasesEntries(deps);
 
   if (hasAnyContent) {
     // full モード: コンテンツ取得成功分を配列で書き出し
@@ -213,9 +213,12 @@ export async function fetchHtmlGeminiCli(
       JSON.stringify(entries, null, 2),
     );
 
-    // releases テキストを別ファイルに保存
-    if (ghText) {
-      writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt"), ghText);
+    // releases データを JSON ファイルに保存
+    if (ghEntries) {
+      writeFileSync(
+        resolve(deps.htmlCurrentDir, "gemini-cli-releases.json"),
+        JSON.stringify(ghEntries, null, 2),
+      );
     }
 
     state.sources[SOURCE_NAME] = {
@@ -246,9 +249,12 @@ export async function fetchHtmlGeminiCli(
 
   writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli.json"), JSON.stringify(entries, null, 2));
 
-  // releases テキストを別ファイルに保存
-  if (ghText) {
-    writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt"), ghText);
+  // releases データを JSON ファイルに保存
+  if (ghEntries) {
+    writeFileSync(
+      resolve(deps.htmlCurrentDir, "gemini-cli-releases.json"),
+      JSON.stringify(ghEntries, null, 2),
+    );
   }
 
   state.sources[SOURCE_NAME] = {

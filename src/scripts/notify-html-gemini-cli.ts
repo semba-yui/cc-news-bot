@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DATA_DIR, getChannelsForSource } from "../config/sources.js";
+import type { GitHubReleaseEntry } from "../services/fetch-service.js";
+import { formatReleasesAsText } from "../services/fetch-service.js";
 import type { BotProfile, PostOptions, PostResult, SlackBlock } from "../services/slack-service.js";
 import {
   postBlocks as postBlocksImpl,
@@ -45,11 +47,17 @@ export async function notifyHtmlGeminiCli(deps: NotifyHtmlGeminiCliDeps): Promis
   const entries = JSON.parse(readFileSync(filePath, "utf-8")) as GeminiCliSummariesEntry[];
   const channels = deps.getChannels(SOURCE_NAME);
 
-  // releases テキストを別ファイルから直接読み込み（Claude Code Action を経由しない）
-  const releasesPath = resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt");
-  const releasesText = existsSync(releasesPath) ? readFileSync(releasesPath, "utf-8") : null;
+  // releases データを JSON ファイルから読み込み、バージョンごとの Map を構築
+  const releasesPath = resolve(deps.htmlCurrentDir, "gemini-cli-releases.json");
+  const releasesEntries: GitHubReleaseEntry[] = existsSync(releasesPath)
+    ? (JSON.parse(readFileSync(releasesPath, "utf-8")) as GitHubReleaseEntry[])
+    : [];
+  const releasesSections = new Map<string, string>();
+  for (const entry of releasesEntries) {
+    releasesSections.set(entry.tagName, formatReleasesAsText([entry]));
+  }
 
-  for (const [i, entry] of entries.entries()) {
+  for (const entry of entries) {
     const content: GeminiCliTranslatedContent = {
       version: entry.version,
       summaryJa: entry.summaryJa,
@@ -58,7 +66,7 @@ export async function notifyHtmlGeminiCli(deps: NotifyHtmlGeminiCliDeps): Promis
 
     const blocks = deps.buildBlocks(content);
     const fallbackText = `Gemini CLI ${entry.version} の更新`;
-    const isLatest = i === entries.length - 1;
+    const versionReleaseText = releasesSections.get(entry.version);
 
     await Promise.all(
       channels.map(async (channel) => {
@@ -70,8 +78,8 @@ export async function notifyHtmlGeminiCli(deps: NotifyHtmlGeminiCliDeps): Promis
           deps.botProfile,
         );
 
-        if (result.success && result.ts && isLatest && releasesText) {
-          await deps.postThreadReplies(channel, result.ts, releasesText, deps.slackToken, {
+        if (result.success && result.ts && versionReleaseText) {
+          await deps.postThreadReplies(channel, result.ts, versionReleaseText, deps.slackToken, {
             botProfile: deps.botProfile,
           });
         }

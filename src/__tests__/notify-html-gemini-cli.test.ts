@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { GitHubReleaseEntry } from "../services/fetch-service.js";
 import type { PostResult, SlackBlock } from "../services/slack-service.js";
 import {
   notifyHtmlGeminiCli,
@@ -51,9 +52,12 @@ function writeSummaryFile(
   );
 }
 
-function writeReleasesFile(text: string): void {
+function writeReleasesFile(entries: GitHubReleaseEntry[]): void {
   mkdirSync(resolve(TEST_ROOT, "html-current"), { recursive: true });
-  writeFileSync(resolve(TEST_ROOT, "html-current", "gemini-cli-releases.txt"), text);
+  writeFileSync(
+    resolve(TEST_ROOT, "html-current", "gemini-cli-releases.json"),
+    JSON.stringify(entries, null, 2),
+  );
 }
 
 describe("notifyHtmlGeminiCli", () => {
@@ -222,7 +226,7 @@ describe("notifyHtmlGeminiCli", () => {
   describe("返信スレッドへの投稿", () => {
     // What: githubReleasesText が存在するバージョンのみスレッド返信が投稿されること
     // Why: GitHub Releases テキストはスレッド返信として詳細を提供する
-    it("releases ファイルが存在する場合、最後のエントリのスレッドに詳細を投稿する", async () => {
+    it("releases ファイルが存在する場合、対応するバージョンのスレッドに詳細を投稿する", async () => {
       // Given: 翻訳済みコンテンツ（単一バージョン）と releases ファイルが存在する
       writeSummaryFile([
         {
@@ -231,7 +235,13 @@ describe("notifyHtmlGeminiCli", () => {
           imageUrls: [],
         },
       ]);
-      writeReleasesFile("## v0.31.0\n\n- New feature\n- Bug fix");
+      writeReleasesFile([
+        {
+          tagName: "v0.31.0",
+          publishedAt: "2026-03-01T10:00:00Z",
+          body: "- New feature\n- Bug fix",
+        },
+      ]);
 
       const deps = makeDeps();
 
@@ -242,7 +252,7 @@ describe("notifyHtmlGeminiCli", () => {
       expect(deps.postThreadReplies).toHaveBeenCalledWith(
         "C_TEST",
         "1234567890.123456",
-        "## v0.31.0\n\n- New feature\n- Bug fix",
+        "## v0.31.0 (2026-03-01T10:00:00Z)\n- New feature\n- Bug fix",
         "xoxb-test",
         { botProfile: { name: "Gemini CLI Changelog", emoji: ":gemini:" } },
       );
@@ -267,11 +277,11 @@ describe("notifyHtmlGeminiCli", () => {
       expect(deps.postThreadReplies).not.toHaveBeenCalled();
     });
 
-    it("複数バージョンで releases ファイルがある場合、最後のエントリのみスレッド返信する", async () => {
-      // What: 複数バージョンのうち、最後のエントリ（最新）のみスレッド返信
-      // Why: releases テキストは全体共通なので、最新バージョンのスレッドに投稿する
+    it("複数バージョンで releases ファイルがある場合、各バージョンの親スレッドに対応する release notes を投稿する", async () => {
+      // What: 複数バージョンそれぞれの親スレッドに、対応するバージョンの release notes をスレッド返信
+      // Why: 各親スレッドに関連する情報だけを返信として投稿し、ユーザーがバージョンごとに詳細を確認できるようにする
 
-      // Given: 2バージョンと releases ファイルが存在する
+      // Given: 2バージョンと、両バージョンの release notes を含む releases ファイルが存在する
       writeSummaryFile([
         {
           version: "v0.30.0",
@@ -284,19 +294,81 @@ describe("notifyHtmlGeminiCli", () => {
           imageUrls: [],
         },
       ]);
-      writeReleasesFile("## v0.31.0\n\n- Details");
+      writeReleasesFile([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Feature B" },
+        { tagName: "v0.30.0", publishedAt: "2026-02-15T08:00:00Z", body: "- Feature A" },
+      ]);
 
-      const deps = makeDeps();
+      // postBlocks の ts をバージョンごとに区別するためにモックを設定
+      let callCount = 0;
+      const deps = makeDeps({
+        postBlocks: vi.fn<() => Promise<PostResult>>().mockImplementation(() => {
+          callCount++;
+          return Promise.resolve({ success: true, ts: `ts-${callCount}` });
+        }),
+      });
 
       // When: 通知スクリプトを実行する
       await notifyHtmlGeminiCli(deps);
 
-      // Then: postThreadReplies は1回だけ呼ばれる（最後のエントリ v0.31.0 のみ）
+      // Then: postThreadReplies は2回呼ばれる（各バージョン1回ずつ）
+      expect(deps.postThreadReplies).toHaveBeenCalledTimes(2);
+      // v0.30.0 の親スレッド (ts-1) に v0.30.0 の release notes
+      expect(deps.postThreadReplies).toHaveBeenCalledWith(
+        "C_TEST",
+        "ts-1",
+        "## v0.30.0 (2026-02-15T08:00:00Z)\n- Feature A",
+        "xoxb-test",
+        { botProfile: { name: "Gemini CLI Changelog", emoji: ":gemini:" } },
+      );
+      // v0.31.0 の親スレッド (ts-2) に v0.31.0 の release notes
+      expect(deps.postThreadReplies).toHaveBeenCalledWith(
+        "C_TEST",
+        "ts-2",
+        "## v0.31.0 (2026-03-01T10:00:00Z)\n- Feature B",
+        "xoxb-test",
+        { botProfile: { name: "Gemini CLI Changelog", emoji: ":gemini:" } },
+      );
+    });
+
+    it("複数バージョンのうち、一部のみ releases にマッチする場合、マッチしたバージョンのみスレッド返信する", async () => {
+      // What: releases テキストに一部バージョンのみ存在する場合の動作
+      // Why: release notes がないバージョンには不要なスレッド返信を投稿しないことを保証する
+
+      // Given: 2バージョンのうち v0.31.0 のみ releases テキストに存在する
+      writeSummaryFile([
+        {
+          version: "v0.30.0",
+          summaryJa: "要約A",
+          imageUrls: [],
+        },
+        {
+          version: "v0.31.0",
+          summaryJa: "要約B",
+          imageUrls: [],
+        },
+      ]);
+      writeReleasesFile([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Feature B" },
+      ]);
+
+      let callCount = 0;
+      const deps = makeDeps({
+        postBlocks: vi.fn<() => Promise<PostResult>>().mockImplementation(() => {
+          callCount++;
+          return Promise.resolve({ success: true, ts: `ts-${callCount}` });
+        }),
+      });
+
+      // When: 通知スクリプトを実行する
+      await notifyHtmlGeminiCli(deps);
+
+      // Then: postThreadReplies は1回だけ呼ばれる（v0.31.0 のみ）
       expect(deps.postThreadReplies).toHaveBeenCalledTimes(1);
       expect(deps.postThreadReplies).toHaveBeenCalledWith(
         "C_TEST",
-        "1234567890.123456",
-        "## v0.31.0\n\n- Details",
+        "ts-2",
+        "## v0.31.0 (2026-03-01T10:00:00Z)\n- Feature B",
         "xoxb-test",
         { botProfile: { name: "Gemini CLI Changelog", emoji: ":gemini:" } },
       );
@@ -311,7 +383,9 @@ describe("notifyHtmlGeminiCli", () => {
           imageUrls: [],
         },
       ]);
-      writeReleasesFile("## v0.31.0\n\n- Details");
+      writeReleasesFile([
+        { tagName: "v0.31.0", publishedAt: "2026-03-01T10:00:00Z", body: "- Details" },
+      ]);
 
       const deps = makeDeps({
         postBlocks: vi.fn().mockResolvedValue({ success: false, error: "channel_not_found" }),

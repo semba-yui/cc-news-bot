@@ -34,6 +34,16 @@ export async function fetchRawMarkdown(url: string, options?: FetchOptions): Pro
   return response.text();
 }
 
+export interface GitHubReleaseEntry {
+  readonly tagName: string;
+  readonly publishedAt: string;
+  readonly body: string;
+}
+
+export function formatReleasesAsText(entries: GitHubReleaseEntry[]): string {
+  return entries.map((e) => `## ${e.tagName} (${e.publishedAt})\n${e.body}`).join("\n\n");
+}
+
 interface GitHubRelease {
   tag_name: string;
   published_at: string;
@@ -46,7 +56,7 @@ export async function fetchGitHubReleases(
   repo: string,
   token?: string,
   options?: FetchOptions,
-): Promise<string> {
+): Promise<GitHubReleaseEntry[]> {
   const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const url = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=50`;
 
@@ -72,8 +82,7 @@ export async function fetchGitHubReleases(
 
   return releases
     .filter((r) => !r.prerelease && (!options?.since || r.published_at > options.since))
-    .map((r) => `## ${r.tag_name} (${r.published_at})\n${r.body}`)
-    .join("\n\n");
+    .map((r) => ({ tagName: r.tag_name, publishedAt: r.published_at, body: r.body }));
 }
 
 async function fetchOne(source: SourceConfig, options?: FetchAllOptions): Promise<FetchResult> {
@@ -81,12 +90,11 @@ async function fetchOne(source: SourceConfig, options?: FetchAllOptions): Promis
     let content: string;
     if (source.type === "github_releases") {
       const since = options?.sourceStates?.[source.name]?.latestReleasedAt;
-      content = await fetchGitHubReleases(source.owner, source.repo, options?.githubToken, {
+      const entries = await fetchGitHubReleases(source.owner, source.repo, options?.githubToken, {
         since,
       });
-      // 先頭行から最新リリースのタイムスタンプを抽出: "## tag (ISO8601Z)"
-      const latestReleasedAt =
-        content.match(/^## .+ \((\d{4}-\d{2}-\d{2}T[^)]+Z)\)/m)?.[1] ?? undefined;
+      content = formatReleasesAsText(entries);
+      const latestReleasedAt = entries.length > 0 ? entries[0].publishedAt : undefined;
       return { source: source.name, success: true, content, latestReleasedAt };
     } else {
       content = await fetchRawMarkdown(source.url);

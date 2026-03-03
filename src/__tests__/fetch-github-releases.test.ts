@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { fetchGitHubReleases } from "../services/fetch-service.js";
+import { fetchGitHubReleases, formatReleasesAsText } from "../services/fetch-service.js";
 
 const RELEASES_URL = "https://api.github.com/repos/openai/codex/releases";
 
@@ -16,7 +16,7 @@ function makeRelease(tag: string, publishedAt: string, body: string, prerelease 
 }
 
 describe("fetchGitHubReleases", () => {
-  it("リリース情報を Markdown 形式で連結して返す", async () => {
+  it("リリース情報を GitHubReleaseEntry 配列で返す", async () => {
     server.use(
       http.get(RELEASES_URL, () => {
         return HttpResponse.json([
@@ -27,9 +27,10 @@ describe("fetchGitHubReleases", () => {
     );
 
     const result = await fetchGitHubReleases("openai", "codex");
-    expect(result).toBe(
-      "## v1.1.0 (2026-02-28T12:00:00Z)\n- Bug fix\n\n## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release",
-    );
+    expect(result).toEqual([
+      { tagName: "v1.1.0", publishedAt: "2026-02-28T12:00:00Z", body: "- Bug fix" },
+      { tagName: "v1.0.0", publishedAt: "2026-02-20T10:00:00Z", body: "- Initial release" },
+    ]);
   });
 
   it("per_page=10 でリクエストする", async () => {
@@ -82,10 +83,12 @@ describe("fetchGitHubReleases", () => {
     );
 
     const result = await fetchGitHubReleases("openai", "codex");
-    expect(result).toBe("## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release");
+    expect(result).toEqual([
+      { tagName: "v1.0.0", publishedAt: "2026-02-20T10:00:00Z", body: "- Initial release" },
+    ]);
   });
 
-  it("リリースが空の場合は空文字列を返す", async () => {
+  it("リリースが空の場合は空配列を返す", async () => {
     server.use(
       http.get(RELEASES_URL, () => {
         return HttpResponse.json([]);
@@ -93,7 +96,7 @@ describe("fetchGitHubReleases", () => {
     );
 
     const result = await fetchGitHubReleases("openai", "codex");
-    expect(result).toBe("");
+    expect(result).toEqual([]);
   });
 
   it("HTTP エラー (404) の場合はエラーをスローする", async () => {
@@ -130,7 +133,9 @@ describe("fetchGitHubReleases", () => {
     const result = await fetchGitHubReleases("openai", "codex", undefined, {
       since: "2026-02-28T12:00:00Z",
     });
-    expect(result).toBe("## v1.2.0 (2026-03-01T10:00:00Z)\n- New feature");
+    expect(result).toEqual([
+      { tagName: "v1.2.0", publishedAt: "2026-03-01T10:00:00Z", body: "- New feature" },
+    ]);
   });
 
   it("since が未指定の場合は全件返す", async () => {
@@ -144,12 +149,13 @@ describe("fetchGitHubReleases", () => {
     );
 
     const result = await fetchGitHubReleases("openai", "codex");
-    expect(result).toBe(
-      "## v1.1.0 (2026-02-28T12:00:00Z)\n- Bug fix\n\n## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release",
-    );
+    expect(result).toEqual([
+      { tagName: "v1.1.0", publishedAt: "2026-02-28T12:00:00Z", body: "- Bug fix" },
+      { tagName: "v1.0.0", publishedAt: "2026-02-20T10:00:00Z", body: "- Initial release" },
+    ]);
   });
 
-  it("since より新しいリリースが存在しない場合は空文字列を返す", async () => {
+  it("since より新しいリリースが存在しない場合は空配列を返す", async () => {
     server.use(
       http.get(RELEASES_URL, () => {
         return HttpResponse.json([
@@ -161,7 +167,7 @@ describe("fetchGitHubReleases", () => {
     const result = await fetchGitHubReleases("openai", "codex", undefined, {
       since: "2026-02-20T10:00:00Z",
     });
-    expect(result).toBe("");
+    expect(result).toEqual([]);
   });
 
   it("ネットワークエラーの場合はエラーをスローする", async () => {
@@ -186,4 +192,48 @@ describe("fetchGitHubReleases", () => {
       fetchGitHubReleases("openai", "codex", undefined, { timeoutMs: 100 }),
     ).rejects.toThrow();
   }, 10_000);
+});
+
+/**
+ * What: GitHubReleaseEntry 配列を Markdown テキストに変換するヘルパーのテスト
+ * Why: fetchOne など結合テキストが必要な箇所で正しくフォーマットされることを保証する
+ */
+describe("formatReleasesAsText", () => {
+  it("複数エントリを Markdown 形式で連結する", () => {
+    // Given: 2つの GitHubReleaseEntry
+    const entries = [
+      { tagName: "v1.1.0", publishedAt: "2026-02-28T12:00:00Z", body: "- Bug fix" },
+      { tagName: "v1.0.0", publishedAt: "2026-02-20T10:00:00Z", body: "- Initial release" },
+    ];
+
+    // When: テキストにフォーマットする
+    const result = formatReleasesAsText(entries);
+
+    // Then: ## tag (date)\nbody の形式で \n\n 区切りで連結される
+    expect(result).toBe(
+      "## v1.1.0 (2026-02-28T12:00:00Z)\n- Bug fix\n\n## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release",
+    );
+  });
+
+  it("空配列の場合は空文字列を返す", () => {
+    // Given: 空配列
+    // When: テキストにフォーマットする
+    const result = formatReleasesAsText([]);
+
+    // Then: 空文字列が返る
+    expect(result).toBe("");
+  });
+
+  it("単一エントリの場合はそのまま返す", () => {
+    // Given: 1つの GitHubReleaseEntry
+    const entries = [
+      { tagName: "v1.0.0", publishedAt: "2026-02-20T10:00:00Z", body: "- Initial release" },
+    ];
+
+    // When: テキストにフォーマットする
+    const result = formatReleasesAsText(entries);
+
+    // Then: 単一セクションが返る
+    expect(result).toBe("## v1.0.0 (2026-02-20T10:00:00Z)\n- Initial release");
+  });
 });
