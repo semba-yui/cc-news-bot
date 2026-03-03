@@ -121,8 +121,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/state.json
-          git diff --cached --quiet || git commit -m "chore: update html source state [cursor]"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git pull --rebase
-          git push
+
+          git add data/state/cursor.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: update html source state [cursor]"
+          git pull --rebase && git push

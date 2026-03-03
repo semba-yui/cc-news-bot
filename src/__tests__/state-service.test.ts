@@ -78,15 +78,17 @@ describe("saveSnapshot", () => {
 });
 
 describe("loadState", () => {
+  const testStateDir = resolve(testDataRoot, "state");
+
   beforeEach(() => {
-    mkdirSync(testDataRoot, { recursive: true });
+    mkdirSync(testStateDir, { recursive: true });
   });
 
   afterEach(() => {
     rmSync(testDataRoot, { recursive: true, force: true });
   });
 
-  it("state.json が存在しない場合は空の初期状態を返す", async () => {
+  it("state ディレクトリが空の場合は空の初期状態を返す", async () => {
     const state = await loadState(testDataRoot);
     expect(state).toEqual({
       lastRunAt: "",
@@ -94,9 +96,23 @@ describe("loadState", () => {
     });
   });
 
-  it("state.json を正しく読み込む", async () => {
-    const expected: SnapshotState = {
-      lastRunAt: "2026-02-28T12:00:00Z",
+  it("ソースごとのファイルを集約して読み込む", async () => {
+    // Given: 各ソースの JSON ファイルがある
+    writeFileSync(
+      resolve(testStateDir, "claude-code.json"),
+      JSON.stringify({ hash: "sha256-abc123", lastCheckedAt: "2026-02-28T12:00:00Z" }),
+    );
+    writeFileSync(
+      resolve(testStateDir, "codex.json"),
+      JSON.stringify({ hash: "sha256-def456", lastCheckedAt: "2026-02-28T11:00:00Z" }),
+    );
+
+    // When
+    const state = await loadState(testDataRoot);
+
+    // Then
+    expect(state).toEqual({
+      lastRunAt: "",
       sources: {
         "claude-code": {
           hash: "sha256-abc123",
@@ -107,24 +123,14 @@ describe("loadState", () => {
           lastCheckedAt: "2026-02-28T11:00:00Z",
         },
       },
-    };
-    writeFileSync(resolve(testDataRoot, "state.json"), JSON.stringify(expected));
-
-    const state = await loadState(testDataRoot);
-    expect(state).toEqual(expected);
+    });
   });
 
   it("sources フィールドにソースごとの hash と lastCheckedAt が含まれる", async () => {
-    const data: SnapshotState = {
-      lastRunAt: "2026-02-28T15:00:00Z",
-      sources: {
-        "copilot-cli": {
-          hash: "sha256-ghi789",
-          lastCheckedAt: "2026-02-28T15:00:00Z",
-        },
-      },
-    };
-    writeFileSync(resolve(testDataRoot, "state.json"), JSON.stringify(data));
+    writeFileSync(
+      resolve(testStateDir, "copilot-cli.json"),
+      JSON.stringify({ hash: "sha256-ghi789", lastCheckedAt: "2026-02-28T15:00:00Z" }),
+    );
 
     const state = await loadState(testDataRoot);
     expect(state.sources["copilot-cli"]).toEqual({
@@ -135,15 +141,18 @@ describe("loadState", () => {
 });
 
 describe("saveState", () => {
+  const testStateDir = resolve(testDataRoot, "state");
+
   beforeEach(() => {
-    mkdirSync(testDataRoot, { recursive: true });
+    mkdirSync(testStateDir, { recursive: true });
   });
 
   afterEach(() => {
     rmSync(testDataRoot, { recursive: true, force: true });
   });
 
-  it("state.json にメタデータを書き出す", async () => {
+  it("ソースごとのファイルを書き出す", async () => {
+    // Given
     const state: SnapshotState = {
       lastRunAt: "2026-02-28T12:00:00Z",
       sources: {
@@ -154,21 +163,27 @@ describe("saveState", () => {
       },
     };
 
+    // When
     await saveState(state, testDataRoot);
 
-    const saved = JSON.parse(
-      readFileSync(resolve(testDataRoot, "state.json"), "utf-8"),
-    ) as SnapshotState;
-    expect(saved).toEqual(state);
+    // Then: ソースごとの JSON ファイルが保存される
+    const sourceState = JSON.parse(
+      readFileSync(resolve(testStateDir, "claude-code.json"), "utf-8"),
+    ) as { hash: string; lastCheckedAt: string };
+    expect(sourceState).toEqual({
+      hash: "sha256-abc123",
+      lastCheckedAt: "2026-02-28T12:00:00Z",
+    });
   });
 
-  it("既存の state.json を上書きする", async () => {
-    const oldState: SnapshotState = {
-      lastRunAt: "2026-02-28T09:00:00Z",
-      sources: {},
-    };
-    writeFileSync(resolve(testDataRoot, "state.json"), JSON.stringify(oldState));
+  it("既存のソースファイルを上書きする", async () => {
+    // Given: 古いソースファイルが存在する
+    writeFileSync(
+      resolve(testStateDir, "codex.json"),
+      JSON.stringify({ hash: "sha256-old", lastCheckedAt: "2026-02-28T09:00:00Z" }),
+    );
 
+    // When
     const newState: SnapshotState = {
       lastRunAt: "2026-02-28T12:00:00Z",
       sources: {
@@ -180,29 +195,20 @@ describe("saveState", () => {
     };
     await saveState(newState, testDataRoot);
 
-    const saved = JSON.parse(
-      readFileSync(resolve(testDataRoot, "state.json"), "utf-8"),
-    ) as SnapshotState;
-    expect(saved).toEqual(newState);
+    // Then: 上書きされる
+    const loaded = await loadState(testDataRoot);
+    expect(loaded.sources.codex.hash).toBe("sha256-new");
   });
 
-  it("lastRunAt が ISO 8601 形式で保存される", async () => {
-    const state: SnapshotState = {
-      lastRunAt: "2026-02-28T15:30:00Z",
-      sources: {},
-    };
-
-    await saveState(state, testDataRoot);
-
-    const saved = JSON.parse(
-      readFileSync(resolve(testDataRoot, "state.json"), "utf-8"),
-    ) as SnapshotState;
-    expect(saved.lastRunAt).toBe("2026-02-28T15:30:00Z");
-  });
-
-  it("書き出し後に state.json ファイルが存在する", async () => {
-    await saveState({ lastRunAt: "", sources: {} }, testDataRoot);
-    expect(existsSync(resolve(testDataRoot, "state.json"))).toBe(true);
+  it("書き出し後にソースごとのファイルが存在する", async () => {
+    await saveState(
+      {
+        lastRunAt: "",
+        sources: { test: { hash: "h", lastCheckedAt: "2026-01-01T00:00:00Z" } },
+      },
+      testDataRoot,
+    );
+    expect(existsSync(resolve(testStateDir, "test.json"))).toBe(true);
   });
 
   it("latestVersion フィールドを含む状態を保存・復元できる", async () => {

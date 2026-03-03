@@ -9,6 +9,7 @@ const SUBDIRS = [
   "current",
   "html-current",
   "html-summaries",
+  "state",
 ] as const;
 
 export function ensureDataDirs(root: string = DATA_DIR.root): void {

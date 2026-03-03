@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
-import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import type { FetchResult } from "../services/fetch-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
@@ -28,6 +27,7 @@ const SNAPSHOTS_DIR = resolve(TEST_ROOT, "snapshots");
 const DIFFS_DIR = resolve(TEST_ROOT, "diffs");
 const SUMMARIES_DIR = resolve(TEST_ROOT, "summaries");
 const CURRENT_DIR = resolve(TEST_ROOT, "current");
+const STATE_DIR = resolve(TEST_ROOT, "state");
 
 const TEST_SOURCES: SourceConfig[] = [
   {
@@ -61,6 +61,7 @@ function setupDirs(): void {
   mkdirSync(DIFFS_DIR, { recursive: true });
   mkdirSync(SUMMARIES_DIR, { recursive: true });
   mkdirSync(CURRENT_DIR, { recursive: true });
+  mkdirSync(STATE_DIR, { recursive: true });
 }
 
 function setupSnapshots(contents: Record<string, string>): void {
@@ -127,10 +128,8 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       // source-beta の diff は生成されていない
       expect(existsSync(resolve(DIFFS_DIR, "source-beta-v1.1.0.md"))).toBe(false);
 
-      // state.json が更新されている
-      const stateFile = resolve(TEST_ROOT, "state.json");
-      expect(existsSync(stateFile)).toBe(true);
-      const state = JSON.parse(readFileSync(stateFile, "utf-8")) as SnapshotState;
+      // state がソースごとのファイルとして更新されている
+      const state = await loadState(TEST_ROOT);
       expect(state.sources["source-alpha"]).toBeDefined();
       expect(state.sources["source-beta"]).toBeDefined();
 
@@ -376,9 +375,8 @@ describe("結合テスト: 差分検出と通知フロー", () => {
   });
 
   describe("state.json の整合性", () => {
-    it("差分ありの場合 state.json に全ソースのハッシュと日時が記録される", async () => {
+    it("差分ありの場合ソースごとの state ファイルにハッシュと日時が記録される", async () => {
       setupSnapshots(OLD_CONTENTS);
-      const beforeRun = new Date().toISOString();
 
       await fetchAndDiff({
         sources: TEST_SOURCES,
@@ -404,14 +402,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
         postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
       });
 
-      const state = JSON.parse(
-        readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"),
-      ) as SnapshotState;
-
-      // lastRunAt が実行時刻以降
-      expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(
-        new Date(beforeRun).getTime(),
-      );
+      const state = await loadState(TEST_ROOT);
 
       // 両ソースのハッシュが記録されている
       for (const source of TEST_SOURCES) {
@@ -423,7 +414,7 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       expect(state.sources["source-alpha"].hash).not.toBe(state.sources["source-beta"].hash);
     });
 
-    it("差分なしの場合は state.json が更新されない", async () => {
+    it("差分なしの場合は state ファイルが更新されない", async () => {
       setupSnapshots(OLD_CONTENTS);
 
       const result = await fetchAndDiff({
@@ -451,7 +442,11 @@ describe("結合テスト: 差分検出と通知フロー", () => {
       });
 
       expect(result.hasChanges).toBe(false);
-      expect(existsSync(resolve(TEST_ROOT, "state.json"))).toBe(false);
+      // state ファイルが生成されていない（saveState が呼ばれない）
+      const stateFiles = existsSync(STATE_DIR)
+        ? readdirSync(STATE_DIR).filter((f) => f.endsWith(".json"))
+        : [];
+      expect(stateFiles).toEqual([]);
     });
   });
 });

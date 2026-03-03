@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
-import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
 import type { RunResultData } from "../scripts/fetch-and-diff.js";
@@ -26,6 +25,7 @@ const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-integration-firs
 const SNAPSHOTS_DIR = resolve(TEST_ROOT, "snapshots");
 const DIFFS_DIR = resolve(TEST_ROOT, "diffs");
 const CURRENT_DIR = resolve(TEST_ROOT, "current");
+const STATE_DIR = resolve(TEST_ROOT, "state");
 
 const TEST_SOURCES: SourceConfig[] = [
   {
@@ -64,6 +64,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
     mkdirSync(SNAPSHOTS_DIR, { recursive: true });
     mkdirSync(DIFFS_DIR, { recursive: true });
     mkdirSync(CURRENT_DIR, { recursive: true });
+    mkdirSync(STATE_DIR, { recursive: true });
   });
 
   afterEach(() => {
@@ -183,9 +184,7 @@ describe("結合テスト: 初回実行シナリオ", () => {
     }
   });
 
-  it("state.json が正しく生成される", async () => {
-    const beforeRun = new Date().toISOString();
-
+  it("ソースごとの state ファイルが正しく生成される", async () => {
     await fetchAndDiff({
       sources: TEST_SOURCES,
       dataRoot: TEST_ROOT,
@@ -211,16 +210,8 @@ describe("結合テスト: 初回実行シナリオ", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    // state.json が存在する
-    const stateFile = resolve(TEST_ROOT, "state.json");
-    expect(existsSync(stateFile)).toBe(true);
-
-    const state = JSON.parse(readFileSync(stateFile, "utf-8")) as SnapshotState;
-
-    // lastRunAt が実行時刻以降
-    expect(new Date(state.lastRunAt).getTime()).toBeGreaterThanOrEqual(
-      new Date(beforeRun).getTime(),
-    );
+    // loadState で集約して検証
+    const state = await loadState(TEST_ROOT);
 
     // 全ソースのエントリが存在する
     for (const source of TEST_SOURCES) {
@@ -236,6 +227,11 @@ describe("結合テスト: 初回実行シナリオ", () => {
       expect(new Date(state.sources[source.name].lastCheckedAt).toISOString()).toBe(
         state.sources[source.name].lastCheckedAt,
       );
+    }
+
+    // ソースごとのファイルが個別に存在する
+    for (const source of TEST_SOURCES) {
+      expect(existsSync(resolve(STATE_DIR, `${source.name}.json`))).toBe(true);
     }
   });
 

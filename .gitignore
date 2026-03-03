@@ -4,7 +4,7 @@ node_modules/
 .env
 .env.local
 
-# data: snapshots/ と state.json のみコミット対象
+# data: snapshots/ と state/ のみコミット対象
 data/current/
 data/diffs/
 data/summaries/

@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceConfig } from "../config/sources.js";
 import { detectChanges, writeDiff } from "../services/diff-service.js";
 import { loadSnapshot, loadState, saveSnapshot, saveState } from "../services/state-service.js";
-import type { SnapshotState } from "../services/state-service.js";
 import type { PostResult } from "../services/slack-service.js";
 import type { FetchResult } from "../services/fetch-service.js";
 import { fetchAndDiff } from "../scripts/fetch-and-diff.js";
@@ -24,6 +23,7 @@ const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-integration-erro
 const SNAPSHOTS_DIR = resolve(TEST_ROOT, "snapshots");
 const DIFFS_DIR = resolve(TEST_ROOT, "diffs");
 const CURRENT_DIR = resolve(TEST_ROOT, "current");
+const STATE_DIR = resolve(TEST_ROOT, "state");
 
 const TEST_SOURCES: SourceConfig[] = [
   {
@@ -56,6 +56,7 @@ describe("結合テスト: エラーハンドリング", () => {
     mkdirSync(SNAPSHOTS_DIR, { recursive: true });
     mkdirSync(DIFFS_DIR, { recursive: true });
     mkdirSync(CURRENT_DIR, { recursive: true });
+    mkdirSync(STATE_DIR, { recursive: true });
   });
 
   afterEach(() => {
@@ -156,7 +157,7 @@ describe("結合テスト: エラーハンドリング", () => {
     expect(existsSync(resolve(CURRENT_DIR, "source-alpha.md"))).toBe(false);
   });
 
-  it("state.json にはエラーのないソースのみ記録される", async () => {
+  it("state ファイルにはエラーのないソースのみ記録される", async () => {
     await fetchAndDiff({
       sources: TEST_SOURCES,
       dataRoot: TEST_ROOT,
@@ -179,9 +180,7 @@ describe("結合テスト: エラーハンドリング", () => {
       postError: vi.fn<() => Promise<PostResult>>().mockResolvedValue({ success: true }),
     });
 
-    const state = JSON.parse(
-      readFileSync(resolve(TEST_ROOT, "state.json"), "utf-8"),
-    ) as SnapshotState;
+    const state = await loadState(TEST_ROOT);
 
     // raw_markdown ソースの状態が記録される
     expect(state.sources["source-beta"]).toBeDefined();
