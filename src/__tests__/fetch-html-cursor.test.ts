@@ -289,8 +289,8 @@ describe("fetchHtmlCursor", () => {
 
   describe("初回実行: state なし", () => {
     // What: state に latestDate が存在しない初回実行ケース
-    // Why: 初回実行時は最新5件まで取得することを検証する
-    it("最新5件まで取得し古い順で配列書き出しする", async () => {
+    // Why: 初回実行時は最新3件まで取得することを検証する
+    it("最新3件まで取得し古い順で配列書き出しする", async () => {
       // Given: state にソースエントリが存在しない（初回実行）
       const deps = makeDeps({
         parseAllEntries: vi.fn().mockReturnValue([
@@ -311,9 +311,9 @@ describe("fetchHtmlCursor", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlCursor(deps);
 
-      // Then: 最新5件が古い順で返される
+      // Then: 最新3件が古い順で返される
       expect(result.hasChanges).toBe(true);
-      expect(result.newVersions).toEqual(["e3", "e4", "e5", "e6", "e7"]);
+      expect(result.newVersions).toEqual(["e5", "e6", "e7"]);
 
       // Then: state は最新エントリの date/slug で更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock

@@ -18,7 +18,7 @@ import {
 
 const SOURCE_NAME = "cursor";
 const CHANGELOG_URL = "https://cursor.com/ja/changelog";
-const MAX_INITIAL_VERSIONS = 5;
+const MAX_INITIAL_VERSIONS = 3;
 
 export interface FetchHtmlCursorDeps {
   readonly dataRoot: string;
