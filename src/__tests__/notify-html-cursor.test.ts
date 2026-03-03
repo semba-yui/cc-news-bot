@@ -6,8 +6,8 @@ import { notifyHtmlCursor, type NotifyHtmlCursorDeps } from "../scripts/notify-h
 
 /**
  * What: Cursor の通知スクリプトのテスト
- * Why: 取得済みコンテンツ（翻訳不要）の JSON ファイルを正しく読み取り、
- *      画像・動画を含む Block Kit メッセージとして Slack に単一スレッドで投稿できることを保証する
+ * Why: Claude Code Action が生成した pre-built Block Kit JSON を正しく読み取り、
+ *      Slack に投稿できることを保証する
  */
 
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-notify-cursor");
@@ -19,11 +19,10 @@ const MOCK_BLOCKS: SlackBlock[] = [
 
 function makeDeps(overrides: Partial<NotifyHtmlCursorDeps> = {}): NotifyHtmlCursorDeps {
   return {
-    htmlCurrentDir: resolve(TEST_ROOT, "html-current"),
+    htmlSummariesDir: resolve(TEST_ROOT, "html-summaries"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
     botProfile: { name: "Cursor Changelog", emoji: ":cursor:" },
-    buildBlocks: vi.fn().mockReturnValue(MOCK_BLOCKS),
     postBlocks: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,
       ts: "1234567890.123456",
@@ -32,44 +31,33 @@ function makeDeps(overrides: Partial<NotifyHtmlCursorDeps> = {}): NotifyHtmlCurs
   };
 }
 
-function writeCurrentFile(data: {
+function writeSummariesFile(data: {
   version: string;
-  contentJa: string;
-  imageUrls: string[];
-  videos: Array<{
-    playbackId: string;
-    thumbnailUrl: string;
-    hlsUrl: string;
-  }>;
-  fetchedAt: string;
+  blocks: SlackBlock[];
+  fallbackText: string;
 }): void {
-  writeFileSync(resolve(TEST_ROOT, "html-current", "cursor.json"), JSON.stringify(data, null, 2));
+  writeFileSync(resolve(TEST_ROOT, "html-summaries", "cursor.json"), JSON.stringify(data, null, 2));
 }
 
 describe("notifyHtmlCursor", () => {
   beforeEach(() => {
-    mkdirSync(resolve(TEST_ROOT, "html-current"), { recursive: true });
+    mkdirSync(resolve(TEST_ROOT, "html-summaries"), { recursive: true });
   });
 
   afterEach(() => {
     rmSync(TEST_ROOT, { recursive: true, force: true });
   });
 
-  describe("単一スレッドへの投稿", () => {
-    it("取得済みコンテンツを読み取り、Block Kit メッセージを Slack に投稿する", async () => {
-      // Given: 取得済みコンテンツの JSON ファイルが存在する（画像・動画あり）
-      writeCurrentFile({
+  describe("pre-built blocks の投稿", () => {
+    it("Claude が生成した Block Kit JSON を読み取り Slack に投稿する", async () => {
+      // What: html-summaries/cursor.json から pre-built blocks を読み取り投稿できるか
+      // Why: Claude Code Action の structured_output をそのまま Slack に送信する
+
+      // Given: pre-built blocks を含む JSON ファイルが存在する
+      writeSummariesFile({
         version: "2.5",
-        contentJa: "テストコンテンツ",
-        imageUrls: ["https://example.com/img.png"],
-        videos: [
-          {
-            playbackId: "abc123",
-            thumbnailUrl: "https://image.mux.com/abc123/thumbnail.png",
-            hlsUrl: "https://stream.mux.com/abc123.m3u8",
-          },
-        ],
-        fetchedAt: "2026-03-02T06:00:00.000Z",
+        blocks: MOCK_BLOCKS,
+        fallbackText: "Cursor 2.5 の更新",
       });
 
       const deps = makeDeps();
@@ -77,21 +65,7 @@ describe("notifyHtmlCursor", () => {
       // When: 通知スクリプトを実行する
       await notifyHtmlCursor(deps);
 
-      // Then: buildBlocks に CursorVersionContent 形式のコンテンツが渡される
-      expect(deps.buildBlocks).toHaveBeenCalledWith({
-        version: "2.5",
-        contentJa: "テストコンテンツ",
-        imageUrls: ["https://example.com/img.png"],
-        videos: [
-          {
-            playbackId: "abc123",
-            thumbnailUrl: "https://image.mux.com/abc123/thumbnail.png",
-            hlsUrl: "https://stream.mux.com/abc123.m3u8",
-          },
-        ],
-      });
-
-      // Then: Slack にブロックが投稿される
+      // Then: Slack に blocks がそのまま投稿される
       expect(deps.postBlocks).toHaveBeenCalledWith(
         "C_TEST",
         MOCK_BLOCKS,
@@ -101,14 +75,26 @@ describe("notifyHtmlCursor", () => {
       );
     });
 
-    it("画像・動画なしのコンテンツでも正常に投稿できる", async () => {
-      // Given: 画像・動画が空のコンテンツ
-      writeCurrentFile({
-        version: "2.4",
-        contentJa: "テキストのみの更新",
-        imageUrls: [],
-        videos: [],
-        fetchedAt: "2026-03-01T06:00:00.000Z",
+    it("divider や image を含む blocks も正常に投稿できる", async () => {
+      // What: 多様なブロックタイプを含む blocks を正しく転送できるか
+      // Why: Claude が生成するブロックには header/section/divider/image が含まれる
+
+      // Given: 多様なブロックタイプを含む JSON
+      const richBlocks: SlackBlock[] = [
+        { type: "header", text: { type: "plain_text", text: "Cursor 2.5 の更新", emoji: true } },
+        { type: "section", text: { type: "mrkdwn", text: "メインコンテンツ" } },
+        { type: "divider" },
+        {
+          type: "image",
+          image_url: "https://example.com/img.png",
+          alt_text: "Cursor 2.5",
+        },
+      ];
+
+      writeSummariesFile({
+        version: "2.5",
+        blocks: richBlocks,
+        fallbackText: "Cursor 2.5 の更新",
       });
 
       const deps = makeDeps();
@@ -116,26 +102,22 @@ describe("notifyHtmlCursor", () => {
       // When: 通知スクリプトを実行する
       await notifyHtmlCursor(deps);
 
-      // Then: buildBlocks に空配列の imageUrls と videos が渡される
-      expect(deps.buildBlocks).toHaveBeenCalledWith({
-        version: "2.4",
-        contentJa: "テキストのみの更新",
-        imageUrls: [],
-        videos: [],
-      });
-
-      // Then: Slack に投稿される
-      expect(deps.postBlocks).toHaveBeenCalledTimes(1);
+      // Then: 全ブロックがそのまま投稿される
+      expect(deps.postBlocks).toHaveBeenCalledWith(
+        "C_TEST",
+        richBlocks,
+        "Cursor 2.5 の更新",
+        "xoxb-test",
+        expect.any(Object),
+      );
     });
 
     it("複数チャンネルに投稿する", async () => {
       // Given: 複数チャンネルが設定されている
-      writeCurrentFile({
+      writeSummariesFile({
         version: "2.5",
-        contentJa: "テストコンテンツ",
-        imageUrls: [],
-        videos: [],
-        fetchedAt: "2026-03-02T06:00:00.000Z",
+        blocks: MOCK_BLOCKS,
+        fallbackText: "Cursor 2.5 の更新",
       });
 
       const deps = makeDeps({
@@ -167,12 +149,10 @@ describe("notifyHtmlCursor", () => {
   describe("botProfile なし", () => {
     it("botProfile が未設定の場合でも正常に投稿できる", async () => {
       // Given: botProfile が未設定
-      writeCurrentFile({
+      writeSummariesFile({
         version: "2.5",
-        contentJa: "テストコンテンツ",
-        imageUrls: [],
-        videos: [],
-        fetchedAt: "2026-03-02T06:00:00.000Z",
+        blocks: MOCK_BLOCKS,
+        fallbackText: "Cursor 2.5 の更新",
       });
 
       const deps = makeDeps({ botProfile: undefined });

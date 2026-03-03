@@ -3,17 +3,14 @@ import { resolve } from "node:path";
 import { DATA_DIR, getChannelsForSource } from "../config/sources.js";
 import type { BotProfile, PostResult, SlackBlock } from "../services/slack-service.js";
 import { postBlocks as postBlocksImpl } from "../services/slack-service.js";
-import type { CursorVersionContent } from "../services/cursor-parser.js";
-import { buildCursorBlocks } from "../services/html-slack-builder.js";
 
 const SOURCE_NAME = "cursor";
 
 export interface NotifyHtmlCursorDeps {
-  readonly htmlCurrentDir: string;
+  readonly htmlSummariesDir: string;
   readonly getChannels: (source: string) => string[];
   readonly slackToken: string;
   readonly botProfile?: BotProfile;
-  readonly buildBlocks: (content: CursorVersionContent) => SlackBlock[];
   readonly postBlocks: (
     channel: string,
     blocks: SlackBlock[],
@@ -23,31 +20,18 @@ export interface NotifyHtmlCursorDeps {
   ) => Promise<PostResult>;
 }
 
-interface CursorCurrentFile {
+interface CursorSummariesFile {
   version: string;
-  contentJa: string;
-  imageUrls: string[];
-  videos: Array<{
-    playbackId: string;
-    thumbnailUrl: string;
-    hlsUrl: string;
-  }>;
-  fetchedAt: string;
+  blocks: SlackBlock[];
+  fallbackText: string;
 }
 
 export async function notifyHtmlCursor(deps: NotifyHtmlCursorDeps): Promise<void> {
-  const filePath = resolve(deps.htmlCurrentDir, "cursor.json");
-  const raw = JSON.parse(readFileSync(filePath, "utf-8")) as CursorCurrentFile;
+  const filePath = resolve(deps.htmlSummariesDir, "cursor.json");
+  const raw = JSON.parse(readFileSync(filePath, "utf-8")) as CursorSummariesFile;
 
-  const content: CursorVersionContent = {
-    version: raw.version,
-    contentJa: raw.contentJa,
-    imageUrls: raw.imageUrls,
-    videos: raw.videos,
-  };
-
-  const blocks = deps.buildBlocks(content);
-  const fallbackText = `Cursor ${raw.version} の更新`;
+  const blocks = raw.blocks;
+  const fallbackText = raw.fallbackText;
   const channels = deps.getChannels(SOURCE_NAME);
 
   await Promise.all(
@@ -64,11 +48,10 @@ async function main(): Promise<void> {
   }
 
   await notifyHtmlCursor({
-    htmlCurrentDir: DATA_DIR.htmlCurrent,
+    htmlSummariesDir: DATA_DIR.htmlSummaries,
     getChannels: getChannelsForSource,
     slackToken,
     botProfile: { name: "Cursor Changelog", emoji: ":cursor:" },
-    buildBlocks: buildCursorBlocks,
     postBlocks: postBlocksImpl,
   });
 

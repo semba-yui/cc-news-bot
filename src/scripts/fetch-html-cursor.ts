@@ -2,11 +2,12 @@ import { appendFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DATA_DIR } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
-import type { CursorVersionContent } from "../services/cursor-parser.js";
+import type { MuxVideo } from "../services/cursor-article-extractor.js";
 import {
   parseLatestVersion as parseLatestVersionImpl,
-  parseVersionContent as parseVersionContentImpl,
-} from "../services/cursor-parser.js";
+  extractArticleRscPayload as extractArticleRscPayloadImpl,
+  extractMuxVideoData as extractMuxVideoDataImpl,
+} from "../services/cursor-article-extractor.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
 import { fetchStaticHtml as fetchStaticHtmlImpl } from "../services/html-fetch-service.js";
 import type { SnapshotState } from "../services/state-service.js";
@@ -23,7 +24,8 @@ export interface FetchHtmlCursorDeps {
   readonly htmlCurrentDir: string;
   readonly fetchStaticHtml: (url: string, opts?: HtmlFetchOptions) => Promise<string>;
   readonly parseLatestVersion: (html: string) => string | null;
-  readonly parseVersionContent: (html: string, version: string) => CursorVersionContent | null;
+  readonly extractArticleRscPayload: (html: string, version: string) => string | null;
+  readonly extractMuxVideoData: (html: string, slug: string) => MuxVideo[];
   readonly loadState: (root: string) => Promise<SnapshotState>;
   readonly saveState: (state: SnapshotState, root: string) => Promise<void>;
 }
@@ -78,22 +80,26 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
     return { hasChanges: false };
   }
 
-  // フェーズ3: コンテンツ抽出
-  const versionContent = deps.parseVersionContent(html, latestVersion);
-  if (!versionContent) {
-    logError(`Could not parse content for version ${latestVersion}`);
+  // フェーズ3: RSC ペイロード抽出
+  const rscPayload = deps.extractArticleRscPayload(html, latestVersion);
+  if (!rscPayload) {
+    logError(`Could not extract RSC payload for version ${latestVersion}`);
     return {
       hasChanges: false,
-      error: `Could not parse content for version ${latestVersion}`,
+      error: `Could not extract RSC payload for version ${latestVersion}`,
     };
   }
+
+  // フェーズ3b: Mux 動画抽出（slug はバージョンからドットをハイフンに変換）
+  const slug = latestVersion.replace(/\./g, "-");
+  const muxVideos = deps.extractMuxVideoData(html, slug);
 
   // フェーズ4: JSON ファイル書き出し
   const outputFile = {
     version: latestVersion,
-    contentJa: versionContent.contentJa,
-    imageUrls: [...versionContent.imageUrls],
-    videos: versionContent.videos.map((v) => ({
+    rscPayload,
+    articleHtml: "",
+    muxVideos: muxVideos.map((v) => ({
       playbackId: v.playbackId,
       thumbnailUrl: v.thumbnailUrl,
       hlsUrl: v.hlsUrl,
@@ -125,7 +131,8 @@ async function main(): Promise<void> {
     htmlCurrentDir: DATA_DIR.htmlCurrent,
     fetchStaticHtml: fetchStaticHtmlImpl,
     parseLatestVersion: parseLatestVersionImpl,
-    parseVersionContent: parseVersionContentImpl,
+    extractArticleRscPayload: extractArticleRscPayloadImpl,
+    extractMuxVideoData: extractMuxVideoDataImpl,
     loadState: loadStateImpl,
     saveState: saveStateImpl,
   });

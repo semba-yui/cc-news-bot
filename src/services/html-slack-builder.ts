@@ -1,5 +1,4 @@
 import type { SlackBlock } from "./slack-service.js";
-import type { CursorVersionContent } from "./cursor-parser.js";
 
 export interface GeminiCliTranslatedContent {
   readonly version: string;
@@ -53,42 +52,6 @@ export function buildGeminiCliBlocks(content: GeminiCliTranslatedContent): Slack
 
   for (const url of content.imageUrls) {
     blocks.push(makeImageBlock(url, `Gemini CLI ${content.version}`));
-  }
-
-  return blocks;
-}
-
-export function buildCursorBlocks(content: CursorVersionContent): SlackBlock[] {
-  const blocks: SlackBlock[] = [];
-
-  blocks.push({
-    type: "header",
-    text: {
-      type: "plain_text",
-      text: `Cursor ${content.version} の更新`.slice(0, 150),
-      emoji: true,
-    },
-  });
-
-  const mrkdwnText = markdownToMrkdwn(content.contentJa);
-  blocks.push({
-    type: "section",
-    text: { type: "mrkdwn", text: mrkdwnText },
-  });
-
-  for (const url of content.imageUrls) {
-    blocks.push(makeImageBlock(url, `Cursor ${content.version}`));
-  }
-
-  for (const video of content.videos) {
-    blocks.push(makeImageBlock(video.thumbnailUrl, `Cursor ${content.version} 動画`));
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `🎬 <${video.hlsUrl}|動画を再生>`,
-      },
-    });
   }
 
   return blocks;

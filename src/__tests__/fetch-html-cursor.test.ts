@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CursorVersionContent } from "../services/cursor-parser.js";
+import type { MuxVideo } from "../services/cursor-article-extractor.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
 import type { SnapshotState } from "../services/state-service.js";
 import {
@@ -11,14 +11,14 @@ import {
 } from "../scripts/fetch-html-cursor.js";
 
 // What: Cursor の HTML 取得スクリプトのテスト
-// Why: cursor.com/ja/changelog からの取得・差分検出・JSON 書き出し・初回実行スキップ・
+// Why: cursor.com/ja/changelog からの取得・差分検出・JSON 書き出し・
 //      エラーハンドリング等のフローが正しく動作することを保証する
 
 interface CursorCurrentFile {
   version: string;
-  contentJa: string;
-  imageUrls: string[];
-  videos: Array<{
+  rscPayload: string;
+  articleHtml: string;
+  muxVideos: Array<{
     playbackId: string;
     thumbnailUrl: string;
     hlsUrl: string;
@@ -36,18 +36,14 @@ interface StructuredLogEntry {
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-fetch-html-cursor");
 const HTML_CURRENT_DIR = resolve(TEST_ROOT, "html-current");
 
-const SAMPLE_VERSION_CONTENT: CursorVersionContent = {
-  version: "2.5",
-  contentJa: "### 新機能\n- 機能A\n- 機能B",
-  imageUrls: ["https://example.com/img1.png"],
-  videos: [
-    {
-      playbackId: "abc123",
-      thumbnailUrl: "https://image.mux.com/abc123/thumbnail.png",
-      hlsUrl: "https://stream.mux.com/abc123.m3u8",
-    },
-  ],
-};
+const SAMPLE_RSC_PAYLOAD = '["$","article","2-5",{"children":"sample RSC data"}]';
+const SAMPLE_MUX_VIDEOS: MuxVideo[] = [
+  {
+    playbackId: "abc123",
+    thumbnailUrl: "https://image.mux.com/abc123/thumbnail.png",
+    hlsUrl: "https://stream.mux.com/abc123.m3u8",
+  },
+];
 
 function makeDeps(overrides: Partial<FetchHtmlCursorDeps> = {}): FetchHtmlCursorDeps {
   return {
@@ -57,9 +53,12 @@ function makeDeps(overrides: Partial<FetchHtmlCursorDeps> = {}): FetchHtmlCursor
       .fn<(url: string, opts?: HtmlFetchOptions) => Promise<string>>()
       .mockResolvedValue("<html>mock cursor changelog</html>"),
     parseLatestVersion: vi.fn<(html: string) => string | null>().mockReturnValue("2.5"),
-    parseVersionContent: vi
-      .fn<(html: string, version: string) => CursorVersionContent | null>()
-      .mockReturnValue(SAMPLE_VERSION_CONTENT),
+    extractArticleRscPayload: vi
+      .fn<(html: string, version: string) => string | null>()
+      .mockReturnValue(SAMPLE_RSC_PAYLOAD),
+    extractMuxVideoData: vi
+      .fn<(html: string, slug: string) => MuxVideo[]>()
+      .mockReturnValue(SAMPLE_MUX_VIDEOS),
     loadState: vi.fn<(root: string) => Promise<SnapshotState>>().mockResolvedValue({
       lastRunAt: "",
       sources: {
@@ -100,14 +99,14 @@ describe("fetchHtmlCursor", () => {
         newVersion: "2.5",
       });
 
-      // Then: html-current/cursor.json が正しいフォーマットで書き出される
+      // Then: html-current/cursor.json が新フォーマットで書き出される
       const outputFile = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "cursor.json"), "utf-8"),
       ) as CursorCurrentFile;
       expect(outputFile.version).toBe("2.5");
-      expect(outputFile.contentJa).toBe("### 新機能\n- 機能A\n- 機能B");
-      expect(outputFile.imageUrls).toEqual(["https://example.com/img1.png"]);
-      expect(outputFile.videos).toEqual([
+      expect(outputFile.rscPayload).toBe(SAMPLE_RSC_PAYLOAD);
+      expect(outputFile.articleHtml).toBe("");
+      expect(outputFile.muxVideos).toEqual([
         {
           playbackId: "abc123",
           thumbnailUrl: "https://image.mux.com/abc123/thumbnail.png",
@@ -122,9 +121,23 @@ describe("fetchHtmlCursor", () => {
         .calls[0][0] as SnapshotState;
       expect(savedState.sources["cursor"].latestVersion).toBe("2.5");
     });
+
+    it("extractMuxVideoData にバージョンから変換した slug が渡される", async () => {
+      // What: version "2.5" から slug "2-5" に変換して extractMuxVideoData を呼ぶか
+      // Why: Mux 動画抽出のための slug 変換ロジックの正確性を検証する
+
+      // Given: 新バージョン検出
+      const deps = makeDeps();
+
+      // When: 取得スクリプトを実行する
+      await fetchHtmlCursor(deps);
+
+      // Then: extractMuxVideoData に slug "2-5" が渡される
+      expect(deps.extractMuxVideoData).toHaveBeenCalledWith(expect.any(String), "2-5");
+    });
   });
 
-  describe("初回実行: latestVersion なし (Req 1.3)", () => {
+  describe("初回実行: latestVersion なし", () => {
     // What: state に latestVersion が存在しない初回実行ケース
     // Why: 初回実行でも通常の新バージョン検出と同じフローで通知することを検証する
     it("hasChanges=true を返し JSON 書き出しと state 更新を行う", async () => {
@@ -216,13 +229,13 @@ describe("fetchHtmlCursor", () => {
     });
   });
 
-  describe("parseVersionContent が null を返す", () => {
-    // What: バージョンは見つかったがコンテンツ抽出に失敗するケース
-    // Why: Cursor にはフォールバックがないため、エラーとして処理されることを検証する
+  describe("extractArticleRscPayload が null を返す", () => {
+    // What: バージョンは見つかったが RSC ペイロード抽出に失敗するケース
+    // Why: RSC データが見つからない場合にエラーとして処理されることを検証する
     it("hasChanges=false とエラーを返す", async () => {
-      // Given: parseVersionContent が null を返す
+      // Given: extractArticleRscPayload が null を返す
       const deps = makeDeps({
-        parseVersionContent: vi.fn().mockReturnValue(null),
+        extractArticleRscPayload: vi.fn().mockReturnValue(null),
       });
 
       // When: 取得スクリプトを実行する
@@ -230,7 +243,7 @@ describe("fetchHtmlCursor", () => {
 
       // Then: 変更なしでエラー
       expect(result.hasChanges).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result.error).toContain("RSC payload");
     });
   });
 

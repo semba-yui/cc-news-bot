@@ -8,6 +8,8 @@ node_modules/
 data/current/
 data/diffs/
 data/summaries/
+data/html-current/
+data/html-summaries/
 data/run-result.json
 
 # devbox

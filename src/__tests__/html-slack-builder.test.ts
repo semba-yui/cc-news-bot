@@ -1,14 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildGeminiCliBlocks,
-  buildCursorBlocks,
-  buildAntigravityBlocks,
-} from "../services/html-slack-builder.js";
+import { buildGeminiCliBlocks, buildAntigravityBlocks } from "../services/html-slack-builder.js";
 import type {
   GeminiCliTranslatedContent,
   AntigravityTranslatedContent,
 } from "../services/html-slack-builder.js";
-import type { CursorVersionContent } from "../services/cursor-parser.js";
 import type { SlackBlock } from "../services/slack-service.js";
 
 describe("buildGeminiCliBlocks", () => {
@@ -134,153 +129,6 @@ describe("buildGeminiCliBlocks", () => {
     const allText = sections.map((s) => s.text.text).join("\n");
     expect(allText).toContain("*重要な変更*");
     expect(allText).not.toContain("**重要な変更**");
-  });
-});
-
-describe("buildCursorBlocks", () => {
-  // What: Cursor のコンテンツから Slack Block Kit メッセージを生成する
-  // Why: Cursor の更新通知を画像・動画付きの構造化形式で Slack に投稿するため
-
-  const baseContent: CursorVersionContent = {
-    version: "2.5",
-    contentJa:
-      "### バグ修正\n改善されたエディタ体験。\n- コード補完の精度向上\n- パフォーマンス改善",
-    imageUrls: ["https://cursor.com/images/feature.png"],
-    videos: [
-      {
-        playbackId: "abc123def456",
-        thumbnailUrl: "https://image.mux.com/abc123def456/thumbnail.png",
-        hlsUrl: "https://stream.mux.com/abc123def456.m3u8",
-      },
-    ],
-  };
-
-  it("header ブロックにソース名とバージョンが含まれる", () => {
-    // Given: Cursor のコンテンツ
-    const content = { ...baseContent };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: header にソース名とバージョンが含まれる
-    const header = blocks.find((b) => b.type === "header");
-    expect(header).toBeDefined();
-    expect(header?.type === "header" && header.text.text).toContain("Cursor");
-    expect(header?.type === "header" && header.text.text).toContain("2.5");
-  });
-
-  it("日本語コンテンツが section ブロックに含まれる", () => {
-    // Given: 日本語コンテンツ
-    const content = { ...baseContent };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: section ブロックにコンテンツが含まれる
-    const sections = blocks.filter(
-      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
-    );
-    const allText = sections.map((s) => s.text.text).join("\n");
-    expect(allText).toContain("改善されたエディタ体験");
-  });
-
-  it("画像 URL が image ブロックとして含まれる", () => {
-    // Given: 画像 URL 付きのコンテンツ
-    const content = { ...baseContent };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: image ブロックが生成される
-    const imageBlocks = blocks.filter(
-      (b): b is Extract<SlackBlock, { type: "image" }> => b.type === "image",
-    );
-    const imageUrls = imageBlocks.map((b) => b.image_url);
-    expect(imageUrls).toContain("https://cursor.com/images/feature.png");
-  });
-
-  it("Mux 動画のサムネイルが image ブロックとして含まれる", () => {
-    // Given: Mux 動画付きのコンテンツ
-    const content = { ...baseContent };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: Mux サムネイルの image ブロックが生成される
-    const imageBlocks = blocks.filter(
-      (b): b is Extract<SlackBlock, { type: "image" }> => b.type === "image",
-    );
-    const imageUrls = imageBlocks.map((b) => b.image_url);
-    expect(imageUrls).toContain("https://image.mux.com/abc123def456/thumbnail.png");
-  });
-
-  it("Mux 動画の HLS リンクがテキストに含まれる", () => {
-    // Given: Mux 動画付きのコンテンツ
-    const content = { ...baseContent };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: HLS リンクがどこかの section に含まれる
-    const sections = blocks.filter(
-      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
-    );
-    const allText = sections.map((s) => s.text.text).join("\n");
-    expect(allText).toContain("https://stream.mux.com/abc123def456.m3u8");
-  });
-
-  it("動画がない場合は動画関連のブロックを生成しない", () => {
-    // Given: 動画なしのコンテンツ
-    const content: CursorVersionContent = {
-      ...baseContent,
-      videos: [],
-    };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: Mux 関連のブロックが含まれない
-    const imageBlocks = blocks.filter(
-      (b): b is Extract<SlackBlock, { type: "image" }> => b.type === "image",
-    );
-    const muxImages = imageBlocks.filter((b) => b.image_url.includes("image.mux.com"));
-    expect(muxImages).toHaveLength(0);
-  });
-
-  it("画像も動画もない場合はテキストブロックのみ生成する", () => {
-    // Given: メディアなしのコンテンツ
-    const content: CursorVersionContent = {
-      ...baseContent,
-      imageUrls: [],
-      videos: [],
-    };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: header と section のみ
-    const imageBlocks = blocks.filter((b) => b.type === "image");
-    expect(imageBlocks).toHaveLength(0);
-    expect(blocks.some((b) => b.type === "header")).toBe(true);
-    expect(blocks.some((b) => b.type === "section")).toBe(true);
-  });
-
-  it("Markdown の - を Slack の • に変換する", () => {
-    // Given: ハイフンリスト付きの日本語コンテンツ
-    const content: CursorVersionContent = {
-      ...baseContent,
-      contentJa: "- 機能A\n- 機能B",
-    };
-
-    // When: Block Kit メッセージを生成する
-    const blocks = buildCursorBlocks(content);
-
-    // Then: • に変換される
-    const sections = blocks.filter(
-      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
-    );
-    const allText = sections.map((s) => s.text.text).join("\n");
-    expect(allText).toContain("• 機能A");
   });
 });
 

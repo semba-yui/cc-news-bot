@@ -30,6 +30,78 @@ jobs:
         id: fetch
         run: npx tsx src/scripts/fetch-html-cursor.ts
 
+      - name: Ensure output directories
+        if: steps.fetch.outputs.has_changes == 'true'
+        run: mkdir -p data/html-summaries
+
+      - name: Convert to Slack blocks with Claude
+        id: convert
+        if: steps.fetch.outputs.has_changes == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            あなたは Slack 通知フォーマッターです。
+            Cursor エディタの changelog データを Slack Block Kit 形式に正確に変換する専門家として振る舞ってください。
+
+            ## タスク
+
+            data/html-current/cursor.json を読み取り、rscPayload フィールドの
+            React Server Components データを解析して Slack Block Kit 形式の JSON に変換してください。
+            出力は --json-schema で指定されたスキーマに従って自動的に返されます。
+
+            ## 入力仕様
+
+            data/html-current/cursor.json の構造:
+            - version (string): バージョン番号（例: "2.5"）
+            - rscPayload (string): RSC 形式の article データ。Next.js の React Server Components ペイロード。
+              コンポーネントは ["$","tagName",key,{props}] 形式で表現される。
+              例: ["$","p",null,{"children":"テキスト"}]
+            - articleHtml (string): 参照用 DOM HTML（画像 URL のデコードに使用）
+            - muxVideos (array): Mux 動画情報の配列
+              各要素: { playbackId: string, thumbnailUrl: string, hlsUrl: string }
+
+            ## 変換ルール
+
+            ### テキスト要素
+            - RSC の ["$","h3",...] → divider ブロック + section ブロック（"*見出しテキスト*" bold 形式）
+            - RSC の ["$","p",...] → section ブロック（type: mrkdwn）。連続する短い p は1つの section にまとめてよい
+            - RSC の ["$","ul",...] 内 ["$","li",...] → 各項目を "• テキスト" 形式でリスト化
+
+            ### インライン要素（Slack mrkdwn 記法）
+            - ["$","a",null,{"href":"url","children":"text"}] → "<url|text>"
+            - ["$","code",null,{"children":"text"}] → "`text`"
+            - ["$","strong",null,{"children":"text"}] → "*text*"
+
+            ### メディア要素
+            - RSC の ["$","figure",...] や ["$","$L23",...] 内の画像:
+              image ブロック {"type":"image","image_url":"URL","alt_text":"Cursor {version}"}
+              ※ Next.js image proxy URL（/_next/image?url=ENCODED&w=...）はデコードして元 URL を使用
+            - muxVideos 配列の各動画:
+              image ブロック（サムネイル）+ section ブロック "🎬 <{hlsUrl}|動画を再生>"
+
+            ### Accordion セクション
+            - RSC の $L1b（Accordion）/$L1c（AccordionItem）/$L1f（AccordionContent）:
+              ボタンラベル（例: "全般 (6)"）を見出しとして section に含める。
+              $L1f 内の ul/li を箇条書きリストとして展開する。
+
+            ### ブロック構成
+            1. 先頭は必ず header ブロック: "Cursor {version} の更新"
+            2. セクション間（h3 の前）に divider ブロックを挿入
+            3. 各 section.text は 3000 文字以内。超える場合は複数 section に分割
+
+            ## 制約
+            - テキストは入力データの日本語をそのまま使用（翻訳・要約はしない）
+            - image_url は公開 HTTPS URL であること
+          claude_args: >-
+            --max-turns 20
+            --allowedTools Read
+            --json-schema '{"type":"object","required":["version","blocks","fallbackText"],"additionalProperties":false,"properties":{"version":{"type":"string"},"fallbackText":{"type":"string"},"blocks":{"type":"array","items":{"oneOf":[{"type":"object","required":["type","text"],"additionalProperties":false,"properties":{"type":{"const":"header"},"text":{"type":"object","required":["type","text","emoji"],"additionalProperties":false,"properties":{"type":{"const":"plain_text"},"text":{"type":"string","maxLength":150},"emoji":{"const":true}}}}},{"type":"object","required":["type","text"],"additionalProperties":false,"properties":{"type":{"const":"section"},"text":{"type":"object","required":["type","text"],"additionalProperties":false,"properties":{"type":{"const":"mrkdwn"},"text":{"type":"string","maxLength":3000}}}}},{"type":"object","required":["type"],"additionalProperties":false,"properties":{"type":{"const":"divider"}}},{"type":"object","required":["type","image_url","alt_text"],"additionalProperties":false,"properties":{"type":{"const":"image"},"image_url":{"type":"string","format":"uri"},"alt_text":{"type":"string"}}}]}}}}'
+
+      - name: Write structured output to file
+        if: steps.fetch.outputs.has_changes == 'true'
+        run: echo '${{ steps.convert.outputs.structured_output }}' > data/html-summaries/cursor.json
+
       - name: Post to Slack
         if: steps.fetch.outputs.has_changes == 'true'
         run: npx tsx src/scripts/notify-html-cursor.ts
@@ -43,6 +115,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/state.json
-          git diff --cached --quiet || git commit -m "chore: update html source state"
+          git diff --cached --quiet || git commit -m "chore: update html source state [cursor]"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git pull --rebase
           git push
