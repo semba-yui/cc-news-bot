@@ -6,8 +6,8 @@ import { notifyHtmlCursor, type NotifyHtmlCursorDeps } from "../scripts/notify-h
 
 /**
  * What: Cursor の通知スクリプトのテスト
- * Why: Claude Code Action が生成した pre-built Block Kit JSON を正しく読み取り、
- *      Slack に投稿できることを保証する
+ * Why: Claude Code Action が生成した pre-built Block Kit JSON 配列を正しく読み取り、
+ *      各バージョンを古い順に Slack に投稿できることを保証する
  */
 
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-notify-cursor");
@@ -31,11 +31,13 @@ function makeDeps(overrides: Partial<NotifyHtmlCursorDeps> = {}): NotifyHtmlCurs
   };
 }
 
-function writeSummariesFile(data: {
-  version: string;
-  blocks: SlackBlock[];
-  fallbackText: string;
-}): void {
+function writeSummariesFile(
+  data: Array<{
+    version: string;
+    blocks: SlackBlock[];
+    fallbackText: string;
+  }>,
+): void {
   writeFileSync(resolve(TEST_ROOT, "html-summaries", "cursor.json"), JSON.stringify(data, null, 2));
 }
 
@@ -48,17 +50,18 @@ describe("notifyHtmlCursor", () => {
     rmSync(TEST_ROOT, { recursive: true, force: true });
   });
 
-  describe("pre-built blocks の投稿", () => {
+  describe("単一バージョンの投稿", () => {
+    // What: 配列に1つのバージョンが含まれる場合の標準フロー
+    // Why: 配列形式でも単一バージョンの投稿が正しく動作することを検証する
     it("Claude が生成した Block Kit JSON を読み取り Slack に投稿する", async () => {
-      // What: html-summaries/cursor.json から pre-built blocks を読み取り投稿できるか
-      // Why: Claude Code Action の structured_output をそのまま Slack に送信する
-
-      // Given: pre-built blocks を含む JSON ファイルが存在する
-      writeSummariesFile({
-        version: "2.5",
-        blocks: MOCK_BLOCKS,
-        fallbackText: "Cursor 2.5 の更新",
-      });
+      // Given: pre-built blocks を含む JSON 配列ファイルが存在する（1エントリ）
+      writeSummariesFile([
+        {
+          version: "2.5",
+          blocks: MOCK_BLOCKS,
+          fallbackText: "Cursor 2.5 の更新",
+        },
+      ]);
 
       const deps = makeDeps();
 
@@ -91,11 +94,13 @@ describe("notifyHtmlCursor", () => {
         },
       ];
 
-      writeSummariesFile({
-        version: "2.5",
-        blocks: richBlocks,
-        fallbackText: "Cursor 2.5 の更新",
-      });
+      writeSummariesFile([
+        {
+          version: "2.5",
+          blocks: richBlocks,
+          fallbackText: "Cursor 2.5 の更新",
+        },
+      ]);
 
       const deps = makeDeps();
 
@@ -114,11 +119,13 @@ describe("notifyHtmlCursor", () => {
 
     it("複数チャンネルに投稿する", async () => {
       // Given: 複数チャンネルが設定されている
-      writeSummariesFile({
-        version: "2.5",
-        blocks: MOCK_BLOCKS,
-        fallbackText: "Cursor 2.5 の更新",
-      });
+      writeSummariesFile([
+        {
+          version: "2.5",
+          blocks: MOCK_BLOCKS,
+          fallbackText: "Cursor 2.5 の更新",
+        },
+      ]);
 
       const deps = makeDeps({
         getChannels: () => ["C_TEST_1", "C_TEST_2"],
@@ -146,14 +153,77 @@ describe("notifyHtmlCursor", () => {
     });
   });
 
+  describe("複数バージョンの投稿", () => {
+    // What: 配列に複数バージョンが含まれる場合のフロー
+    // Why: 複数バージョンが古い順（配列順）で各チャンネルに投稿されることを検証する
+    it("複数バージョンを配列順に Slack に投稿する", async () => {
+      // Given: 2つのバージョンを含む配列（古い順）
+      const blocks24: SlackBlock[] = [
+        { type: "header", text: { type: "plain_text", text: "Cursor 2.4 の更新", emoji: true } },
+      ];
+      const blocks25: SlackBlock[] = [
+        { type: "header", text: { type: "plain_text", text: "Cursor 2.5 の更新", emoji: true } },
+      ];
+
+      writeSummariesFile([
+        { version: "2.4", blocks: blocks24, fallbackText: "Cursor 2.4 の更新" },
+        { version: "2.5", blocks: blocks25, fallbackText: "Cursor 2.5 の更新" },
+      ]);
+
+      const deps = makeDeps();
+
+      // When: 通知スクリプトを実行する
+      await notifyHtmlCursor(deps);
+
+      // Then: postBlocks が2回呼ばれる（古い順）
+      expect(deps.postBlocks).toHaveBeenCalledTimes(2);
+      expect(deps.postBlocks).toHaveBeenNthCalledWith(
+        1,
+        "C_TEST",
+        blocks24,
+        "Cursor 2.4 の更新",
+        "xoxb-test",
+        { name: "Cursor Changelog", emoji: ":cursor:" },
+      );
+      expect(deps.postBlocks).toHaveBeenNthCalledWith(
+        2,
+        "C_TEST",
+        blocks25,
+        "Cursor 2.5 の更新",
+        "xoxb-test",
+        { name: "Cursor Changelog", emoji: ":cursor:" },
+      );
+    });
+
+    it("複数バージョン × 複数チャンネルに投稿する", async () => {
+      // Given: 2バージョン × 2チャンネル
+      writeSummariesFile([
+        { version: "2.4", blocks: MOCK_BLOCKS, fallbackText: "Cursor 2.4 の更新" },
+        { version: "2.5", blocks: MOCK_BLOCKS, fallbackText: "Cursor 2.5 の更新" },
+      ]);
+
+      const deps = makeDeps({
+        getChannels: () => ["C_TEST_1", "C_TEST_2"],
+      });
+
+      // When: 通知スクリプトを実行する
+      await notifyHtmlCursor(deps);
+
+      // Then: 2バージョン × 2チャンネル = 4回投稿
+      expect(deps.postBlocks).toHaveBeenCalledTimes(4);
+    });
+  });
+
   describe("botProfile なし", () => {
     it("botProfile が未設定の場合でも正常に投稿できる", async () => {
       // Given: botProfile が未設定
-      writeSummariesFile({
-        version: "2.5",
-        blocks: MOCK_BLOCKS,
-        fallbackText: "Cursor 2.5 の更新",
-      });
+      writeSummariesFile([
+        {
+          version: "2.5",
+          blocks: MOCK_BLOCKS,
+          fallbackText: "Cursor 2.5 の更新",
+        },
+      ]);
 
       const deps = makeDeps({ botProfile: undefined });
 

@@ -1,67 +1,119 @@
 import { describe, expect, it } from "vitest";
-import { validateCursorSummary } from "../services/cursor-summary-schema.js";
+import { validateCursorSummaries } from "../services/cursor-summary-schema.js";
 
 /**
- * What: Cursor サマリー JSON の Zod バリデーションをテストする
- * Why: Claude が生成した JSON が Slack Block Kit スキーマに準拠していることを保証する
+ * What: Cursor サマリー JSON 配列の Zod バリデーションをテストする
+ * Why: Claude が生成した JSON 配列が Slack Block Kit スキーマに準拠していることを保証する
  */
 
-describe("validateCursorSummary", () => {
-  it("正常な JSON がバリデーションを通過する", () => {
-    // What: 全フィールドが正しい JSON が通過するか
+describe("validateCursorSummaries", () => {
+  it("正常な JSON 配列がバリデーションを通過する", () => {
+    // What: 正しい形式の配列が通過するか
     // Why: 基本的な正常系の動作保証
 
-    // Given: 正しいスキーマの JSON
-    const data = {
-      version: "2.5",
-      fallbackText: "Cursor 2.5 の更新",
-      blocks: [
-        { type: "header", text: { type: "plain_text", text: "Cursor 2.5 の更新", emoji: true } },
-        { type: "section", text: { type: "mrkdwn", text: "テストコンテンツ" } },
-        { type: "divider" },
-        { type: "image", image_url: "https://example.com/img.png", alt_text: "Cursor 2.5" },
-      ],
-    };
+    // Given: 正しいスキーマの JSON 配列
+    const data = [
+      {
+        version: "2.5",
+        fallbackText: "Cursor 2.5 の更新",
+        blocks: [
+          { type: "header", text: { type: "plain_text", text: "Cursor 2.5 の更新", emoji: true } },
+          { type: "section", text: { type: "mrkdwn", text: "テストコンテンツ" } },
+          { type: "divider" },
+          { type: "image", image_url: "https://example.com/img.png", alt_text: "Cursor 2.5" },
+        ],
+      },
+    ];
 
     // When: バリデーションを実行する
-    const result = validateCursorSummary(data);
+    const result = validateCursorSummaries(data);
 
     // Then: 成功する
     expect(result.success).toBe(true);
   });
 
-  it("version が欠損している場合は失敗する", () => {
-    // What: version フィールドがない JSON を拒否するか
-    // Why: version は Slack 通知の必須情報
+  it("複数エントリの配列がバリデーションを通過する", () => {
+    // What: 複数バージョンを含む配列が通過するか
+    // Why: 複数バージョン同時通知に対応するため
 
-    // Given: version がない JSON
-    const data = {
-      fallbackText: "Cursor の更新",
-      blocks: [
-        { type: "header", text: { type: "plain_text", text: "Cursor の更新", emoji: true } },
-      ],
-    };
+    // Given: 2エントリの配列
+    const data = [
+      {
+        version: "2.4",
+        fallbackText: "Cursor 2.4 の更新",
+        blocks: [
+          { type: "header", text: { type: "plain_text", text: "Cursor 2.4 の更新", emoji: true } },
+        ],
+      },
+      {
+        version: "2.5",
+        fallbackText: "Cursor 2.5 の更新",
+        blocks: [
+          { type: "header", text: { type: "plain_text", text: "Cursor 2.5 の更新", emoji: true } },
+        ],
+      },
+    ];
 
     // When: バリデーションを実行する
-    const result = validateCursorSummary(data);
+    const result = validateCursorSummaries(data);
+
+    // Then: 成功する
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(2);
+    }
+  });
+
+  it("空配列で失敗する", () => {
+    // What: 空配列を拒否するか
+    // Why: 空の通知配列を許可しない
+
+    // Given: 空配列
+    const data: unknown[] = [];
+
+    // When: バリデーションを実行する
+    const result = validateCursorSummaries(data);
+
+    // Then: 失敗する
+    expect(result.success).toBe(false);
+  });
+
+  it("version が欠損している場合は失敗する", () => {
+    // What: version フィールドがない要素を含む配列を拒否するか
+    // Why: version は Slack 通知の必須情報
+
+    // Given: version がないエントリ
+    const data = [
+      {
+        fallbackText: "Cursor の更新",
+        blocks: [
+          { type: "header", text: { type: "plain_text", text: "Cursor の更新", emoji: true } },
+        ],
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateCursorSummaries(data);
 
     // Then: 失敗する
     expect(result.success).toBe(false);
   });
 
   it("不正なブロックタイプで失敗する", () => {
-    // What: 未知のブロックタイプを含む JSON を拒否するか
+    // What: 未知のブロックタイプを含む要素を拒否するか
     // Why: Slack API が受け付けないブロックを事前に検出する
 
     // Given: 不正な type を持つブロック
-    const data = {
-      version: "2.5",
-      fallbackText: "Cursor 2.5 の更新",
-      blocks: [{ type: "unknown_block" }],
-    };
+    const data = [
+      {
+        version: "2.5",
+        fallbackText: "Cursor 2.5 の更新",
+        blocks: [{ type: "unknown_block" }],
+      },
+    ];
 
     // When: バリデーションを実行する
-    const result = validateCursorSummary(data);
+    const result = validateCursorSummaries(data);
 
     // Then: 失敗する
     expect(result.success).toBe(false);
@@ -72,32 +124,36 @@ describe("validateCursorSummary", () => {
     // Why: Slack API は section.text を 3000 文字に制限している
 
     // Given: 3001 文字のテキストを持つ section
-    const data = {
-      version: "2.5",
-      fallbackText: "Cursor 2.5 の更新",
-      blocks: [{ type: "section", text: { type: "mrkdwn", text: "x".repeat(3001) } }],
-    };
+    const data = [
+      {
+        version: "2.5",
+        fallbackText: "Cursor 2.5 の更新",
+        blocks: [{ type: "section", text: { type: "mrkdwn", text: "x".repeat(3001) } }],
+      },
+    ];
 
     // When: バリデーションを実行する
-    const result = validateCursorSummary(data);
+    const result = validateCursorSummaries(data);
 
     // Then: 失敗する
     expect(result.success).toBe(false);
   });
 
-  it("blocks が空配列で失敗する", () => {
-    // What: ブロックが空の JSON を拒否するか
+  it("blocks が空配列のエントリで失敗する", () => {
+    // What: ブロックが空のエントリを含む配列を拒否するか
     // Why: 空の通知を Slack に送信するのを防止する
 
-    // Given: blocks が空の JSON
-    const data = {
-      version: "2.5",
-      fallbackText: "Cursor 2.5 の更新",
-      blocks: [],
-    };
+    // Given: blocks が空のエントリ
+    const data = [
+      {
+        version: "2.5",
+        fallbackText: "Cursor 2.5 の更新",
+        blocks: [],
+      },
+    ];
 
     // When: バリデーションを実行する
-    const result = validateCursorSummary(data);
+    const result = validateCursorSummaries(data);
 
     // Then: 失敗する
     expect(result.success).toBe(false);
@@ -107,11 +163,11 @@ describe("validateCursorSummary", () => {
     // What: 失敗時に詳細なエラー情報を返すか
     // Why: Claude が自己修復するためにエラー内容を読む必要がある
 
-    // Given: 不正な JSON
-    const data = { version: 123 };
+    // Given: 不正なデータ
+    const data = [{ version: 123 }];
 
     // When: バリデーションを実行する
-    const result = validateCursorSummary(data);
+    const result = validateCursorSummaries(data);
 
     // Then: 失敗し、エラーメッセージが存在する
     expect(result.success).toBe(false);

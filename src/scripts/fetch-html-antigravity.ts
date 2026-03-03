@@ -4,7 +4,7 @@ import { DATA_DIR } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
 import type { AntigravityVersionContent } from "../services/antigravity-parser.js";
 import {
-  parseLatestVersion as parseLatestVersionImpl,
+  parseAllVersions as parseAllVersionsImpl,
   parseVersionContent as parseVersionContentImpl,
 } from "../services/antigravity-parser.js";
 import type { PlaywrightFetchOptions } from "../services/playwright-service.js";
@@ -17,12 +17,13 @@ import {
 
 const SOURCE_NAME = "antigravity";
 const CHANGELOG_URL = "https://antigravity.google/changelog";
+const MAX_INITIAL_VERSIONS = 5;
 
 export interface FetchHtmlAntigravityDeps {
   readonly dataRoot: string;
   readonly htmlCurrentDir: string;
   readonly fetchHeadlessHtml: (url: string, opts?: PlaywrightFetchOptions) => Promise<string>;
-  readonly parseLatestVersion: (html: string) => string | null;
+  readonly parseAllVersions: (html: string) => string[];
   readonly parseVersionContent: (html: string, version: string) => AntigravityVersionContent | null;
   readonly loadState: (root: string) => Promise<SnapshotState>;
   readonly saveState: (state: SnapshotState, root: string) => Promise<void>;
@@ -30,7 +31,7 @@ export interface FetchHtmlAntigravityDeps {
 
 export interface FetchHtmlAntigravityResult {
   readonly hasChanges: boolean;
-  readonly newVersion?: string;
+  readonly newVersions?: string[];
   readonly error?: string;
 }
 
@@ -65,46 +66,81 @@ export async function fetchHtmlAntigravity(
     };
   }
 
-  // フェーズ2: バージョン検出
-  const latestVersion = deps.parseLatestVersion(html);
-  if (!latestVersion) {
-    logError("Could not parse latest version from antigravity HTML");
+  // フェーズ2: 全バージョン検出
+  const allVersions = deps.parseAllVersions(html);
+  if (allVersions.length === 0) {
+    logError("Could not parse any versions from antigravity HTML");
     return {
       hasChanges: false,
-      error: "Could not parse latest version from antigravity HTML",
+      error: "Could not parse any versions from antigravity HTML",
     };
   }
+
+  const latestVersion = allVersions[0];
 
   // 同一バージョンチェック
   if (existingVersion === latestVersion) {
     return { hasChanges: false };
   }
 
-  // フェーズ3: コンテンツ抽出
-  const versionContent = deps.parseVersionContent(html, latestVersion);
-  if (!versionContent) {
-    logError(`Could not parse content for version ${latestVersion}`);
+  // フェーズ3: 未通知バージョンの特定
+  let newVersions: string[];
+  if (!existingVersion) {
+    // 初回実行: 最新5件まで
+    newVersions = allVersions.slice(0, MAX_INITIAL_VERSIONS);
+  } else {
+    const existingIdx = allVersions.indexOf(existingVersion);
+    if (existingIdx === -1) {
+      // 既存バージョンがページにない → 全バージョンを取得
+      newVersions = [...allVersions];
+    } else {
+      // existingVersion の手前まで
+      newVersions = allVersions.slice(0, existingIdx);
+    }
+  }
+
+  // 古い順に反転
+  newVersions.reverse();
+
+  // フェーズ4: 各バージョンのコンテンツ抽出
+  const entries: Array<{
+    version: string;
+    improvementsEn: string[];
+    fixesEn: string[];
+    patchesEn: string[];
+    fetchedAt: string;
+  }> = [];
+
+  for (const version of newVersions) {
+    const content = deps.parseVersionContent(html, version);
+    if (!content) {
+      logError(`Could not parse content for version ${version}, skipping`);
+      continue;
+    }
+    entries.push({
+      version,
+      improvementsEn: [...content.improvementsEn],
+      fixesEn: [...content.fixesEn],
+      patchesEn: [...content.patchesEn],
+      fetchedAt: now,
+    });
+  }
+
+  if (entries.length === 0) {
+    logError("Could not extract content for any new versions");
     return {
       hasChanges: false,
-      error: `Could not parse content for version ${latestVersion}`,
+      error: "Could not extract content for any new versions",
     };
   }
 
-  // フェーズ4: JSON ファイル書き出し（3カテゴリ構成を維持）
-  const outputFile = {
-    version: latestVersion,
-    improvementsEn: [...versionContent.improvementsEn],
-    fixesEn: [...versionContent.fixesEn],
-    patchesEn: [...versionContent.patchesEn],
-    fetchedAt: now,
-  };
-
+  // フェーズ5: JSON 配列ファイル書き出し
   writeFileSync(
     resolve(deps.htmlCurrentDir, "antigravity.json"),
-    JSON.stringify(outputFile, null, 2),
+    JSON.stringify(entries, null, 2),
   );
 
-  // フェーズ5: state 更新
+  // フェーズ6: state 更新（最新バージョンで）
   state.sources[SOURCE_NAME] = {
     hash: "",
     lastCheckedAt: now,
@@ -114,7 +150,7 @@ export async function fetchHtmlAntigravity(
 
   return {
     hasChanges: true,
-    newVersion: latestVersion,
+    newVersions: entries.map((e) => e.version),
   };
 }
 
@@ -125,7 +161,7 @@ async function main(): Promise<void> {
     dataRoot: DATA_DIR.root,
     htmlCurrentDir: DATA_DIR.htmlCurrent,
     fetchHeadlessHtml: fetchHeadlessHtmlImpl,
-    parseLatestVersion: parseLatestVersionImpl,
+    parseAllVersions: parseAllVersionsImpl,
     parseVersionContent: parseVersionContentImpl,
     loadState: loadStateImpl,
     saveState: saveStateImpl,
@@ -138,7 +174,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Has changes: ${result.hasChanges}`);
-  if (result.newVersion) console.log(`New version: ${result.newVersion}`);
+  if (result.newVersions) console.log(`New versions: ${result.newVersions.join(", ")}`);
   if (result.error) console.error(`Error: ${result.error}`);
 }
 

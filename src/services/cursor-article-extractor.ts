@@ -8,18 +8,23 @@ export interface MuxVideo {
 
 const VERSION_PATTERN = /^\d+\.\d+$/;
 
-export function parseLatestVersion(html: string): string | null {
+export function parseAllVersions(html: string): string[] {
   const $ = cheerio.load(html);
+  const versions: string[] = [];
 
   const labels = $("article span.label").toArray();
   for (const label of labels) {
     const text = $(label).text().trim();
     if (VERSION_PATTERN.test(text)) {
-      return text;
+      versions.push(text);
     }
   }
 
-  return null;
+  return versions;
+}
+
+export function parseLatestVersion(html: string): string | null {
+  return parseAllVersions(html)[0] ?? null;
 }
 
 /**

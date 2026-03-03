@@ -10,19 +10,24 @@ export interface AntigravityVersionContent {
 
 const VERSION_PATTERN = /^(\d+\.\d+\.\d+)/;
 
-export function parseLatestVersion(html: string): string | null {
+export function parseAllVersions(html: string): string[] {
   const $ = cheerio.load(html);
+  const versions: string[] = [];
 
   const versionDivs = $("div.version p.body").toArray();
   for (const el of versionDivs) {
     const text = $(el).text().trim();
     const match = text.match(VERSION_PATTERN);
     if (match) {
-      return match[1];
+      versions.push(match[1]);
     }
   }
 
-  return null;
+  return versions;
+}
+
+export function parseLatestVersion(html: string): string | null {
+  return parseAllVersions(html)[0] ?? null;
 }
 
 export function parseVersionContent(

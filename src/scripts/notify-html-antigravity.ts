@@ -23,7 +23,7 @@ export interface NotifyHtmlAntigravityDeps {
   ) => Promise<PostResult>;
 }
 
-interface AntigravitySummariesFile {
+interface AntigravitySummariesEntry {
   version: string;
   improvementsJa: string[];
   fixesJa: string[];
@@ -32,24 +32,26 @@ interface AntigravitySummariesFile {
 
 export async function notifyHtmlAntigravity(deps: NotifyHtmlAntigravityDeps): Promise<void> {
   const filePath = resolve(deps.htmlSummariesDir, "antigravity.json");
-  const raw = JSON.parse(readFileSync(filePath, "utf-8")) as AntigravitySummariesFile;
-
-  const content: AntigravityTranslatedContent = {
-    version: raw.version,
-    improvementsJa: raw.improvementsJa,
-    fixesJa: raw.fixesJa,
-    patchesJa: raw.patchesJa,
-  };
-
-  const blocks = deps.buildBlocks(content);
-  const fallbackText = `Antigravity ${raw.version} の更新`;
+  const entries = JSON.parse(readFileSync(filePath, "utf-8")) as AntigravitySummariesEntry[];
   const channels = deps.getChannels(SOURCE_NAME);
 
-  await Promise.all(
-    channels.map(async (channel) => {
-      await deps.postBlocks(channel, blocks, fallbackText, deps.slackToken, deps.botProfile);
-    }),
-  );
+  for (const entry of entries) {
+    const content: AntigravityTranslatedContent = {
+      version: entry.version,
+      improvementsJa: entry.improvementsJa,
+      fixesJa: entry.fixesJa,
+      patchesJa: entry.patchesJa,
+    };
+
+    const blocks = deps.buildBlocks(content);
+    const fallbackText = `Antigravity ${entry.version} の更新`;
+
+    await Promise.all(
+      channels.map(async (channel) => {
+        await deps.postBlocks(channel, blocks, fallbackText, deps.slackToken, deps.botProfile);
+      }),
+    );
+  }
 }
 
 async function main(): Promise<void> {

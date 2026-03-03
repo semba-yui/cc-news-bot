@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   parseLatestVersion,
+  parseAllVersions,
   extractArticleRscPayload,
   extractMuxVideoData,
 } from "../services/cursor-article-extractor.js";
@@ -53,6 +54,41 @@ describe("cursor-article-extractor", () => {
 
       // Then: null が返される
       expect(result).toBeNull();
+    });
+  });
+
+  describe("parseAllVersions", () => {
+    // What: HTML から全バージョンを降順（最新が先頭）で列挙する
+    // Why: cron 間に複数リリースがあった場合に中間バージョンを見逃さないため
+
+    it("HTML から全バージョンを降順（最新が先頭）で返す", () => {
+      // Given: 複数バージョンを含むフィクスチャ HTML
+      // When: parseAllVersions を呼び出す
+      const result = parseAllVersions(fixtureHtml);
+
+      // Then: 配列が返され、先頭が最新バージョン、複数件含まれる
+      expect(result.length).toBeGreaterThan(1);
+      expect(result[0]).toBe("2.5");
+    });
+
+    it("バージョンラベルがない HTML では空配列を返す", () => {
+      // Given: バージョンラベルを含まない HTML
+      const html = "<html><body><article><h1>No changelog</h1></article></body></html>";
+
+      // When: parseAllVersions を呼び出す
+      const result = parseAllVersions(html);
+
+      // Then: 空配列が返される
+      expect(result).toEqual([]);
+    });
+
+    it("空の HTML では空配列を返す", () => {
+      // Given: 空の HTML
+      // When: parseAllVersions を呼び出す
+      const result = parseAllVersions("");
+
+      // Then: 空配列が返される
+      expect(result).toEqual([]);
     });
   });
 

@@ -11,10 +11,10 @@ import {
 } from "../scripts/fetch-html-antigravity.js";
 
 // What: Antigravity の HTML 取得スクリプトのテスト
-// Why: Playwright 経由での取得・差分検出・JSON 書き出し・初回実行スキップ・
+// Why: Playwright 経由での取得・複数バージョン差分検出・JSON 配列書き出し・
 //      エラーハンドリング等のフローが正しく動作することを保証する
 
-interface AntigravityCurrentFile {
+interface AntigravityCurrentEntry {
   version: string;
   improvementsEn: string[];
   fixesEn: string[];
@@ -32,12 +32,14 @@ interface StructuredLogEntry {
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-fetch-html-antigravity");
 const HTML_CURRENT_DIR = resolve(TEST_ROOT, "html-current");
 
-const SAMPLE_VERSION_CONTENT: AntigravityVersionContent = {
-  version: "1.19.6",
-  improvementsEn: ["Improved performance of X", "Better Y handling"],
-  fixesEn: ["Fixed crash on Z"],
-  patchesEn: [],
-};
+function makeVersionContent(version: string): AntigravityVersionContent {
+  return {
+    version,
+    improvementsEn: [`Improved ${version}`],
+    fixesEn: [`Fixed ${version}`],
+    patchesEn: [],
+  };
+}
 
 function makeDeps(overrides: Partial<FetchHtmlAntigravityDeps> = {}): FetchHtmlAntigravityDeps {
   return {
@@ -46,10 +48,12 @@ function makeDeps(overrides: Partial<FetchHtmlAntigravityDeps> = {}): FetchHtmlA
     fetchHeadlessHtml: vi
       .fn<(url: string, opts?: PlaywrightFetchOptions) => Promise<string>>()
       .mockResolvedValue("<html>mock antigravity changelog</html>"),
-    parseLatestVersion: vi.fn<(html: string) => string | null>().mockReturnValue("1.19.6"),
+    parseAllVersions: vi
+      .fn<(html: string) => string[]>()
+      .mockReturnValue(["1.19.6", "1.19.5", "1.19.4", "1.19.3"]),
     parseVersionContent: vi
       .fn<(html: string, version: string) => AntigravityVersionContent | null>()
-      .mockReturnValue(SAMPLE_VERSION_CONTENT),
+      .mockImplementation((_html: string, version: string) => makeVersionContent(version)),
     loadState: vi.fn<(root: string) => Promise<SnapshotState>>().mockResolvedValue({
       lastRunAt: "",
       sources: {
@@ -74,33 +78,34 @@ describe("fetchHtmlAntigravity", () => {
     rmSync(TEST_ROOT, { recursive: true, force: true });
   });
 
-  describe("正常系: 新バージョン検出", () => {
-    // What: ヘッドレスブラウザ経由で新バージョンが検出される標準フロー
-    // Why: JSON ファイル書き出し（3カテゴリ構成維持）・state 更新が正しく行われることを検証する
-    it("新バージョン検出時に html-current/antigravity.json を書き出し state を更新する", async () => {
-      // Given: 既存バージョンが 1.19.5 で、最新が 1.19.6
+  describe("正常系: 単一新バージョン検出", () => {
+    // What: 1つの新バージョンが検出される標準フロー
+    // Why: JSON 配列書き出し・state 更新が正しく行われることを検証する
+    it("新バージョン検出時に html-current/antigravity.json を配列で書き出し state を更新する", async () => {
+      // Given: 既存バージョンが 1.19.5 で、最新が 1.19.6（新バージョン1件）
       const deps = makeDeps();
 
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlAntigravity(deps);
 
-      // Then: 変更あり
+      // Then: 変更あり、新バージョンが配列で返される
       expect(result).toEqual<FetchHtmlAntigravityResult>({
         hasChanges: true,
-        newVersion: "1.19.6",
+        newVersions: ["1.19.6"],
       });
 
-      // Then: html-current/antigravity.json が正しいフォーマットで書き出される
-      const outputFile = JSON.parse(
+      // Then: html-current/antigravity.json が配列形式で書き出される
+      const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "antigravity.json"), "utf-8"),
-      ) as AntigravityCurrentFile;
-      expect(outputFile.version).toBe("1.19.6");
-      expect(outputFile.improvementsEn).toEqual(["Improved performance of X", "Better Y handling"]);
-      expect(outputFile.fixesEn).toEqual(["Fixed crash on Z"]);
-      expect(outputFile.patchesEn).toEqual([]);
-      expect(outputFile.fetchedAt).toBeDefined();
+      ) as AntigravityCurrentEntry[];
+      expect(entries).toHaveLength(1);
+      expect(entries[0].version).toBe("1.19.6");
+      expect(entries[0].improvementsEn).toEqual(["Improved 1.19.6"]);
+      expect(entries[0].fixesEn).toEqual(["Fixed 1.19.6"]);
+      expect(entries[0].patchesEn).toEqual([]);
+      expect(entries[0].fetchedAt).toBeDefined();
 
-      // Then: state が更新される
+      // Then: state が最新バージョンで更新される
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
@@ -108,12 +113,57 @@ describe("fetchHtmlAntigravity", () => {
     });
   });
 
-  describe("初回実行: latestVersion なし (Req 1.3)", () => {
-    // What: state に latestVersion が存在しない初回実行ケース
-    // Why: 初回実行でも通常の新バージョン検出と同じフローで通知することを検証する
-    it("hasChanges=true を返し JSON 書き出しと state 更新を行う", async () => {
-      // Given: state にソースエントリが存在しない（初回実行）
+  describe("正常系: 複数バージョン未通知", () => {
+    // What: cron 間に複数バージョンがリリースされたケース
+    // Why: 中間バージョンを見逃さず、全て古い順で配列に含まれることを検証する
+    it("複数の未通知バージョンを全て古い順で配列書き出しする", async () => {
+      // Given: 既存バージョンが 1.19.3、ページには [1.19.6, 1.19.5, 1.19.4, 1.19.3]
       const deps = makeDeps({
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: {
+            antigravity: {
+              hash: "",
+              lastCheckedAt: "2026-03-01T00:00:00.000Z",
+              latestVersion: "1.19.3",
+            },
+          },
+        }),
+      });
+
+      // When: 取得スクリプトを実行する
+      const result = await fetchHtmlAntigravity(deps);
+
+      // Then: 3件の新バージョンが古い順で返される
+      expect(result.hasChanges).toBe(true);
+      expect(result.newVersions).toEqual(["1.19.4", "1.19.5", "1.19.6"]);
+
+      // Then: JSON 配列が古い順で書き出される
+      const entries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "antigravity.json"), "utf-8"),
+      ) as AntigravityCurrentEntry[];
+      expect(entries).toHaveLength(3);
+      expect(entries[0].version).toBe("1.19.4");
+      expect(entries[1].version).toBe("1.19.5");
+      expect(entries[2].version).toBe("1.19.6");
+
+      // Then: state は最新バージョンで更新される
+      const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as SnapshotState;
+      expect(savedState.sources["antigravity"].latestVersion).toBe("1.19.6");
+    });
+  });
+
+  describe("初回実行: latestVersion なし", () => {
+    // What: state に latestVersion が存在しない初回実行ケース
+    // Why: 初回実行時は最新5件まで取得し、複数バージョン通知のテストにも使えることを検証する
+    it("最新5件まで取得し古い順で配列書き出しする", async () => {
+      // Given: state にソースエントリが存在しない（初回実行）
+      //        ページには6件以上のバージョンがある
+      const deps = makeDeps({
+        parseAllVersions: vi.fn().mockReturnValue([
+          "1.19.6", "1.19.5", "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19.0",
+        ]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
           sources: {},
@@ -123,24 +173,113 @@ describe("fetchHtmlAntigravity", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlAntigravity(deps);
 
-      // Then: 変更あり（通知される）
+      // Then: 最新5件が古い順で返される
       expect(result.hasChanges).toBe(true);
-      expect(result.newVersion).toBe("1.19.6");
+      expect(result.newVersions).toEqual(["1.19.2", "1.19.3", "1.19.4", "1.19.5", "1.19.6"]);
 
-      // Then: state にバージョンが記録される
-      expect(deps.saveState).toHaveBeenCalledTimes(1);
+      // Then: state は最新バージョンで更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
       expect(savedState.sources["antigravity"].latestVersion).toBe("1.19.6");
     });
   });
 
+  describe("既存バージョンがページに見つからない場合", () => {
+    // What: 既存バージョンが古すぎてページから消えているケース
+    // Why: 全表示バージョンを取得して見逃しを防ぐことを検証する
+    it("ページ上の全バージョンを取得する", async () => {
+      // Given: 既存バージョン "1.15.0" がページにない
+      const deps = makeDeps({
+        parseAllVersions: vi.fn().mockReturnValue(["1.19.6", "1.19.5"]),
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: {
+            antigravity: {
+              hash: "",
+              lastCheckedAt: "2026-03-01T00:00:00.000Z",
+              latestVersion: "1.15.0",
+            },
+          },
+        }),
+      });
+
+      // When: 取得スクリプトを実行する
+      const result = await fetchHtmlAntigravity(deps);
+
+      // Then: ページ上の全バージョンが古い順で返される
+      expect(result.hasChanges).toBe(true);
+      expect(result.newVersions).toEqual(["1.19.5", "1.19.6"]);
+    });
+  });
+
+  describe("一部バージョンの parseVersionContent が null の場合", () => {
+    // What: 一部バージョンのコンテンツ抽出に失敗するケース
+    // Why: 抽出失敗バージョンをスキップし、成功したバージョンは通知されることを検証する
+    it("コンテンツ抽出成功分のみ配列に含まれる", async () => {
+      // Given: 1.19.4 のコンテンツ抽出が失敗し、1.19.5 と 1.19.6 は成功
+      const deps = makeDeps({
+        parseAllVersions: vi.fn().mockReturnValue(["1.19.6", "1.19.5", "1.19.4", "1.19.3"]),
+        parseVersionContent: vi.fn().mockImplementation((_html: string, version: string) => {
+          if (version === "1.19.4") return null;
+          return makeVersionContent(version);
+        }),
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: {
+            antigravity: {
+              hash: "",
+              lastCheckedAt: "2026-03-01T00:00:00.000Z",
+              latestVersion: "1.19.3",
+            },
+          },
+        }),
+      });
+
+      // When: 取得スクリプトを実行する
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const result = await fetchHtmlAntigravity(deps);
+      consoleSpy.mockRestore();
+
+      // Then: 成功分のみ含まれ、失敗分はスキップ
+      expect(result.hasChanges).toBe(true);
+      expect(result.newVersions).toEqual(["1.19.5", "1.19.6"]);
+
+      const entries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "antigravity.json"), "utf-8"),
+      ) as AntigravityCurrentEntry[];
+      expect(entries).toHaveLength(2);
+      expect(entries[0].version).toBe("1.19.5");
+      expect(entries[1].version).toBe("1.19.6");
+    });
+  });
+
+  describe("全バージョンの parseVersionContent が null の場合", () => {
+    // What: 全バージョンのコンテンツ抽出に失敗するケース
+    // Why: 通知可能なバージョンがない場合にエラーを返すことを検証する
+    it("hasChanges=false とエラーを返す", async () => {
+      // Given: 全バージョンの parseVersionContent が null
+      const deps = makeDeps({
+        parseVersionContent: vi.fn().mockReturnValue(null),
+      });
+
+      // When: 取得スクリプトを実行する
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const result = await fetchHtmlAntigravity(deps);
+      consoleSpy.mockRestore();
+
+      // Then: 変更なしでエラー
+      expect(result.hasChanges).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+  });
+
   describe("同一バージョン検出", () => {
-    // What: 既存バージョンと同じバージョンが検出されるケース
+    // What: 既存バージョンと同じ最新バージョンが検出されるケース
     // Why: 冪等性を保証し、重複通知を防止する
     it("hasChanges=false を返しファイル書き出しをスキップする", async () => {
-      // Given: 既存バージョンと同じ 1.19.6 が検出される
+      // Given: 既存バージョンと最新が同じ 1.19.6
       const deps = makeDeps({
+        parseAllVersions: vi.fn().mockReturnValue(["1.19.6", "1.19.5"]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
           sources: {
@@ -159,14 +298,14 @@ describe("fetchHtmlAntigravity", () => {
       // Then: 変更なし
       expect(result.hasChanges).toBe(false);
 
-      // Then: state の保存は呼ばれない（変更なし）
+      // Then: state の保存は呼ばれない
       expect(deps.saveState).not.toHaveBeenCalled();
     });
   });
 
-  describe("Playwright 取得失敗 (Req 4.5)", () => {
+  describe("Playwright 取得失敗", () => {
     // What: ヘッドレスブラウザによる HTML 取得が失敗するケース
-    // Why: 要件 4.5 に従い、取得失敗時にエラーログ記録・通知スキップすることを検証する
+    // Why: 取得失敗時にエラーログ記録・通知スキップすることを検証する
     it("hasChanges=false とエラーメッセージを返す", async () => {
       // Given: Playwright による取得が失敗する
       const deps = makeDeps({
@@ -182,13 +321,13 @@ describe("fetchHtmlAntigravity", () => {
     });
   });
 
-  describe("parseLatestVersion が null を返す", () => {
-    // What: HTML から最新バージョンを抽出できないケース（DOM 構造変更等）
+  describe("parseAllVersions が空配列を返す", () => {
+    // What: HTML からバージョンを1つも抽出できないケース（DOM 構造変更等）
     // Why: パーサ失敗時に安全にエラーを返すことを検証する
     it("hasChanges=false とエラーを返す", async () => {
-      // Given: parseLatestVersion が null を返す
+      // Given: parseAllVersions が空配列を返す
       const deps = makeDeps({
-        parseLatestVersion: vi.fn().mockReturnValue(null),
+        parseAllVersions: vi.fn().mockReturnValue([]),
       });
 
       // When: 取得スクリプトを実行する
@@ -200,27 +339,9 @@ describe("fetchHtmlAntigravity", () => {
     });
   });
 
-  describe("parseVersionContent が null を返す", () => {
-    // What: バージョンは見つかったがコンテンツ抽出に失敗するケース
-    // Why: Antigravity にはフォールバックがないため、エラーとして処理されることを検証する
-    it("hasChanges=false とエラーを返す", async () => {
-      // Given: parseVersionContent が null を返す
-      const deps = makeDeps({
-        parseVersionContent: vi.fn().mockReturnValue(null),
-      });
-
-      // When: 取得スクリプトを実行する
-      const result = await fetchHtmlAntigravity(deps);
-
-      // Then: 変更なしでエラー
-      expect(result.hasChanges).toBe(false);
-      expect(result.error).toBeDefined();
-    });
-  });
-
-  describe("構造化エラーログ (Req 6.1)", () => {
+  describe("構造化エラーログ", () => {
     // What: エラー発生時のログフォーマット
-    // Why: 要件 6.1 のエラーログ形式（ソース名・メッセージ・タイムスタンプ）を検証する
+    // Why: エラーログ形式（ソース名・メッセージ・タイムスタンプ）を検証する
     it("Playwright 取得失敗時に構造化ログを出力する", async () => {
       // Given: Playwright による取得が失敗する
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -262,7 +383,6 @@ describe("fetchHtmlAntigravity", () => {
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
       expect(savedState.sources["antigravity"].lastCheckedAt).toBeDefined();
-      // ISO 8601 形式であること
       expect(new Date(savedState.sources["antigravity"].lastCheckedAt).toISOString()).toBeTruthy();
     });
   });

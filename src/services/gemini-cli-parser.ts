@@ -10,17 +10,27 @@ export interface GeminiCliVersionContent {
 const VERSION_TEXT_PATTERN = /(v\d+\.\d+\.\d+)/;
 const VERSION_ID_PREFIX = "announcements-v";
 
-export function parseLatestVersion(html: string): string | null {
+export function parseAllVersions(html: string): string[] {
   const $ = cheerio.load(html);
-  const firstH2 = $("h2[id]")
+  const versions: string[] = [];
+
+  const h2s = $("h2[id]")
     .toArray()
-    .find((el) => ($(el).attr("id") ?? "").startsWith(VERSION_ID_PREFIX));
+    .filter((el) => ($(el).attr("id") ?? "").startsWith(VERSION_ID_PREFIX));
 
-  if (!firstH2) return null;
+  for (const h2 of h2s) {
+    const text = $(h2).text();
+    const match = text.match(VERSION_TEXT_PATTERN);
+    if (match) {
+      versions.push(match[1]);
+    }
+  }
 
-  const text = $(firstH2).text();
-  const match = text.match(VERSION_TEXT_PATTERN);
-  return match ? match[1] : null;
+  return versions;
+}
+
+export function parseLatestVersion(html: string): string | null {
+  return parseAllVersions(html)[0] ?? null;
 }
 
 export function parseVersionContent(html: string, version: string): GeminiCliVersionContent | null {

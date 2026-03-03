@@ -4,7 +4,7 @@ import { DATA_DIR } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
 import type { MuxVideo } from "../services/cursor-article-extractor.js";
 import {
-  parseLatestVersion as parseLatestVersionImpl,
+  parseAllVersions as parseAllVersionsImpl,
   extractArticleRscPayload as extractArticleRscPayloadImpl,
   extractMuxVideoData as extractMuxVideoDataImpl,
 } from "../services/cursor-article-extractor.js";
@@ -18,12 +18,13 @@ import {
 
 const SOURCE_NAME = "cursor";
 const CHANGELOG_URL = "https://cursor.com/ja/changelog";
+const MAX_INITIAL_VERSIONS = 5;
 
 export interface FetchHtmlCursorDeps {
   readonly dataRoot: string;
   readonly htmlCurrentDir: string;
   readonly fetchStaticHtml: (url: string, opts?: HtmlFetchOptions) => Promise<string>;
-  readonly parseLatestVersion: (html: string) => string | null;
+  readonly parseAllVersions: (html: string) => string[];
   readonly extractArticleRscPayload: (html: string, version: string) => string | null;
   readonly extractMuxVideoData: (html: string, slug: string) => MuxVideo[];
   readonly loadState: (root: string) => Promise<SnapshotState>;
@@ -32,7 +33,7 @@ export interface FetchHtmlCursorDeps {
 
 export interface FetchHtmlCursorResult {
   readonly hasChanges: boolean;
-  readonly newVersion?: string;
+  readonly newVersions?: string[];
   readonly error?: string;
 }
 
@@ -65,51 +66,83 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
     };
   }
 
-  // フェーズ2: バージョン検出
-  const latestVersion = deps.parseLatestVersion(html);
-  if (!latestVersion) {
-    logError("Could not parse latest version from cursor.com HTML");
+  // フェーズ2: 全バージョン検出
+  const allVersions = deps.parseAllVersions(html);
+  if (allVersions.length === 0) {
+    logError("Could not parse any versions from cursor.com HTML");
     return {
       hasChanges: false,
-      error: "Could not parse latest version from cursor.com HTML",
+      error: "Could not parse any versions from cursor.com HTML",
     };
   }
+
+  const latestVersion = allVersions[0];
 
   // 同一バージョンチェック
   if (existingVersion === latestVersion) {
     return { hasChanges: false };
   }
 
-  // フェーズ3: RSC ペイロード抽出
-  const rscPayload = deps.extractArticleRscPayload(html, latestVersion);
-  if (!rscPayload) {
-    logError(`Could not extract RSC payload for version ${latestVersion}`);
+  // フェーズ3: 未通知バージョンの特定
+  let newVersions: string[];
+  if (!existingVersion) {
+    newVersions = allVersions.slice(0, MAX_INITIAL_VERSIONS);
+  } else {
+    const existingIdx = allVersions.indexOf(existingVersion);
+    if (existingIdx === -1) {
+      newVersions = [...allVersions];
+    } else {
+      newVersions = allVersions.slice(0, existingIdx);
+    }
+  }
+
+  // 古い順に反転
+  newVersions.reverse();
+
+  // フェーズ4: 各バージョンのコンテンツ抽出
+  const entries: Array<{
+    version: string;
+    rscPayload: string;
+    articleHtml: string;
+    muxVideos: Array<{ playbackId: string; thumbnailUrl: string; hlsUrl: string }>;
+    fetchedAt: string;
+  }> = [];
+
+  for (const version of newVersions) {
+    const rscPayload = deps.extractArticleRscPayload(html, version);
+    if (!rscPayload) {
+      logError(`Could not extract RSC payload for version ${version}, skipping`);
+      continue;
+    }
+
+    const slug = version.replace(/\./g, "-");
+    const muxVideos = deps.extractMuxVideoData(html, slug);
+
+    entries.push({
+      version,
+      rscPayload,
+      articleHtml: "",
+      muxVideos: muxVideos.map((v) => ({
+        playbackId: v.playbackId,
+        thumbnailUrl: v.thumbnailUrl,
+        hlsUrl: v.hlsUrl,
+      })),
+      fetchedAt: now,
+    });
+  }
+
+  if (entries.length === 0) {
+    logError("Could not extract content for any new versions");
     return {
       hasChanges: false,
-      error: `Could not extract RSC payload for version ${latestVersion}`,
+      error: "Could not extract content for any new versions",
     };
   }
 
-  // フェーズ3b: Mux 動画抽出（slug はバージョンからドットをハイフンに変換）
-  const slug = latestVersion.replace(/\./g, "-");
-  const muxVideos = deps.extractMuxVideoData(html, slug);
+  // フェーズ5: JSON 配列ファイル書き出し
+  writeFileSync(resolve(deps.htmlCurrentDir, "cursor.json"), JSON.stringify(entries, null, 2));
 
-  // フェーズ4: JSON ファイル書き出し
-  const outputFile = {
-    version: latestVersion,
-    rscPayload,
-    articleHtml: "",
-    muxVideos: muxVideos.map((v) => ({
-      playbackId: v.playbackId,
-      thumbnailUrl: v.thumbnailUrl,
-      hlsUrl: v.hlsUrl,
-    })),
-    fetchedAt: now,
-  };
-
-  writeFileSync(resolve(deps.htmlCurrentDir, "cursor.json"), JSON.stringify(outputFile, null, 2));
-
-  // フェーズ5: state 更新
+  // フェーズ6: state 更新
   state.sources[SOURCE_NAME] = {
     hash: "",
     lastCheckedAt: now,
@@ -119,7 +152,7 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
 
   return {
     hasChanges: true,
-    newVersion: latestVersion,
+    newVersions: entries.map((e) => e.version),
   };
 }
 
@@ -130,7 +163,7 @@ async function main(): Promise<void> {
     dataRoot: DATA_DIR.root,
     htmlCurrentDir: DATA_DIR.htmlCurrent,
     fetchStaticHtml: fetchStaticHtmlImpl,
-    parseLatestVersion: parseLatestVersionImpl,
+    parseAllVersions: parseAllVersionsImpl,
     extractArticleRscPayload: extractArticleRscPayloadImpl,
     extractMuxVideoData: extractMuxVideoDataImpl,
     loadState: loadStateImpl,
@@ -144,7 +177,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Has changes: ${result.hasChanges}`);
-  if (result.newVersion) console.log(`New version: ${result.newVersion}`);
+  if (result.newVersions) console.log(`New versions: ${result.newVersions.join(", ")}`);
   if (result.error) console.error(`Error: ${result.error}`);
 }
 

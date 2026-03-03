@@ -40,9 +40,11 @@ const CursorSummarySchema = z.object({
   blocks: z.array(SlackBlockSchema).min(1),
 });
 
+const CursorSummariesSchema = z.array(CursorSummarySchema).min(1);
+
 export interface ValidationSuccess {
   success: true;
-  data: z.infer<typeof CursorSummarySchema>;
+  data: z.infer<typeof CursorSummariesSchema>;
 }
 
 export interface ValidationFailure {
@@ -52,8 +54,8 @@ export interface ValidationFailure {
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
 
-export function validateCursorSummary(data: unknown): ValidationResult {
-  const result = CursorSummarySchema.safeParse(data);
+export function validateCursorSummaries(data: unknown): ValidationResult {
+  const result = CursorSummariesSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
   }

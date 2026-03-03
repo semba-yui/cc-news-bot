@@ -20,7 +20,7 @@ export interface NotifyHtmlCursorDeps {
   ) => Promise<PostResult>;
 }
 
-interface CursorSummariesFile {
+interface CursorSummariesEntry {
   version: string;
   blocks: SlackBlock[];
   fallbackText: string;
@@ -28,17 +28,22 @@ interface CursorSummariesFile {
 
 export async function notifyHtmlCursor(deps: NotifyHtmlCursorDeps): Promise<void> {
   const filePath = resolve(deps.htmlSummariesDir, "cursor.json");
-  const raw = JSON.parse(readFileSync(filePath, "utf-8")) as CursorSummariesFile;
-
-  const blocks = raw.blocks;
-  const fallbackText = raw.fallbackText;
+  const entries = JSON.parse(readFileSync(filePath, "utf-8")) as CursorSummariesEntry[];
   const channels = deps.getChannels(SOURCE_NAME);
 
-  await Promise.all(
-    channels.map(async (channel) => {
-      await deps.postBlocks(channel, blocks, fallbackText, deps.slackToken, deps.botProfile);
-    }),
-  );
+  for (const entry of entries) {
+    await Promise.all(
+      channels.map(async (channel) => {
+        await deps.postBlocks(
+          channel,
+          entry.blocks,
+          entry.fallbackText,
+          deps.slackToken,
+          deps.botProfile,
+        );
+      }),
+    );
+  }
 }
 
 async function main(): Promise<void> {

@@ -4,7 +4,7 @@ import { DATA_DIR } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
 import type { GeminiCliVersionContent } from "../services/gemini-cli-parser.js";
 import {
-  parseLatestVersion as parseLatestVersionImpl,
+  parseAllVersions as parseAllVersionsImpl,
   parseVersionContent as parseVersionContentImpl,
 } from "../services/gemini-cli-parser.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
@@ -20,13 +20,14 @@ const SOURCE_NAME = "gemini-cli";
 const CHANGELOG_URL = "https://geminicli.com/docs/changelogs/";
 const GITHUB_OWNER = "google-gemini";
 const GITHUB_REPO = "gemini-cli";
+const MAX_INITIAL_VERSIONS = 5;
 
 export interface FetchHtmlGeminiCliDeps {
   readonly dataRoot: string;
   readonly htmlCurrentDir: string;
   readonly fetchStaticHtml: (url: string, opts?: HtmlFetchOptions) => Promise<string>;
   readonly fetchGitHubReleases: (owner: string, repo: string, token?: string) => Promise<string>;
-  readonly parseLatestVersion: (html: string) => string | null;
+  readonly parseAllVersions: (html: string) => string[];
   readonly parseVersionContent: (html: string, version: string) => GeminiCliVersionContent | null;
   readonly loadState: (root: string) => Promise<SnapshotState>;
   readonly saveState: (state: SnapshotState, root: string) => Promise<void>;
@@ -34,7 +35,7 @@ export interface FetchHtmlGeminiCliDeps {
 
 export interface FetchHtmlGeminiCliResult {
   readonly hasChanges: boolean;
-  readonly newVersion?: string;
+  readonly newVersions?: string[];
   readonly mode?: "full" | "fallback";
   readonly error?: string;
 }
@@ -81,15 +82,14 @@ export async function fetchHtmlGeminiCli(
   }
 
   // フェーズ2: バージョン検出
-  let latestVersion: string | null = null;
+  let allVersions: string[] = [];
 
   if (html) {
-    latestVersion = deps.parseLatestVersion(html);
+    allVersions = deps.parseAllVersions(html);
   }
 
-  // geminicli.com からバージョン取得できない場合、GitHub Releases からバージョンを抽出
-  if (!latestVersion && htmlFetchError) {
-    // フォールバックモード: GitHub Releases からバージョンとコンテンツを取得
+  // geminicli.com からバージョン取得できない場合、GitHub Releases フォールバック
+  if (allVersions.length === 0 && htmlFetchError) {
     const ghText = await fetchGitHubReleasesText(deps);
     if (!ghText) {
       return {
@@ -98,7 +98,6 @@ export async function fetchHtmlGeminiCli(
       };
     }
 
-    // GitHub Releases テキストからバージョンを抽出 (## vX.Y.Z パターン)
     const versionMatch = ghText.match(/## (v\d+\.\d+\.\d+)/);
     if (!versionMatch) {
       return {
@@ -107,26 +106,27 @@ export async function fetchHtmlGeminiCli(
       };
     }
 
-    latestVersion = versionMatch[1];
+    const latestVersion = versionMatch[1];
 
-    // 同一バージョンチェック
     if (existingVersion === latestVersion) {
       return { hasChanges: false };
     }
 
-    // fallback モードで JSON 書き出し
-    const outputFile = {
-      version: latestVersion,
-      rawSummaryEn: null,
-      imageUrls: [],
-      githubReleasesText: ghText,
-      mode: "fallback" as const,
-      fetchedAt: now,
-    };
+    // fallback モード: 単一バージョン配列
+    const entries = [
+      {
+        version: latestVersion,
+        rawSummaryEn: null,
+        imageUrls: [] as string[],
+        githubReleasesText: ghText,
+        mode: "fallback" as const,
+        fetchedAt: now,
+      },
+    ];
 
     writeFileSync(
       resolve(deps.htmlCurrentDir, "gemini-cli.json"),
-      JSON.stringify(outputFile, null, 2),
+      JSON.stringify(entries, null, 2),
     );
 
     state.sources[SOURCE_NAME] = {
@@ -138,45 +138,77 @@ export async function fetchHtmlGeminiCli(
 
     return {
       hasChanges: true,
-      newVersion: latestVersion,
+      newVersions: [latestVersion],
       mode: "fallback",
     };
   }
 
-  // parseLatestVersion が null の場合（DOM 構造変更等）
-  if (!latestVersion) {
-    logError("Could not parse latest version from geminicli.com HTML");
+  // parseAllVersions が空の場合（DOM 構造変更等）
+  if (allVersions.length === 0) {
+    logError("Could not parse any versions from geminicli.com HTML");
     return {
       hasChanges: false,
-      error: "Could not parse latest version from geminicli.com HTML",
+      error: "Could not parse any versions from geminicli.com HTML",
     };
   }
+
+  const latestVersion = allVersions[0];
 
   // 同一バージョンチェック
   if (existingVersion === latestVersion) {
     return { hasChanges: false };
   }
 
-  // フェーズ3: コンテンツ抽出
-  const versionContent = deps.parseVersionContent(html!, latestVersion);
+  // フェーズ3: 未通知バージョンの特定
+  let newVersions: string[];
+  if (!existingVersion) {
+    newVersions = allVersions.slice(0, MAX_INITIAL_VERSIONS);
+  } else {
+    const existingIdx = allVersions.indexOf(existingVersion);
+    if (existingIdx === -1) {
+      newVersions = [...allVersions];
+    } else {
+      newVersions = allVersions.slice(0, existingIdx);
+    }
+  }
 
-  if (!versionContent) {
-    // parseVersionContent が null → geminicli.com のコンテンツは取れないが、
-    // GitHub Releases で fallback
-    const ghText = await fetchGitHubReleasesText(deps);
+  // 古い順に反転
+  newVersions.reverse();
 
-    const outputFile = {
-      version: latestVersion,
-      rawSummaryEn: null,
-      imageUrls: [],
-      githubReleasesText: ghText,
-      mode: "fallback" as const,
-      fetchedAt: now,
-    };
+  // フェーズ4: 各バージョンのコンテンツ抽出
+  const contentResults: Array<{
+    version: string;
+    content: GeminiCliVersionContent | null;
+  }> = [];
+
+  for (const version of newVersions) {
+    const content = deps.parseVersionContent(html!, version);
+    contentResults.push({ version, content });
+  }
+
+  // コンテンツ取得成功分があるかチェック
+  const hasAnyContent = contentResults.some((r) => r.content !== null);
+
+  // GitHub Releases テキスト取得（最新バージョンのスレッド返信用）
+  const ghText = await fetchGitHubReleasesText(deps);
+
+  if (hasAnyContent) {
+    // full モード: コンテンツ取得成功分を配列で書き出し
+    const entries = contentResults
+      .filter((r) => r.content !== null)
+      .map((r) => ({
+        version: r.version,
+        rawSummaryEn: r.content!.rawSummaryEn,
+        imageUrls: [...r.content!.imageUrls],
+        // githubReleasesText は最新バージョン（配列末尾）にのみ付与
+        githubReleasesText: r.version === latestVersion ? ghText : null,
+        mode: "full" as const,
+        fetchedAt: now,
+      }));
 
     writeFileSync(
       resolve(deps.htmlCurrentDir, "gemini-cli.json"),
-      JSON.stringify(outputFile, null, 2),
+      JSON.stringify(entries, null, 2),
     );
 
     state.sources[SOURCE_NAME] = {
@@ -188,30 +220,29 @@ export async function fetchHtmlGeminiCli(
 
     return {
       hasChanges: true,
-      newVersion: latestVersion,
-      mode: "fallback",
+      newVersions: entries.map((e) => e.version),
+      mode: "full",
     };
   }
 
-  // フェーズ4: GitHub Releases テキスト取得（失敗時は null）
-  const ghText = await fetchGitHubReleasesText(deps);
-
-  // フェーズ5: JSON ファイル書き出し
-  const outputFile = {
-    version: latestVersion,
-    rawSummaryEn: versionContent.rawSummaryEn,
-    imageUrls: [...versionContent.imageUrls],
-    githubReleasesText: ghText,
-    mode: "full" as const,
-    fetchedAt: now,
-  };
+  // 全バージョンのコンテンツ抽出失敗 → GitHub Releases フォールバック
+  // 最新バージョンのみ fallback エントリとして書き出し
+  const entries = [
+    {
+      version: latestVersion,
+      rawSummaryEn: null,
+      imageUrls: [] as string[],
+      githubReleasesText: ghText,
+      mode: "fallback" as const,
+      fetchedAt: now,
+    },
+  ];
 
   writeFileSync(
     resolve(deps.htmlCurrentDir, "gemini-cli.json"),
-    JSON.stringify(outputFile, null, 2),
+    JSON.stringify(entries, null, 2),
   );
 
-  // フェーズ6: state 更新
   state.sources[SOURCE_NAME] = {
     hash: "",
     lastCheckedAt: now,
@@ -221,8 +252,8 @@ export async function fetchHtmlGeminiCli(
 
   return {
     hasChanges: true,
-    newVersion: latestVersion,
-    mode: "full",
+    newVersions: [latestVersion],
+    mode: "fallback",
   };
 }
 
@@ -237,7 +268,7 @@ async function main(): Promise<void> {
     fetchStaticHtml: fetchStaticHtmlImpl,
     fetchGitHubReleases: (owner, repo, token) =>
       fetchGitHubReleasesImpl(owner, repo, token ?? githubToken),
-    parseLatestVersion: parseLatestVersionImpl,
+    parseAllVersions: parseAllVersionsImpl,
     parseVersionContent: parseVersionContentImpl,
     loadState: loadStateImpl,
     saveState: saveStateImpl,
@@ -250,7 +281,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Has changes: ${result.hasChanges}`);
-  if (result.newVersion) console.log(`New version: ${result.newVersion}`);
+  if (result.newVersions) console.log(`New versions: ${result.newVersions.join(", ")}`);
   if (result.mode) console.log(`Mode: ${result.mode}`);
   if (result.error) console.error(`Error: ${result.error}`);
 }

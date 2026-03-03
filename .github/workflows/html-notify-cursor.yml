@@ -45,12 +45,15 @@ jobs:
 
             ## タスク
 
-            data/html-current/cursor.json を読み取り、rscPayload フィールドの
-            React Server Components データを解析して Slack Block Kit 形式の JSON に変換してください。
+            data/html-current/cursor.json を読み取ってください。
+            このファイルは JSON 配列で、各要素は1つのバージョンのデータです。
+            各要素の rscPayload フィールドの React Server Components データを解析して
+            Slack Block Kit 形式の JSON に変換してください。
 
             ## 入力仕様
 
-            data/html-current/cursor.json の構造:
+            data/html-current/cursor.json の構造（配列）:
+            各要素:
             - version (string): バージョン番号（例: "2.5"）
             - rscPayload (string): RSC 形式の article データ。Next.js の React Server Components ペイロード。
               コンポーネントは ["$","tagName",key,{props}] 形式で表現される。
@@ -93,8 +96,9 @@ jobs:
             - image_url は公開 HTTPS URL であること
 
             ## 出力
-            結果を data/html-summaries/cursor.json に JSON で書き出してください。
-            スキーマ:
+            結果を data/html-summaries/cursor.json に JSON 配列で書き出してください。
+            入力配列の各要素に対して、変換結果を出力配列の対応する要素に格納してください。
+            出力スキーマ（配列の各要素）:
             - version (string): バージョン番号
             - fallbackText (string): Slack の通知テキスト（例: "Cursor 2.5 の更新"）
             - blocks (array): Slack Block Kit ブロック配列

@@ -11,10 +11,10 @@ import {
 } from "../scripts/fetch-html-gemini-cli.js";
 
 // What: Gemini CLI の HTML 取得スクリプトのテスト
-// Why: geminicli.com + GitHub Releases の2ソース統合取得、フォールバック動作、
-//      初回実行スキップ、構造化エラーログ等の複雑なフローが正しく動作することを保証する
+// Why: geminicli.com + GitHub Releases の2ソース統合取得、複数バージョン差分検出、
+//      フォールバック動作、JSON 配列書き出し等のフローが正しく動作することを保証する
 
-interface GeminiCliCurrentFile {
+interface GeminiCliCurrentEntry {
   version: string;
   rawSummaryEn: string | null;
   imageUrls: string[];
@@ -33,11 +33,13 @@ interface StructuredLogEntry {
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-fetch-html-gemini-cli");
 const HTML_CURRENT_DIR = resolve(TEST_ROOT, "html-current");
 
-const SAMPLE_VERSION_CONTENT: GeminiCliVersionContent = {
-  version: "v0.31.0",
-  rawSummaryEn: "- New feature A\n- Bug fix B",
-  imageUrls: ["https://i.imgur.com/sample.png"],
-};
+function makeVersionContent(version: string): GeminiCliVersionContent {
+  return {
+    version,
+    rawSummaryEn: `- Features for ${version}`,
+    imageUrls: [],
+  };
+}
 
 function makeDeps(overrides: Partial<FetchHtmlGeminiCliDeps> = {}): FetchHtmlGeminiCliDeps {
   return {
@@ -49,10 +51,12 @@ function makeDeps(overrides: Partial<FetchHtmlGeminiCliDeps> = {}): FetchHtmlGem
     fetchGitHubReleases: vi
       .fn<(owner: string, repo: string, token?: string) => Promise<string>>()
       .mockResolvedValue("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes"),
-    parseLatestVersion: vi.fn<(html: string) => string | null>().mockReturnValue("v0.31.0"),
+    parseAllVersions: vi
+      .fn<(html: string) => string[]>()
+      .mockReturnValue(["v0.31.0", "v0.30.0", "v0.29.0"]),
     parseVersionContent: vi
       .fn<(html: string, version: string) => GeminiCliVersionContent | null>()
-      .mockReturnValue(SAMPLE_VERSION_CONTENT),
+      .mockImplementation((_html: string, version: string) => makeVersionContent(version)),
     loadState: vi.fn<(root: string) => Promise<SnapshotState>>().mockResolvedValue({
       lastRunAt: "",
       sources: {
@@ -77,10 +81,10 @@ describe("fetchHtmlGeminiCli", () => {
     rmSync(TEST_ROOT, { recursive: true, force: true });
   });
 
-  describe("フルモード: geminicli.com + GitHub Releases 両方成功", () => {
+  describe("フルモード: 単一新バージョン検出", () => {
     // What: geminicli.com と GitHub Releases の両方から取得成功するフルモード動作
-    // Why: 標準フローで正しく JSON ファイル書き出し・state 更新が行われることを検証する
-    it("新バージョン検出時に html-current/gemini-cli.json を書き出し state を更新する", async () => {
+    // Why: 標準フローで正しく配列 JSON 書き出し・state 更新が行われることを検証する
+    it("新バージョン検出時に html-current/gemini-cli.json を配列で書き出す", async () => {
       // Given: 既存バージョンが v0.30.0 で、最新が v0.31.0
       const deps = makeDeps();
 
@@ -90,22 +94,22 @@ describe("fetchHtmlGeminiCli", () => {
       // Then: 変更ありで full モード
       expect(result).toEqual<FetchHtmlGeminiCliResult>({
         hasChanges: true,
-        newVersion: "v0.31.0",
+        newVersions: ["v0.31.0"],
         mode: "full",
       });
 
-      // Then: html-current/gemini-cli.json が正しいフォーマットで書き出される
-      const outputFile = JSON.parse(
+      // Then: html-current/gemini-cli.json が配列形式で書き出される
+      const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
-      ) as GeminiCliCurrentFile;
-      expect(outputFile.version).toBe("v0.31.0");
-      expect(outputFile.rawSummaryEn).toBe("- New feature A\n- Bug fix B");
-      expect(outputFile.imageUrls).toEqual(["https://i.imgur.com/sample.png"]);
-      expect(outputFile.githubReleasesText).toBe(
+      ) as GeminiCliCurrentEntry[];
+      expect(entries).toHaveLength(1);
+      expect(entries[0].version).toBe("v0.31.0");
+      expect(entries[0].rawSummaryEn).toBe("- Features for v0.31.0");
+      expect(entries[0].mode).toBe("full");
+      // githubReleasesText は最新バージョンにのみ付与
+      expect(entries[0].githubReleasesText).toBe(
         "## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes",
       );
-      expect(outputFile.mode).toBe("full");
-      expect(outputFile.fetchedAt).toBeDefined();
 
       // Then: state が更新される
       expect(deps.saveState).toHaveBeenCalledTimes(1);
@@ -115,7 +119,48 @@ describe("fetchHtmlGeminiCli", () => {
     });
   });
 
-  describe("フルモード: GitHub Releases 取得失敗 (Req 2.6)", () => {
+  describe("フルモード: 複数バージョン未通知", () => {
+    // What: cron 間に複数バージョンがリリースされたケース
+    // Why: 中間バージョンも含め全て古い順で配列に含まれることを検証する
+    it("複数の未通知バージョンを全て古い順で配列書き出しする", async () => {
+      // Given: 既存バージョンが v0.29.0、ページには [v0.31.0, v0.30.0, v0.29.0]
+      const deps = makeDeps({
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: {
+            "gemini-cli": {
+              hash: "",
+              lastCheckedAt: "2026-03-01T00:00:00.000Z",
+              latestVersion: "v0.29.0",
+            },
+          },
+        }),
+      });
+
+      // When: 取得スクリプトを実行する
+      const result = await fetchHtmlGeminiCli(deps);
+
+      // Then: 2件の新バージョンが古い順で返される
+      expect(result.hasChanges).toBe(true);
+      expect(result.newVersions).toEqual(["v0.30.0", "v0.31.0"]);
+
+      // Then: JSON 配列が古い順で書き出される
+      const entries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
+      ) as GeminiCliCurrentEntry[];
+      expect(entries).toHaveLength(2);
+      expect(entries[0].version).toBe("v0.30.0");
+      expect(entries[1].version).toBe("v0.31.0");
+
+      // Then: githubReleasesText は最新バージョンのみ
+      expect(entries[0].githubReleasesText).toBeNull();
+      expect(entries[1].githubReleasesText).toBe(
+        "## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes",
+      );
+    });
+  });
+
+  describe("フルモード: GitHub Releases 取得失敗", () => {
     // What: geminicli.com は成功するが GitHub Releases が失敗するケース
     // Why: githubReleasesText を null にして通知側で親スレッドのみ投稿とするため
     it("githubReleasesText を null として JSON を書き出す", async () => {
@@ -131,18 +176,20 @@ describe("fetchHtmlGeminiCli", () => {
       expect(result.hasChanges).toBe(true);
       expect(result.mode).toBe("full");
 
-      // Then: githubReleasesText が null
-      const outputFile = JSON.parse(
+      // Then: 全エントリの githubReleasesText が null
+      const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
-      ) as GeminiCliCurrentFile;
-      expect(outputFile.githubReleasesText).toBeNull();
+      ) as GeminiCliCurrentEntry[];
+      for (const entry of entries) {
+        expect(entry.githubReleasesText).toBeNull();
+      }
     });
   });
 
-  describe("フォールバックモード: geminicli.com 取得失敗 (Req 2.5, 6.2)", () => {
+  describe("フォールバックモード: geminicli.com 取得失敗", () => {
     // What: geminicli.com が利用不可で GitHub Releases のみで通知するフォールバック
-    // Why: 要件 2.5 のフォールバック動作が正しく実装されていることを検証する
-    it("GitHub Releases のみで fallback モードとして JSON を書き出す", async () => {
+    // Why: フォールバック動作では単一バージョンのみ配列に含まれることを検証する
+    it("GitHub Releases のみで fallback モードとして単一バージョン配列を書き出す", async () => {
       // Given: geminicli.com の取得が失敗し、GitHub Releases にバージョンが含まれる
       const deps = makeDeps({
         fetchStaticHtml: vi.fn().mockRejectedValue(new Error("geminicli.com unavailable")),
@@ -157,18 +204,19 @@ describe("fetchHtmlGeminiCli", () => {
       // Then: 変更ありで fallback モード
       expect(result).toEqual<FetchHtmlGeminiCliResult>({
         hasChanges: true,
-        newVersion: "v0.31.0",
+        newVersions: ["v0.31.0"],
         mode: "fallback",
       });
 
-      // Then: JSON ファイルが fallback モードで書き出される
-      const outputFile = JSON.parse(
+      // Then: 配列に1件の fallback エントリが含まれる
+      const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
-      ) as GeminiCliCurrentFile;
-      expect(outputFile.mode).toBe("fallback");
-      expect(outputFile.rawSummaryEn).toBeNull();
-      expect(outputFile.imageUrls).toEqual([]);
-      expect(outputFile.githubReleasesText).toBe(
+      ) as GeminiCliCurrentEntry[];
+      expect(entries).toHaveLength(1);
+      expect(entries[0].mode).toBe("fallback");
+      expect(entries[0].rawSummaryEn).toBeNull();
+      expect(entries[0].imageUrls).toEqual([]);
+      expect(entries[0].githubReleasesText).toBe(
         "## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes",
       );
     });
@@ -193,10 +241,10 @@ describe("fetchHtmlGeminiCli", () => {
     });
   });
 
-  describe("初回実行: latestVersion なし (Req 1.3)", () => {
+  describe("初回実行: latestVersion なし", () => {
     // What: state に latestVersion が存在しない初回実行ケース
-    // Why: 初回実行でも通常の新バージョン検出と同じフローで通知することを検証する
-    it("hasChanges=true を返し JSON 書き出しと state 更新を行う", async () => {
+    // Why: 初回実行時は最新5件まで取得することを検証する
+    it("最新5件まで取得し古い順で配列書き出しする", async () => {
       // Given: state にソースエントリが存在しない（初回実行）
       const deps = makeDeps({
         loadState: vi.fn().mockResolvedValue({
@@ -208,15 +256,9 @@ describe("fetchHtmlGeminiCli", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlGeminiCli(deps);
 
-      // Then: 変更あり（通知される）
+      // Then: 変更あり（ページ上の3件全て、5件未満なので全部）
       expect(result.hasChanges).toBe(true);
-      expect(result.newVersion).toBe("v0.31.0");
-
-      // Then: state にバージョンが記録される
-      expect(deps.saveState).toHaveBeenCalledTimes(1);
-      const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
-        .calls[0][0] as SnapshotState;
-      expect(savedState.sources["gemini-cli"].latestVersion).toBe("v0.31.0");
+      expect(result.newVersions).toEqual(["v0.29.0", "v0.30.0", "v0.31.0"]);
     });
   });
 
@@ -243,19 +285,17 @@ describe("fetchHtmlGeminiCli", () => {
 
       // Then: 変更なし
       expect(result.hasChanges).toBe(false);
-
-      // Then: state の保存は呼ばれない（変更なし）
       expect(deps.saveState).not.toHaveBeenCalled();
     });
   });
 
-  describe("parseLatestVersion が null を返す", () => {
-    // What: HTML から最新バージョンを抽出できないケース（DOM 構造変更等）
+  describe("parseAllVersions が空配列を返す", () => {
+    // What: HTML からバージョンを抽出できないケース（DOM 構造変更等）
     // Why: パーサ失敗時に安全にエラーを返すことを検証する
     it("hasChanges=false とエラーを返す", async () => {
-      // Given: parseLatestVersion が null を返す
+      // Given: parseAllVersions が空配列を返す
       const deps = makeDeps({
-        parseLatestVersion: vi.fn().mockReturnValue(null),
+        parseAllVersions: vi.fn().mockReturnValue([]),
       });
 
       // When: 取得スクリプトを実行する
@@ -269,7 +309,7 @@ describe("fetchHtmlGeminiCli", () => {
 
   describe("parseVersionContent が null を返す", () => {
     // What: バージョンは見つかったがコンテンツ抽出に失敗するケース
-    // Why: コンテンツなしでもフォールバックで GitHub Releases のみで継続することを検証する
+    // Why: GitHub Releases でフォールバックし、配列の各エントリに反映されることを検証する
     it("GitHub Releases のみで fallback モードとして処理する", async () => {
       // Given: parseVersionContent が null を返す
       const deps = makeDeps({
@@ -285,9 +325,9 @@ describe("fetchHtmlGeminiCli", () => {
     });
   });
 
-  describe("構造化エラーログ (Req 6.1)", () => {
+  describe("構造化エラーログ", () => {
     // What: エラー発生時のログフォーマット
-    // Why: 要件 6.1 のエラーログ形式（ソース名・メッセージ・タイムスタンプ）を検証する
+    // Why: エラーログ形式（ソース名・メッセージ・タイムスタンプ）を検証する
     it("geminicli.com 取得失敗時に構造化ログを出力する", async () => {
       // Given: geminicli.com の取得が失敗する
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -316,7 +356,7 @@ describe("fetchHtmlGeminiCli", () => {
   });
 
   describe("lastCheckedAt の更新", () => {
-    // What: 変更有無に関わらず lastCheckedAt が更新されること
+    // What: 新バージョン検出時に lastCheckedAt が更新されること
     // Why: 次回実行時の差分検出に正確な最終チェック日時が必要
     it("新バージョン検出時に lastCheckedAt を現在時刻に更新する", async () => {
       // Given: 新バージョンが検出される
@@ -329,7 +369,6 @@ describe("fetchHtmlGeminiCli", () => {
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
       expect(savedState.sources["gemini-cli"].lastCheckedAt).toBeDefined();
-      // ISO 8601 形式であること
       expect(new Date(savedState.sources["gemini-cli"].lastCheckedAt).toISOString()).toBeTruthy();
     });
   });

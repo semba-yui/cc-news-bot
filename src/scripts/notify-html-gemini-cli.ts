@@ -33,7 +33,7 @@ export interface NotifyHtmlGeminiCliDeps {
   ) => Promise<PostResult[]>;
 }
 
-interface GeminiCliSummariesFile {
+interface GeminiCliSummariesEntry {
   version: string;
   summaryJa: string;
   imageUrls: string[];
@@ -42,36 +42,44 @@ interface GeminiCliSummariesFile {
 
 export async function notifyHtmlGeminiCli(deps: NotifyHtmlGeminiCliDeps): Promise<void> {
   const filePath = resolve(deps.htmlSummariesDir, "gemini-cli.json");
-  const raw = JSON.parse(readFileSync(filePath, "utf-8")) as GeminiCliSummariesFile;
-
-  const content: GeminiCliTranslatedContent = {
-    version: raw.version,
-    summaryJa: raw.summaryJa,
-    imageUrls: raw.imageUrls,
-    ...(raw.githubReleasesText != null ? { githubReleasesText: raw.githubReleasesText } : {}),
-  };
-
-  const blocks = deps.buildBlocks(content);
-  const fallbackText = `Gemini CLI ${raw.version} の更新`;
+  const entries = JSON.parse(readFileSync(filePath, "utf-8")) as GeminiCliSummariesEntry[];
   const channels = deps.getChannels(SOURCE_NAME);
 
-  await Promise.all(
-    channels.map(async (channel) => {
-      const result = await deps.postBlocks(
-        channel,
-        blocks,
-        fallbackText,
-        deps.slackToken,
-        deps.botProfile,
-      );
+  for (const entry of entries) {
+    const content: GeminiCliTranslatedContent = {
+      version: entry.version,
+      summaryJa: entry.summaryJa,
+      imageUrls: entry.imageUrls,
+      ...(entry.githubReleasesText != null
+        ? { githubReleasesText: entry.githubReleasesText }
+        : {}),
+    };
 
-      if (result.success && result.ts && raw.githubReleasesText) {
-        await deps.postThreadReplies(channel, result.ts, raw.githubReleasesText, deps.slackToken, {
-          botProfile: deps.botProfile,
-        });
-      }
-    }),
-  );
+    const blocks = deps.buildBlocks(content);
+    const fallbackText = `Gemini CLI ${entry.version} の更新`;
+
+    await Promise.all(
+      channels.map(async (channel) => {
+        const result = await deps.postBlocks(
+          channel,
+          blocks,
+          fallbackText,
+          deps.slackToken,
+          deps.botProfile,
+        );
+
+        if (result.success && result.ts && entry.githubReleasesText) {
+          await deps.postThreadReplies(
+            channel,
+            result.ts,
+            entry.githubReleasesText,
+            deps.slackToken,
+            { botProfile: deps.botProfile },
+          );
+        }
+      }),
+    );
+  }
 }
 
 async function main(): Promise<void> {

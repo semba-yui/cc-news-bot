@@ -11,10 +11,10 @@ import {
 } from "../scripts/fetch-html-cursor.js";
 
 // What: Cursor の HTML 取得スクリプトのテスト
-// Why: cursor.com/ja/changelog からの取得・差分検出・JSON 書き出し・
+// Why: cursor.com/ja/changelog からの取得・複数バージョン差分検出・JSON 配列書き出し・
 //      エラーハンドリング等のフローが正しく動作することを保証する
 
-interface CursorCurrentFile {
+interface CursorCurrentEntry {
   version: string;
   rscPayload: string;
   articleHtml: string;
@@ -52,7 +52,9 @@ function makeDeps(overrides: Partial<FetchHtmlCursorDeps> = {}): FetchHtmlCursor
     fetchStaticHtml: vi
       .fn<(url: string, opts?: HtmlFetchOptions) => Promise<string>>()
       .mockResolvedValue("<html>mock cursor changelog</html>"),
-    parseLatestVersion: vi.fn<(html: string) => string | null>().mockReturnValue("2.5"),
+    parseAllVersions: vi
+      .fn<(html: string) => string[]>()
+      .mockReturnValue(["2.5", "2.4", "2.3"]),
     extractArticleRscPayload: vi
       .fn<(html: string, version: string) => string | null>()
       .mockReturnValue(SAMPLE_RSC_PAYLOAD),
@@ -83,10 +85,10 @@ describe("fetchHtmlCursor", () => {
     rmSync(TEST_ROOT, { recursive: true, force: true });
   });
 
-  describe("正常系: 新バージョン検出", () => {
-    // What: cursor.com/ja/changelog から新バージョンが検出される標準フロー
-    // Why: JSON ファイル書き出し・state 更新が正しく行われることを検証する
-    it("新バージョン検出時に html-current/cursor.json を書き出し state を更新する", async () => {
+  describe("正常系: 単一新バージョン検出", () => {
+    // What: cursor.com/ja/changelog から1つの新バージョンが検出される標準フロー
+    // Why: JSON 配列書き出し・state 更新が正しく行われることを検証する
+    it("新バージョン検出時に html-current/cursor.json を配列で書き出し state を更新する", async () => {
       // Given: 既存バージョンが 2.4 で、最新が 2.5
       const deps = makeDeps();
 
@@ -96,24 +98,25 @@ describe("fetchHtmlCursor", () => {
       // Then: 変更あり
       expect(result).toEqual<FetchHtmlCursorResult>({
         hasChanges: true,
-        newVersion: "2.5",
+        newVersions: ["2.5"],
       });
 
-      // Then: html-current/cursor.json が新フォーマットで書き出される
-      const outputFile = JSON.parse(
+      // Then: html-current/cursor.json が配列形式で書き出される
+      const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "cursor.json"), "utf-8"),
-      ) as CursorCurrentFile;
-      expect(outputFile.version).toBe("2.5");
-      expect(outputFile.rscPayload).toBe(SAMPLE_RSC_PAYLOAD);
-      expect(outputFile.articleHtml).toBe("");
-      expect(outputFile.muxVideos).toEqual([
+      ) as CursorCurrentEntry[];
+      expect(entries).toHaveLength(1);
+      expect(entries[0].version).toBe("2.5");
+      expect(entries[0].rscPayload).toBe(SAMPLE_RSC_PAYLOAD);
+      expect(entries[0].articleHtml).toBe("");
+      expect(entries[0].muxVideos).toEqual([
         {
           playbackId: "abc123",
           thumbnailUrl: "https://image.mux.com/abc123/thumbnail.png",
           hlsUrl: "https://stream.mux.com/abc123.m3u8",
         },
       ]);
-      expect(outputFile.fetchedAt).toBeDefined();
+      expect(entries[0].fetchedAt).toBeDefined();
 
       // Then: state が更新される
       expect(deps.saveState).toHaveBeenCalledTimes(1);
@@ -137,12 +140,48 @@ describe("fetchHtmlCursor", () => {
     });
   });
 
+  describe("正常系: 複数バージョン未通知", () => {
+    // What: cron 間に複数バージョンがリリースされたケース
+    // Why: 中間バージョンを見逃さず、全て古い順で配列に含まれることを検証する
+    it("複数の未通知バージョンを全て古い順で配列書き出しする", async () => {
+      // Given: 既存バージョンが 2.3、ページには [2.5, 2.4, 2.3]
+      const deps = makeDeps({
+        loadState: vi.fn().mockResolvedValue({
+          lastRunAt: "",
+          sources: {
+            cursor: {
+              hash: "",
+              lastCheckedAt: "2026-03-01T00:00:00.000Z",
+              latestVersion: "2.3",
+            },
+          },
+        }),
+      });
+
+      // When: 取得スクリプトを実行する
+      const result = await fetchHtmlCursor(deps);
+
+      // Then: 2件の新バージョンが古い順で返される
+      expect(result.hasChanges).toBe(true);
+      expect(result.newVersions).toEqual(["2.4", "2.5"]);
+
+      // Then: JSON 配列が古い順で書き出される
+      const entries = JSON.parse(
+        readFileSync(resolve(HTML_CURRENT_DIR, "cursor.json"), "utf-8"),
+      ) as CursorCurrentEntry[];
+      expect(entries).toHaveLength(2);
+      expect(entries[0].version).toBe("2.4");
+      expect(entries[1].version).toBe("2.5");
+    });
+  });
+
   describe("初回実行: latestVersion なし", () => {
     // What: state に latestVersion が存在しない初回実行ケース
-    // Why: 初回実行でも通常の新バージョン検出と同じフローで通知することを検証する
-    it("hasChanges=true を返し JSON 書き出しと state 更新を行う", async () => {
+    // Why: 初回実行時は最新5件まで取得することを検証する
+    it("最新5件まで取得し古い順で配列書き出しする", async () => {
       // Given: state にソースエントリが存在しない（初回実行）
       const deps = makeDeps({
+        parseAllVersions: vi.fn().mockReturnValue(["2.5", "2.4", "2.3", "2.2", "2.1", "2.0", "1.9"]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
           sources: {},
@@ -152,12 +191,11 @@ describe("fetchHtmlCursor", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlCursor(deps);
 
-      // Then: 変更あり（通知される）
+      // Then: 最新5件が古い順で返される
       expect(result.hasChanges).toBe(true);
-      expect(result.newVersion).toBe("2.5");
+      expect(result.newVersions).toEqual(["2.1", "2.2", "2.3", "2.4", "2.5"]);
 
-      // Then: state にバージョンが記録される
-      expect(deps.saveState).toHaveBeenCalledTimes(1);
+      // Then: state は最新バージョンで更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
       expect(savedState.sources["cursor"].latestVersion).toBe("2.5");
@@ -188,14 +226,14 @@ describe("fetchHtmlCursor", () => {
       // Then: 変更なし
       expect(result.hasChanges).toBe(false);
 
-      // Then: state の保存は呼ばれない（変更なし）
+      // Then: state の保存は呼ばれない
       expect(deps.saveState).not.toHaveBeenCalled();
     });
   });
 
-  describe("HTML 取得失敗 (Req 3.5)", () => {
+  describe("HTML 取得失敗", () => {
     // What: cursor.com からの HTML 取得が失敗するケース
-    // Why: 要件 3.5 に従い、取得失敗時にエラーログ記録・通知スキップすることを検証する
+    // Why: 取得失敗時にエラーログ記録・通知スキップすることを検証する
     it("hasChanges=false とエラーメッセージを返す", async () => {
       // Given: HTML の取得が失敗する
       const deps = makeDeps({
@@ -211,13 +249,13 @@ describe("fetchHtmlCursor", () => {
     });
   });
 
-  describe("parseLatestVersion が null を返す", () => {
-    // What: HTML から最新バージョンを抽出できないケース（DOM 構造変更等）
+  describe("parseAllVersions が空配列を返す", () => {
+    // What: HTML からバージョンを抽出できないケース（DOM 構造変更等）
     // Why: パーサ失敗時に安全にエラーを返すことを検証する
     it("hasChanges=false とエラーを返す", async () => {
-      // Given: parseLatestVersion が null を返す
+      // Given: parseAllVersions が空配列を返す
       const deps = makeDeps({
-        parseLatestVersion: vi.fn().mockReturnValue(null),
+        parseAllVersions: vi.fn().mockReturnValue([]),
       });
 
       // When: 取得スクリプトを実行する
@@ -231,25 +269,27 @@ describe("fetchHtmlCursor", () => {
 
   describe("extractArticleRscPayload が null を返す", () => {
     // What: バージョンは見つかったが RSC ペイロード抽出に失敗するケース
-    // Why: RSC データが見つからない場合にエラーとして処理されることを検証する
-    it("hasChanges=false とエラーを返す", async () => {
-      // Given: extractArticleRscPayload が null を返す
+    // Why: RSC データが見つからない場合にスキップされることを検証する
+    it("該当バージョンをスキップし、全て失敗ならエラーを返す", async () => {
+      // Given: extractArticleRscPayload が全て null を返す
       const deps = makeDeps({
         extractArticleRscPayload: vi.fn().mockReturnValue(null),
       });
 
       // When: 取得スクリプトを実行する
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const result = await fetchHtmlCursor(deps);
+      consoleSpy.mockRestore();
 
       // Then: 変更なしでエラー
       expect(result.hasChanges).toBe(false);
-      expect(result.error).toContain("RSC payload");
+      expect(result.error).toBeDefined();
     });
   });
 
-  describe("構造化エラーログ (Req 6.1)", () => {
+  describe("構造化エラーログ", () => {
     // What: エラー発生時のログフォーマット
-    // Why: 要件 6.1 のエラーログ形式（ソース名・メッセージ・タイムスタンプ）を検証する
+    // Why: エラーログ形式（ソース名・メッセージ・タイムスタンプ）を検証する
     it("HTML 取得失敗時に構造化ログを出力する", async () => {
       // Given: HTML の取得が失敗する
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -291,7 +331,6 @@ describe("fetchHtmlCursor", () => {
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
       expect(savedState.sources["cursor"].lastCheckedAt).toBeDefined();
-      // ISO 8601 形式であること
       expect(new Date(savedState.sources["cursor"].lastCheckedAt).toISOString()).toBeTruthy();
     });
   });

@@ -42,10 +42,15 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            data/html-current/gemini-cli.json を読み取り、rawSummaryEn フィールドを
-            日本語に翻訳し、summaryJa フィールドとして
-            data/html-summaries/gemini-cli.json に書き出してください。
+            data/html-current/gemini-cli.json を読み取ってください。
+            このファイルは JSON 配列で、各要素は以下の構造を持ちます:
+            { version, rawSummaryEn, imageUrls, githubReleasesText, mode, fetchedAt }
+
+            各要素の rawSummaryEn を日本語に翻訳し、summaryJa フィールドに置き換えてください。
             imageUrls と githubReleasesText フィールドはそのままコピーしてください。
+            version フィールドもそのままコピーしてください。
+            出力も同じ配列構造を維持し、data/html-summaries/gemini-cli.json に書き出してください。
+            出力スキーマ: [{ version, summaryJa, imageUrls, githubReleasesText }]
           claude_args: "--max-turns 20 --allowedTools Read,Write"
 
       - name: Post to Slack

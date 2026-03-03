@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseLatestVersion, parseVersionContent } from "../services/antigravity-parser.js";
+import {
+  parseLatestVersion,
+  parseAllVersions,
+  parseVersionContent,
+} from "../services/antigravity-parser.js";
 
 // What: Antigravity changelog ページの HTML パーシングをテストする
 // Why: antigravity.google/changelog から Playwright で取得した HTML からバージョンと3カテゴリ（Improvements・Fixes・Patches）を正確に抽出するため
@@ -49,6 +53,44 @@ describe("antigravity-parser", () => {
 
       // Then: null が返される
       expect(result).toBeNull();
+    });
+  });
+
+  describe("parseAllVersions", () => {
+    // What: HTML から全バージョンを降順（最新が先頭）で列挙する
+    // Why: cron 間に複数リリースがあった場合に中間バージョンを見逃さないため
+
+    it("HTML から全バージョンを降順（最新が先頭）で返す", () => {
+      // Given: 複数バージョンを含むフィクスチャ HTML
+      // When: parseAllVersions を呼び出す
+      const result = parseAllVersions(fixtureHtml);
+
+      // Then: 配列が返され、先頭が最新バージョン、複数件含まれる
+      expect(result.length).toBeGreaterThan(1);
+      expect(result[0]).toBe("1.19.6");
+      // 古いバージョンも含まれる
+      expect(result).toContain("1.18.3");
+      expect(result).toContain("1.16.5");
+    });
+
+    it("バージョンが見つからない HTML では空配列を返す", () => {
+      // Given: バージョン情報を含まない HTML
+      const html = "<html><body><h1>No changelog</h1></body></html>";
+
+      // When: parseAllVersions を呼び出す
+      const result = parseAllVersions(html);
+
+      // Then: 空配列が返される
+      expect(result).toEqual([]);
+    });
+
+    it("空の HTML では空配列を返す", () => {
+      // Given: 空の HTML
+      // When: parseAllVersions を呼び出す
+      const result = parseAllVersions("");
+
+      // Then: 空配列が返される
+      expect(result).toEqual([]);
     });
   });
 
