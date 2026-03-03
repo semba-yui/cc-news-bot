@@ -35,7 +35,6 @@ jobs:
         run: mkdir -p data/html-summaries
 
       - name: Convert to Slack blocks with Claude
-        id: convert
         if: steps.fetch.outputs.has_changes == 'true'
         uses: anthropics/claude-code-action@v1
         with:
@@ -48,7 +47,6 @@ jobs:
 
             data/html-current/cursor.json を読み取り、rscPayload フィールドの
             React Server Components データを解析して Slack Block Kit 形式の JSON に変換してください。
-            出力は --json-schema で指定されたスキーマに従って自動的に返されます。
 
             ## 入力仕様
 
@@ -93,14 +91,23 @@ jobs:
             ## 制約
             - テキストは入力データの日本語をそのまま使用（翻訳・要約はしない）
             - image_url は公開 HTTPS URL であること
-          claude_args: >-
-            --max-turns 20
-            --allowedTools Read
-            --json-schema '{"type":"object","required":["version","blocks","fallbackText"],"additionalProperties":false,"properties":{"version":{"type":"string"},"fallbackText":{"type":"string"},"blocks":{"type":"array","items":{"oneOf":[{"type":"object","required":["type","text"],"additionalProperties":false,"properties":{"type":{"const":"header"},"text":{"type":"object","required":["type","text","emoji"],"additionalProperties":false,"properties":{"type":{"const":"plain_text"},"text":{"type":"string","maxLength":150},"emoji":{"const":true}}}}},{"type":"object","required":["type","text"],"additionalProperties":false,"properties":{"type":{"const":"section"},"text":{"type":"object","required":["type","text"],"additionalProperties":false,"properties":{"type":{"const":"mrkdwn"},"text":{"type":"string","maxLength":3000}}}}},{"type":"object","required":["type"],"additionalProperties":false,"properties":{"type":{"const":"divider"}}},{"type":"object","required":["type","image_url","alt_text"],"additionalProperties":false,"properties":{"type":{"const":"image"},"image_url":{"type":"string","format":"uri"},"alt_text":{"type":"string"}}}]}}}}'
 
-      - name: Write structured output to file
-        if: steps.fetch.outputs.has_changes == 'true'
-        run: echo '${{ steps.convert.outputs.structured_output }}' > data/html-summaries/cursor.json
+            ## 出力
+            結果を data/html-summaries/cursor.json に JSON で書き出してください。
+            スキーマ:
+            - version (string): バージョン番号
+            - fallbackText (string): Slack の通知テキスト（例: "Cursor 2.5 の更新"）
+            - blocks (array): Slack Block Kit ブロック配列
+              - header: { type: "header", text: { type: "plain_text", text: string (150文字以内), emoji: true } }
+              - section: { type: "section", text: { type: "mrkdwn", text: string (3000文字以内) } }
+              - divider: { type: "divider" }
+              - image: { type: "image", image_url: string (HTTPS URL), alt_text: string }
+
+            ## 検証
+            書き出し後、以下のコマンドで JSON を検証してください:
+            npx tsx src/scripts/validate-cursor-summary.ts
+            検証に失敗した場合は、エラーメッセージを読み取り、JSON を修正して再度検証してください。
+          claude_args: "--max-turns 20 --allowedTools Read,Write,Bash"
 
       - name: Post to Slack
         if: steps.fetch.outputs.has_changes == 'true'
