@@ -22,20 +22,46 @@ export function parseLatestVersion(html: string): string | null {
   return null;
 }
 
+/**
+ * Find the position of an article marker in RSC data.
+ * Handles both unescaped (`["$","article","slug"`) and
+ * escaped (`[\"$\",\"article\",\"slug\"`) quoting styles.
+ */
+function findArticleMarker(
+  html: string,
+  slug: string,
+  fromIndex = 0,
+): { index: number; escaped: boolean } | null {
+  const unescaped = `["$","article","${slug}"`;
+  const escaped = `[\\"$\\",\\"article\\",\\"${slug}\\"`;
+
+  const ui = html.indexOf(unescaped, fromIndex);
+  const ei = html.indexOf(escaped, fromIndex);
+
+  if (ui === -1 && ei === -1) return null;
+  if (ui === -1) return { index: ei, escaped: true };
+  if (ei === -1) return { index: ui, escaped: false };
+  return ui <= ei ? { index: ui, escaped: false } : { index: ei, escaped: true };
+}
+
+/**
+ * Find the next article boundary marker (any slug) after a given offset.
+ */
+function findNextArticleBoundary(html: string, fromIndex: number, escaped: boolean): number {
+  const pattern = escaped ? `[\\"$\\",\\"article\\",\\"` : `["$","article","`;
+  const idx = html.indexOf(pattern, fromIndex);
+  return idx === -1 ? html.length : idx;
+}
+
 export function extractArticleRscPayload(html: string, version: string): string | null {
-  // Derive slug from version: "2.5" → "2-5"
   const slug = version.replace(/\./g, "-");
 
-  // Find the RSC line containing ["$","article","<slug>",...]
-  const articleMarker = `["$","article","${slug}"`;
-  const startIdx = html.indexOf(articleMarker);
-  if (startIdx === -1) return null;
+  const match = findArticleMarker(html, slug);
+  if (!match) return null;
 
-  // Find the next article marker or end of script
-  const nextArticleIdx = html.indexOf('["$","article","', startIdx + articleMarker.length);
-  const endIdx = nextArticleIdx === -1 ? html.length : nextArticleIdx;
+  const endIdx = findNextArticleBoundary(html, match.index + slug.length + 20, match.escaped);
 
-  const section = html.substring(startIdx, endIdx);
+  const section = html.substring(match.index, endIdx);
   return section.length > 0 ? section : null;
 }
 
@@ -52,19 +78,18 @@ export function extractMuxVideoData(html: string, slug: string): MuxVideo[] {
 function findPlaybackIdsForArticle(html: string, slug: string): string[] {
   const playbackIds: string[] = [];
 
-  const articleMarker = `"article","${slug}"`;
-  const startIdx = html.indexOf(articleMarker);
-  if (startIdx === -1) return [];
+  const match = findArticleMarker(html, slug);
+  if (!match) return [];
 
-  const nextArticleIdx = html.indexOf('"article","', startIdx + articleMarker.length);
-  const endIdx = nextArticleIdx === -1 ? html.length : nextArticleIdx;
+  const endIdx = findNextArticleBoundary(html, match.index + slug.length + 20, match.escaped);
 
-  const articleSection = html.substring(startIdx, endIdx);
+  const articleSection = html.substring(match.index, endIdx);
 
-  const playbackPattern = /"playbackId":"([^"]+)"/g;
-  let match: RegExpExecArray | null;
-  while ((match = playbackPattern.exec(articleSection)) !== null) {
-    playbackIds.push(match[1]);
+  // Match both escaped (\"playbackId\":\"...\") and unescaped ("playbackId":"...")
+  const playbackPattern = /\\?"playbackId\\?"\\?:\\?"([^"\\]+)\\?"/g;
+  let m: RegExpExecArray | null;
+  while ((m = playbackPattern.exec(articleSection)) !== null) {
+    playbackIds.push(m[1]);
   }
 
   return playbackIds;

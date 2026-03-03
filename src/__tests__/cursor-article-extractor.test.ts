@@ -65,9 +65,9 @@ describe("cursor-article-extractor", () => {
       // When: extractArticleRscPayload を呼び出す
       const result = extractArticleRscPayload(fixtureHtml, "2.5");
 
-      // Then: null ではなく、article タグのマーカーを含む
+      // Then: null ではなく、article タグのマーカーを含む（エスケープ済み形式）
       expect(result).not.toBeNull();
-      expect(result).toContain('["$","article","2-5"');
+      expect(result).toContain('[\\\"$\\\",\\\"article\\\",\\\"2-5\\\"');
     });
 
     it("RSC ペイロードに article 内のテキストコンテンツが含まれる", () => {
