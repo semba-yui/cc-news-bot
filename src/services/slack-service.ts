@@ -3,10 +3,18 @@ const DEFAULT_DELAY_MS = 1_000;
 export const MAX_MESSAGE_LENGTH = 3_000;
 const MAX_BLOCK_TEXT_LENGTH = 3_000;
 
+export type ImageBlock = {
+  readonly type: "image";
+  readonly image_url: string;
+  readonly alt_text: string;
+  readonly title?: { readonly type: "plain_text"; readonly text: string };
+};
+
 export type SlackBlock =
   | { type: "header"; text: { type: "plain_text"; text: string; emoji: boolean } }
   | { type: "section"; text: { type: "mrkdwn"; text: string } }
-  | { type: "divider" };
+  | { type: "divider" }
+  | ImageBlock;
 
 export interface BotProfile {
   name: string;
@@ -259,6 +267,25 @@ export async function postThreadReply(
       mrkdwn: true,
       ...(blocks ? { blocks } : {}),
       ...botProfileFields(options?.botProfile),
+    },
+    token,
+  );
+}
+
+export async function postBlocks(
+  channel: string,
+  blocks: SlackBlock[],
+  text: string,
+  token: string,
+  botProfile?: BotProfile,
+): Promise<PostResult> {
+  return callPostMessage(
+    {
+      channel,
+      blocks,
+      text,
+      mrkdwn: true,
+      ...botProfileFields(botProfile),
     },
     token,
   );

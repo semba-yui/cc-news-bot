@@ -6,10 +6,12 @@ import {
   postThreadReply,
   postThreadReplies,
   postError,
+  postBlocks,
   splitText,
   summaryToBlocks,
   MAX_MESSAGE_LENGTH,
 } from "../services/slack-service.js";
+import type { SlackBlock, BotProfile } from "../services/slack-service.js";
 
 const SLACK_API = "https://slack.com/api/chat.postMessage";
 const TOKEN = "xoxb-test-token";
@@ -311,26 +313,20 @@ describe("summaryToBlocks", () => {
 
   it("ひとこと セクションに 💬 絵文字が付く", () => {
     const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
-    const section = blocks.find(
-      (b) => b.type === "section" && b.text.text.includes("💬"),
-    );
+    const section = blocks.find((b) => b.type === "section" && b.text.text.includes("💬"));
     expect(section).toBeDefined();
   });
 
   it("存在しないカテゴリのブロックは生成しない", () => {
     const blocks = summaryToBlocks("src", "1.0", "## ひとこと\n- only this");
-    const blockTexts = blocks
-      .filter((b) => b.type === "section")
-      .map((b) => b.text.text);
+    const blockTexts = blocks.filter((b) => b.type === "section").map((b) => b.text.text);
     expect(blockTexts.some((t) => t.includes("🆕"))).toBe(false);
     expect(blockTexts.some((t) => t.includes("🔧"))).toBe(false);
   });
 
   it("divider が ひとこと とカテゴリ群の間に挿入される", () => {
     const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
-    const hitokotoIdx = blocks.findIndex(
-      (b) => b.type === "section" && b.text.text.includes("💬"),
-    );
+    const hitokotoIdx = blocks.findIndex((b) => b.type === "section" && b.text.text.includes("💬"));
     const dividerIdx = blocks.findIndex((b) => b.type === "divider");
     expect(dividerIdx).toBeGreaterThan(hitokotoIdx);
   });
@@ -351,11 +347,7 @@ describe("summaryToBlocks", () => {
   });
 
   it("**bold** を Slack mrkdwn の *bold* に変換する", () => {
-    const blocks = summaryToBlocks(
-      "src",
-      "1.0",
-      "## 用語解説\n- **用語**: 解説テキスト",
-    );
+    const blocks = summaryToBlocks("src", "1.0", "## 用語解説\n- **用語**: 解説テキスト");
     const section = blocks.find(
       (b): b is Extract<typeof b, { type: "section" }> =>
         b.type === "section" && b.text.text.includes("用語解説"),
@@ -418,6 +410,154 @@ describe("postThreadReply (Block Kit)", () => {
     });
     expect(capturedBody.blocks).toBeDefined();
     expect(Array.isArray(capturedBody.blocks)).toBe(true);
+  });
+});
+
+describe("SlackBlock ImageBlock 型", () => {
+  // What: ImageBlock 型が SlackBlock Union に含まれることを検証する
+  // Why: HTML プロバイダの画像・GIF を Slack に投稿するために image ブロック型が必要
+
+  it("image ブロックを SlackBlock 型として扱える", () => {
+    // Given: image タイプの SlackBlock を定義
+    const imageBlock: SlackBlock = {
+      type: "image",
+      image_url: "https://example.com/image.png",
+      alt_text: "テスト画像",
+    };
+
+    // Then: 型チェックが通り、プロパティにアクセスできる
+    expect(imageBlock.type).toBe("image");
+  });
+
+  it("title 付きの image ブロックを SlackBlock 型として扱える", () => {
+    // Given: title フィールド付きの image ブロックを定義
+    const imageBlock: SlackBlock = {
+      type: "image",
+      image_url: "https://example.com/image.png",
+      alt_text: "テスト画像",
+      title: { type: "plain_text", text: "画像タイトル" },
+    };
+
+    // Then: 型チェックが通る
+    expect(imageBlock.type).toBe("image");
+  });
+});
+
+describe("postBlocks", () => {
+  // What: 事前ビルド済みの Block Kit ブロック配列を Slack に投稿する関数を検証する
+  // Why: HTML プロバイダは独自の Block Kit メッセージビルダーを持ち、
+  //      ビルド済み blocks を受け取って投稿する汎用関数が必要
+
+  it("ビルド済みブロック配列を Slack に投稿し、ts を返す", async () => {
+    // Given: Slack API が成功レスポンスを返す
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.111111" });
+      }),
+    );
+
+    // Given: ビルド済みの blocks 配列
+    const blocks: SlackBlock[] = [
+      { type: "header", text: { type: "plain_text", text: "テスト", emoji: true } },
+      { type: "section", text: { type: "mrkdwn", text: "本文テキスト" } },
+      {
+        type: "image",
+        image_url: "https://example.com/image.png",
+        alt_text: "テスト画像",
+      },
+    ];
+
+    // When: postBlocks を呼び出す
+    const result = await postBlocks(CHANNEL, blocks, "フォールバックテキスト", TOKEN);
+
+    // Then: 成功レスポンスが返る
+    expect(result.success).toBe(true);
+    expect(result.ts).toBe("1234567890.111111");
+
+    // Then: blocks がペイロードに含まれる
+    expect(capturedBody.blocks).toEqual(blocks);
+    expect(capturedBody.channel).toBe(CHANNEL);
+    expect(capturedBody.text).toBe("フォールバックテキスト");
+  });
+
+  it("botProfile を渡した場合、username と icon_emoji がペイロードに含まれる", async () => {
+    // Given: Slack API が成功レスポンスを返す
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.222222" });
+      }),
+    );
+
+    const blocks: SlackBlock[] = [{ type: "section", text: { type: "mrkdwn", text: "テスト" } }];
+
+    const botProfile: BotProfile = { name: "Gemini CLI Bot", emoji: ":gemini:" };
+
+    // When: botProfile 付きで postBlocks を呼び出す
+    await postBlocks(CHANNEL, blocks, "テキスト", TOKEN, botProfile);
+
+    // Then: bot profile のフィールドが含まれる
+    expect(capturedBody.username).toBe("Gemini CLI Bot");
+    expect(capturedBody.icon_emoji).toBe(":gemini:");
+  });
+
+  it("botProfile を渡さない場合、username と icon_emoji がペイロードに含まれない", async () => {
+    // Given: Slack API が成功レスポンスを返す
+    let capturedBody: Record<string, unknown> = {};
+    server.use(
+      http.post(SLACK_API, async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ok: true, ts: "1234567890.333333" });
+      }),
+    );
+
+    const blocks: SlackBlock[] = [{ type: "section", text: { type: "mrkdwn", text: "テスト" } }];
+
+    // When: botProfile なしで postBlocks を呼び出す
+    await postBlocks(CHANNEL, blocks, "テキスト", TOKEN);
+
+    // Then: bot profile のフィールドが含まれない
+    expect(capturedBody.username).toBeUndefined();
+    expect(capturedBody.icon_emoji).toBeUndefined();
+  });
+
+  it("Slack API がエラーを返した場合、success: false とエラー内容を返す", async () => {
+    // Given: Slack API がエラーを返す
+    server.use(
+      http.post(SLACK_API, () => {
+        return HttpResponse.json({ ok: false, error: "channel_not_found" });
+      }),
+    );
+
+    const blocks: SlackBlock[] = [{ type: "section", text: { type: "mrkdwn", text: "テスト" } }];
+
+    // When: postBlocks を呼び出す
+    const result = await postBlocks(CHANNEL, blocks, "テキスト", TOKEN);
+
+    // Then: エラーが返る
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("channel_not_found");
+  });
+
+  it("ネットワークエラーの場合、success: false を返す", async () => {
+    // Given: ネットワークエラーが発生する
+    server.use(
+      http.post(SLACK_API, () => {
+        return HttpResponse.error();
+      }),
+    );
+
+    const blocks: SlackBlock[] = [{ type: "section", text: { type: "mrkdwn", text: "テスト" } }];
+
+    // When: postBlocks を呼び出す
+    const result = await postBlocks(CHANNEL, blocks, "テキスト", TOKEN);
+
+    // Then: エラーが返る
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
   });
 });
 

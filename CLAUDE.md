@@ -43,6 +43,11 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 - Human review required each phase; use `-y` only for intentional fast-track
 - Keep steering current and verify alignment with `/kiro:spec-status`
 - Follow the user's instructions precisely, and within that scope act autonomously: gather the necessary context and complete the requested work end-to-end in this run, asking questions only when essential information is missing or the instructions are critically ambiguous.
+- t-wada の推奨する TDD の形式に従って実装してください。
+  - Red / Green / Refactor のサイクルです
+- テストコードはレビューしやすいように、 BDD の形式を守ってください。
+  - コメントで Given When Then を記載し、度のフェーズのコードなのかがわかりやすいように
+  - 何をテストしているコードなのか？なぜ必要なのか？という、What と Why もコメントで最初に記述したテストコードにしてください。
 
 ## Steering Configuration
 

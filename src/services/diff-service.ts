@@ -13,9 +13,9 @@ export interface DiffResult {
 }
 
 export interface VersionSection {
-  version: string;     // "2.1.63", "rust-v0.106.0", "0.0.420"
+  version: string; // "2.1.63", "rust-v0.106.0", "0.0.420"
   safeVersion: string; // ファイル名に安全な文字列
-  content: string;     // ヘッダー行を含む全セクション内容
+  content: string; // ヘッダー行を含む全セクション内容
 }
 
 function sha256(content: string): string {
@@ -51,10 +51,7 @@ function toSafeVersion(version: string): string {
   return version.replace(/[^a-zA-Z0-9.\-_]/g, "_");
 }
 
-function isVersionHeader(
-  line: string,
-  sourceType: "raw_markdown" | "github_releases",
-): boolean {
+function isVersionHeader(line: string, sourceType: "raw_markdown" | "github_releases"): boolean {
   if (sourceType === "github_releases") {
     return /^## .+ \(\d{4}-\d{2}-\d{2}T[^)]+Z\)$/.test(line);
   }

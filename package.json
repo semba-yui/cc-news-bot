@@ -29,6 +29,7 @@
     "@secretlint/secretlint-rule-preset-recommend": "catalog:",
     "@types/node": "catalog:",
     "cheerio": "catalog:",
+    "domhandler": "catalog:",
     "lefthook": "catalog:",
     "msw": "catalog:",
     "oxfmt": "catalog:",

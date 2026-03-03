@@ -19,8 +19,21 @@ export interface NotifyDeps {
   slackToken: string;
   listDiffFiles: (diffsDir: string, source: string) => string[];
 
-  postSummary: (ch: string, src: string, version: string, summary: string, token: string, botProfile?: BotProfile) => Promise<PostResult>;
-  postThreadReplies: (ch: string, ts: string, text: string, token: string, options?: PostOptions) => Promise<PostResult[]>;
+  postSummary: (
+    ch: string,
+    src: string,
+    version: string,
+    summary: string,
+    token: string,
+    botProfile?: BotProfile,
+  ) => Promise<PostResult>;
+  postThreadReplies: (
+    ch: string,
+    ts: string,
+    text: string,
+    token: string,
+    options?: PostOptions,
+  ) => Promise<PostResult[]>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
 }
 

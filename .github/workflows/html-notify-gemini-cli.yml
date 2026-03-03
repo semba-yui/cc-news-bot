@@ -1,0 +1,62 @@
+name: HTML Notify - Gemini CLI
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: html-notify-gemini-cli
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: corepack enable && pnpm install --frozen-lockfile
+
+      - name: Fetch Gemini CLI changelog
+        id: fetch
+        run: npx tsx src/scripts/fetch-html-gemini-cli.ts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Translate with Claude
+        if: steps.fetch.outputs.has_changes == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            data/html-current/gemini-cli.json を読み取り、rawSummaryEn フィールドを
+            日本語に翻訳し、summaryJa フィールドとして
+            data/html-summaries/gemini-cli.json に書き出してください。
+            imageUrls と githubReleasesText フィールドはそのままコピーしてください。
+          claude_args: "--max-turns 20 --allowedTools Read,Write"
+
+      - name: Post to Slack
+        if: steps.fetch.outputs.has_changes == 'true'
+        run: npx tsx src/scripts/notify-html-gemini-cli.ts
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID_GEMINI_CLI: ${{ secrets.SLACK_CHANNEL_ID_GEMINI_CLI }}
+
+      - name: Commit state
+        if: steps.fetch.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/state.json
+          git diff --cached --quiet || git commit -m "chore: update html source state"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push

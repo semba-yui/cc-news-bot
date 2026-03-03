@@ -33,7 +33,11 @@ export interface RunDeps {
     currentContent: string,
     previousSnapshot: string | null,
   ) => DiffResult;
-  writeDiff: (result: DiffResult, diffsDir: string, sourceType: "raw_markdown" | "github_releases") => Promise<void>;
+  writeDiff: (
+    result: DiffResult,
+    diffsDir: string,
+    sourceType: "raw_markdown" | "github_releases",
+  ) => Promise<void>;
   loadState: (dataRoot: string) => Promise<SnapshotState>;
   saveState: (state: SnapshotState, dataRoot: string) => Promise<void>;
   postSummary: (
@@ -115,9 +119,10 @@ export async function run(deps: RunDeps): Promise<RunResult> {
 
     hasAnyChanges = true;
     const sourceConfig = sources.find((s) => s.name === sourceName)!;
-    const sourceType = sourceConfig.type === "raw_markdown" || sourceConfig.type === "github_releases"
-      ? sourceConfig.type
-      : "raw_markdown";
+    const sourceType =
+      sourceConfig.type === "raw_markdown" || sourceConfig.type === "github_releases"
+        ? sourceConfig.type
+        : "raw_markdown";
     await writeDiff(diffResult, diffsDir, sourceType);
 
     const versions = splitIntoVersions(diffResult.diffText ?? "", sourceType);

@@ -11,8 +11,20 @@ import { run } from "../main.js";
 const TEST_DATA_ROOT = resolve(import.meta.dirname, "../../data-test-main");
 
 const SOURCES: SourceConfig[] = [
-  { name: "source-a", type: "raw_markdown", url: "https://example.com/a.md", botName: "test", botEmoji: ":test:" },
-  { name: "source-b", type: "raw_markdown", url: "https://example.com/b.md", botName: "test", botEmoji: ":test:" },
+  {
+    name: "source-a",
+    type: "raw_markdown",
+    url: "https://example.com/a.md",
+    botName: "test",
+    botEmoji: ":test:",
+  },
+  {
+    name: "source-b",
+    type: "raw_markdown",
+    url: "https://example.com/b.md",
+    botName: "test",
+    botEmoji: ":test:",
+  },
 ];
 
 function makeTestDeps(overrides: Partial<Parameters<typeof run>[0]> = {}) {

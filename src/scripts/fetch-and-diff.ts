@@ -41,7 +41,11 @@ export interface FetchAndDiffDeps {
   loadSnapshot: (source: string, dir: string) => Promise<string | null>;
   saveSnapshot: (source: string, content: string, dir: string) => Promise<void>;
   detectChanges: (source: string, current: string, prev: string | null) => DiffResult;
-  writeDiff: (result: DiffResult, dir: string, sourceType: "raw_markdown" | "github_releases") => Promise<void>;
+  writeDiff: (
+    result: DiffResult,
+    dir: string,
+    sourceType: "raw_markdown" | "github_releases",
+  ) => Promise<void>;
   loadState: (root: string) => Promise<SnapshotState>;
   saveState: (state: SnapshotState, root: string) => Promise<void>;
   postError: (ch: string, src: string, err: string, token: string) => Promise<PostResult>;

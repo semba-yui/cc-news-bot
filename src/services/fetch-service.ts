@@ -81,7 +81,7 @@ async function fetchOne(source: SourceConfig, options?: FetchAllOptions): Promis
     let content: string;
     if (source.type === "github_releases") {
       const since = options?.sourceStates?.[source.name]?.latestReleasedAt;
-      content = await fetchGitHubReleases(source.owner!, source.repo!, options?.githubToken, {
+      content = await fetchGitHubReleases(source.owner, source.repo, options?.githubToken, {
         since,
       });
       // 先頭行から最新リリースのタイムスタンプを抽出: "## tag (ISO8601Z)"

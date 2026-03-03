@@ -1,7 +1,12 @@
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type DiffResult, detectChanges, splitIntoVersions, writeDiff } from "../services/diff-service.js";
+import {
+  type DiffResult,
+  detectChanges,
+  splitIntoVersions,
+  writeDiff,
+} from "../services/diff-service.js";
 
 describe("detectChanges", () => {
   it("前回スナップショットが null（初回実行）の場合、hasChanges: false を返す", () => {

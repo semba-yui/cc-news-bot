@@ -15,3 +15,6 @@ data/run-result.json
 
 # claude code
 .claude/
+
+# Playwright
+.playwright-mcp/

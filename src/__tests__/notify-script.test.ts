@@ -25,9 +25,7 @@ function makeDeps(overrides: Partial<NotifyDeps> = {}): NotifyDeps {
       success: true,
       ts: "1234567890.123456",
     }),
-    postThreadReplies: vi.fn<() => Promise<PostResult[]>>().mockResolvedValue([
-      { success: true },
-    ]),
+    postThreadReplies: vi.fn<() => Promise<PostResult[]>>().mockResolvedValue([{ success: true }]),
     saveSnapshot: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     ...overrides,
   };
