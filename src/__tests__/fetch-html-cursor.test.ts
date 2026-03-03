@@ -126,8 +126,8 @@ describe("fetchHtmlCursor", () => {
 
   describe("初回実行: latestVersion なし (Req 1.3)", () => {
     // What: state に latestVersion が存在しない初回実行ケース
-    // Why: 初回実行ではバージョン記録のみ行い通知をスキップすることを検証する
-    it("バージョンを記録するのみで hasChanges=false を返す", async () => {
+    // Why: 初回実行でも通常の新バージョン検出と同じフローで通知することを検証する
+    it("hasChanges=true を返し JSON 書き出しと state 更新を行う", async () => {
       // Given: state にソースエントリが存在しない（初回実行）
       const deps = makeDeps({
         loadState: vi.fn().mockResolvedValue({
@@ -139,8 +139,9 @@ describe("fetchHtmlCursor", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlCursor(deps);
 
-      // Then: 変更なし（通知スキップ）
-      expect(result.hasChanges).toBe(false);
+      // Then: 変更あり（通知される）
+      expect(result.hasChanges).toBe(true);
+      expect(result.newVersion).toBe("2.5");
 
       // Then: state にバージョンが記録される
       expect(deps.saveState).toHaveBeenCalledTimes(1);

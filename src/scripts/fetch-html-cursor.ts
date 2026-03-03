@@ -78,17 +78,6 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
     return { hasChanges: false };
   }
 
-  // 初回実行チェック
-  if (existingVersion === undefined) {
-    state.sources[SOURCE_NAME] = {
-      hash: "",
-      lastCheckedAt: now,
-      latestVersion,
-    };
-    await deps.saveState(state, deps.dataRoot);
-    return { hasChanges: false };
-  }
-
   // フェーズ3: コンテンツ抽出
   const versionContent = deps.parseVersionContent(html, latestVersion);
   if (!versionContent) {

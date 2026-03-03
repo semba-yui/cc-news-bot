@@ -114,17 +114,6 @@ export async function fetchHtmlGeminiCli(
       return { hasChanges: false };
     }
 
-    // 初回実行チェック
-    if (existingVersion === undefined) {
-      state.sources[SOURCE_NAME] = {
-        hash: "",
-        lastCheckedAt: now,
-        latestVersion,
-      };
-      await deps.saveState(state, deps.dataRoot);
-      return { hasChanges: false };
-    }
-
     // fallback モードで JSON 書き出し
     const outputFile = {
       version: latestVersion,
@@ -165,17 +154,6 @@ export async function fetchHtmlGeminiCli(
 
   // 同一バージョンチェック
   if (existingVersion === latestVersion) {
-    return { hasChanges: false };
-  }
-
-  // 初回実行チェック
-  if (existingVersion === undefined) {
-    state.sources[SOURCE_NAME] = {
-      hash: "",
-      lastCheckedAt: now,
-      latestVersion,
-    };
-    await deps.saveState(state, deps.dataRoot);
     return { hasChanges: false };
   }
 
