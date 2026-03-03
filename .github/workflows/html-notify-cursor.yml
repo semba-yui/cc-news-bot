@@ -130,4 +130,6 @@ jobs:
           git add data/state/cursor.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: update html source state [cursor]"
+          git checkout -- . || true
+          git clean -fd || true
           git pull --rebase && git push

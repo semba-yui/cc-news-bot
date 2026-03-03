@@ -70,4 +70,6 @@ jobs:
           git add data/state/gemini-cli.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: update html source state [gemini-cli]"
+          git checkout -- . || true
+          git clean -fd || true
           git pull --rebase && git push

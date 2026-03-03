@@ -71,4 +71,6 @@ jobs:
           git add data/state/antigravity.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: update html source state [antigravity]"
+          git checkout -- . || true
+          git clean -fd || true
           git pull --rebase && git push
