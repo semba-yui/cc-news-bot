@@ -2,9 +2,9 @@ import { appendFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DATA_DIR } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
-import type { MuxVideo } from "../services/cursor-article-extractor.js";
+import type { CursorEntry, MuxVideo } from "../services/cursor-article-extractor.js";
 import {
-  parseAllVersions as parseAllVersionsImpl,
+  parseAllEntries as parseAllEntriesImpl,
   extractArticleRscPayload as extractArticleRscPayloadImpl,
   extractMuxVideoData as extractMuxVideoDataImpl,
 } from "../services/cursor-article-extractor.js";
@@ -24,8 +24,8 @@ export interface FetchHtmlCursorDeps {
   readonly dataRoot: string;
   readonly htmlCurrentDir: string;
   readonly fetchStaticHtml: (url: string, opts?: HtmlFetchOptions) => Promise<string>;
-  readonly parseAllVersions: (html: string) => string[];
-  readonly extractArticleRscPayload: (html: string, version: string) => string | null;
+  readonly parseAllEntries: (html: string) => CursorEntry[];
+  readonly extractArticleRscPayload: (html: string, slug: string) => string | null;
   readonly extractMuxVideoData: (html: string, slug: string) => MuxVideo[];
   readonly loadState: (root: string) => Promise<SnapshotState>;
   readonly saveState: (state: SnapshotState, root: string) => Promise<void>;
@@ -51,7 +51,7 @@ function logError(message: string): void {
 export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchHtmlCursorResult> {
   const state = await deps.loadState(deps.dataRoot);
   const now = new Date().toISOString();
-  const existingVersion = state.sources[SOURCE_NAME]?.latestVersion;
+  const sourceState = state.sources[SOURCE_NAME];
 
   // フェーズ1: cursor.com/ja/changelog からの取得
   let html: string;
@@ -66,60 +66,81 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
     };
   }
 
-  // フェーズ2: 全バージョン検出
-  const allVersions = deps.parseAllVersions(html);
-  if (allVersions.length === 0) {
-    logError("Could not parse any versions from cursor.com HTML");
+  // フェーズ2: 全エントリ検出（date 降順）
+  const allEntries = deps.parseAllEntries(html);
+  if (allEntries.length === 0) {
+    logError("Could not parse any entries from cursor.com HTML");
     return {
       hasChanges: false,
-      error: "Could not parse any versions from cursor.com HTML",
+      error: "Could not parse any entries from cursor.com HTML",
     };
   }
 
-  const latestVersion = allVersions[0];
+  // フェーズ3: カットオフ date/slug の決定
+  let cutoffDate: string | undefined;
+  let cutoffSlug: string | undefined;
 
-  // 同一バージョンチェック
-  if (existingVersion === latestVersion) {
-    return { hasChanges: false };
-  }
-
-  // フェーズ3: 未通知バージョンの特定
-  let newVersions: string[];
-  if (!existingVersion) {
-    newVersions = allVersions.slice(0, MAX_INITIAL_VERSIONS);
-  } else {
-    const existingIdx = allVersions.indexOf(existingVersion);
-    if (existingIdx === -1) {
-      newVersions = [...allVersions];
-    } else {
-      newVersions = allVersions.slice(0, existingIdx);
+  if (sourceState?.latestDate) {
+    cutoffDate = sourceState.latestDate;
+    cutoffSlug = sourceState.latestSlug;
+  } else if (sourceState?.latestVersion) {
+    // マイグレーション: latestVersion → latestDate/latestSlug
+    const matched = allEntries.find((e) => e.version === sourceState.latestVersion);
+    if (matched) {
+      cutoffDate = matched.date;
+      cutoffSlug = matched.slug;
     }
   }
 
-  // 古い順に反転
-  newVersions.reverse();
+  // フェーズ4: 未通知エントリの特定
+  let newEntries: CursorEntry[];
+  if (!cutoffDate) {
+    // 初回実行: 最新 MAX_INITIAL_VERSIONS 件
+    newEntries = allEntries.slice(0, MAX_INITIAL_VERSIONS);
+  } else {
+    newEntries = [];
+    for (const entry of allEntries) {
+      if (entry.date > cutoffDate) {
+        // date が新しい → 新規
+        newEntries.push(entry);
+      } else if (entry.date === cutoffDate && entry.slug !== cutoffSlug) {
+        // 同一日付の別エントリ → 新規
+        newEntries.push(entry);
+      }
+      // entry.date === cutoffDate && entry.slug === cutoffSlug → 境界（既知）
+      // entry.date < cutoffDate → 既知
+    }
+  }
 
-  // フェーズ4: 各バージョンのコンテンツ抽出
+  if (newEntries.length === 0) {
+    return { hasChanges: false };
+  }
+
+  // 古い順に反転
+  newEntries.reverse();
+
+  // フェーズ5: 各エントリのコンテンツ抽出
   const entries: Array<{
     version: string;
+    title: string;
     rscPayload: string;
     articleHtml: string;
     muxVideos: Array<{ playbackId: string; thumbnailUrl: string; hlsUrl: string }>;
     fetchedAt: string;
   }> = [];
 
-  for (const version of newVersions) {
-    const rscPayload = deps.extractArticleRscPayload(html, version);
+  for (const entry of newEntries) {
+    const rscPayload = deps.extractArticleRscPayload(html, entry.slug);
     if (!rscPayload) {
-      logError(`Could not extract RSC payload for version ${version}, skipping`);
+      logError(`Could not extract RSC payload for entry ${entry.slug}, skipping`);
       continue;
     }
 
-    const slug = version.replace(/\./g, "-");
-    const muxVideos = deps.extractMuxVideoData(html, slug);
+    const muxVideos = deps.extractMuxVideoData(html, entry.slug);
 
     entries.push({
-      version,
+      version: entry.version,
+      title: entry.title,
       rscPayload,
       articleHtml: "",
       muxVideos: muxVideos.map((v) => ({
@@ -132,21 +153,23 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
   }
 
   if (entries.length === 0) {
-    logError("Could not extract content for any new versions");
+    logError("Could not extract content for any new entries");
     return {
       hasChanges: false,
-      error: "Could not extract content for any new versions",
+      error: "Could not extract content for any new entries",
     };
   }
 
-  // フェーズ5: JSON 配列ファイル書き出し
+  // フェーズ6: JSON 配列ファイル書き出し
   writeFileSync(resolve(deps.htmlCurrentDir, "cursor.json"), JSON.stringify(entries, null, 2));
 
-  // フェーズ6: state 更新
+  // フェーズ7: state 更新（最新エントリの date/slug を保存）
+  const latestEntry = allEntries[0];
   state.sources[SOURCE_NAME] = {
     hash: "",
     lastCheckedAt: now,
-    latestVersion,
+    latestDate: latestEntry.date,
+    latestSlug: latestEntry.slug,
   };
   await deps.saveState(state, deps.dataRoot);
 
@@ -163,7 +186,7 @@ async function main(): Promise<void> {
     dataRoot: DATA_DIR.root,
     htmlCurrentDir: DATA_DIR.htmlCurrent,
     fetchStaticHtml: fetchStaticHtmlImpl,
-    parseAllVersions: parseAllVersionsImpl,
+    parseAllEntries: parseAllEntriesImpl,
     extractArticleRscPayload: extractArticleRscPayloadImpl,
     extractMuxVideoData: extractMuxVideoDataImpl,
     loadState: loadStateImpl,

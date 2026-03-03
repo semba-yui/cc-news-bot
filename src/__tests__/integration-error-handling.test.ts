@@ -184,10 +184,10 @@ describe("結合テスト: エラーハンドリング", () => {
 
     // raw_markdown ソースの状態が記録される
     expect(state.sources["source-beta"]).toBeDefined();
-    expect(state.sources["source-beta"].hash).toBeTruthy();
+    expect(state.sources["source-beta"]!.hash).toBeTruthy();
     // github_releases ソース: hash は使わない（latestReleasedAt でトラッキング）
     expect(state.sources["source-gamma"]).toBeDefined();
-    expect(state.sources["source-gamma"].hash).toBe("");
+    expect(state.sources["source-gamma"]!.hash).toBe("");
 
     // エラーのソースは state に記録されない
     expect(state.sources["source-alpha"]).toBeUndefined();

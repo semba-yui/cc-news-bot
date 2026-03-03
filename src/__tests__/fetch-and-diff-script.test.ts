@@ -258,7 +258,7 @@ describe("fetchAndDiff", () => {
 
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["codex"].latestReleasedAt).toBe("2026-02-28T12:00:00Z");
+      expect(savedState.sources["codex"]!.latestReleasedAt).toBe("2026-02-28T12:00:00Z");
     });
 
     it("新規リリースなし（空コンテンツ）: changedSources 空、latestReleasedAt を既存値で保持する", async () => {
@@ -326,7 +326,7 @@ describe("fetchAndDiff", () => {
       // latestReleasedAt が更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["codex"].latestReleasedAt).toBe("2026-03-01T10:00:00Z");
+      expect(savedState.sources["codex"]!.latestReleasedAt).toBe("2026-03-01T10:00:00Z");
     });
 
     it("state の sourceStates を fetchAll に渡す", async () => {

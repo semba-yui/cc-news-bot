@@ -6,21 +6,43 @@ export interface MuxVideo {
   readonly hlsUrl: string;
 }
 
-const VERSION_PATTERN = /^\d+\.\d+$/;
+export interface CursorEntry {
+  readonly slug: string;
+  readonly date: string;
+  readonly title: string;
+  readonly version: string;
+}
+
+export function parseAllEntries(html: string): CursorEntry[] {
+  if (!html) return [];
+
+  const $ = cheerio.load(html);
+  const entries: CursorEntry[] = [];
+
+  const firstSection = $("section.container").first();
+  const articles = firstSection.find("article");
+
+  articles.each((_i, el) => {
+    const $el = $(el);
+    const href = $el.find('a[href*="/changelog/"]').first().attr("href") ?? "";
+    const slug = href.replace(/.*\/changelog\//, "");
+    if (!slug) return;
+
+    const date = $el.find("time").first().attr("datetime") ?? "";
+    const title = $el.find("h1").first().text().trim();
+    const labelText = $el.find("span.label").first().text().trim();
+    const version = labelText || slug;
+
+    entries.push({ slug, date, title, version });
+  });
+
+  entries.sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
+
+  return entries;
+}
 
 export function parseAllVersions(html: string): string[] {
-  const $ = cheerio.load(html);
-  const versions: string[] = [];
-
-  const labels = $("article span.label").toArray();
-  for (const label of labels) {
-    const text = $(label).text().trim();
-    if (VERSION_PATTERN.test(text)) {
-      versions.push(text);
-    }
-  }
-
-  return versions;
+  return parseAllEntries(html).map((e) => e.version);
 }
 
 export function parseLatestVersion(html: string): string | null {
@@ -58,9 +80,7 @@ function findNextArticleBoundary(html: string, fromIndex: number, escaped: boole
   return idx === -1 ? html.length : idx;
 }
 
-export function extractArticleRscPayload(html: string, version: string): string | null {
-  const slug = version.replace(/\./g, "-");
-
+export function extractArticleRscPayload(html: string, slug: string): string | null {
   const match = findArticleMarker(html, slug);
   if (!match) return null;
 

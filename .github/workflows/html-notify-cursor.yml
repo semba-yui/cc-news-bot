@@ -54,7 +54,8 @@ jobs:
 
             data/html-current/cursor.json の構造（配列）:
             各要素:
-            - version (string): バージョン番号（例: "2.5"）
+            - version (string): バージョン番号（例: "2.5"）またはエントリの slug（例: "02-26-26", "cli-feb-18-2026"）
+            - title (string): エントリのタイトル（例: "Bugbot Autofix", "プラグイン、サンドボックスのアクセス制御"）
             - rscPayload (string): RSC 形式の article データ。Next.js の React Server Components ペイロード。
               コンポーネントは ["$","tagName",key,{props}] 形式で表現される。
               例: ["$","p",null,{"children":"テキスト"}]
@@ -87,7 +88,9 @@ jobs:
               $L1f 内の ul/li を箇条書きリストとして展開する。
 
             ### ブロック構成
-            1. 先頭は必ず header ブロック: "Cursor {version} の更新"
+            1. 先頭は必ず header ブロック:
+               - version が "X.Y" 形式（数値.数値）の場合: "Cursor {version} の更新"
+               - それ以外（slug 形式）の場合: "Cursor: {title}"
             2. セクション間（h3 の前）に divider ブロックを挿入
             3. 各 section.text は 3000 文字以内。超える場合は複数 section に分割
 
@@ -99,8 +102,8 @@ jobs:
             結果を data/html-summaries/cursor.json に JSON 配列で書き出してください。
             入力配列の各要素に対して、変換結果を出力配列の対応する要素に格納してください。
             出力スキーマ（配列の各要素）:
-            - version (string): バージョン番号
-            - fallbackText (string): Slack の通知テキスト（例: "Cursor 2.5 の更新"）
+            - version (string): バージョン番号または slug
+            - fallbackText (string): Slack の通知テキスト（例: "Cursor 2.5 の更新" or "Cursor: Bugbot Autofix"）
             - blocks (array): Slack Block Kit ブロック配列
               - header: { type: "header", text: { type: "plain_text", text: string (150文字以内), emoji: true } }
               - section: { type: "section", text: { type: "mrkdwn", text: string (3000文字以内) } }

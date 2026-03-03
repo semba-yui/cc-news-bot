@@ -298,8 +298,8 @@ describe("run (メインフロー制御)", () => {
       const savedState = vi.mocked(deps.saveState).mock.calls[0][0];
       expect(savedState.lastRunAt).toBeTruthy();
       expect(savedState.sources["source-a"]).toBeDefined();
-      expect(savedState.sources["source-a"].hash).toBe("hash-a");
-      expect(savedState.sources["source-a"].lastCheckedAt).toBeTruthy();
+      expect(savedState.sources["source-a"]!.hash).toBe("hash-a");
+      expect(savedState.sources["source-a"]!.lastCheckedAt).toBeTruthy();
     });
 
     it("全ソースで差分なし（初回でもない）の場合は saveState を呼ばない", async () => {
@@ -346,8 +346,8 @@ describe("run (メインフロー制御)", () => {
 
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = vi.mocked(deps.saveState).mock.calls[0][0];
-      expect(savedState.sources["source-a"].hash).toBe("new-a");
-      expect(savedState.sources["source-b"].hash).toBe("same-b");
+      expect(savedState.sources["source-a"]!.hash).toBe("new-a");
+      expect(savedState.sources["source-b"]!.hash).toBe("same-b");
     });
   });
 

@@ -109,7 +109,7 @@ describe("fetchHtmlAntigravity", () => {
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"].latestVersion).toBe("1.19.6");
+      expect(savedState.sources["antigravity"]!.latestVersion).toBe("1.19.6");
     });
   });
 
@@ -150,7 +150,7 @@ describe("fetchHtmlAntigravity", () => {
       // Then: state は最新バージョンで更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"].latestVersion).toBe("1.19.6");
+      expect(savedState.sources["antigravity"]!.latestVersion).toBe("1.19.6");
     });
   });
 
@@ -180,7 +180,7 @@ describe("fetchHtmlAntigravity", () => {
       // Then: state は最新バージョンで更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"].latestVersion).toBe("1.19.6");
+      expect(savedState.sources["antigravity"]!.latestVersion).toBe("1.19.6");
     });
   });
 
@@ -382,8 +382,8 @@ describe("fetchHtmlAntigravity", () => {
       // Then: lastCheckedAt が更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"].lastCheckedAt).toBeDefined();
-      expect(new Date(savedState.sources["antigravity"].lastCheckedAt).toISOString()).toBeTruthy();
+      expect(savedState.sources["antigravity"]!.lastCheckedAt).toBeDefined();
+      expect(new Date(savedState.sources["antigravity"]!.lastCheckedAt).toISOString()).toBeTruthy();
     });
   });
 });

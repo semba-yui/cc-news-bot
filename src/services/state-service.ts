@@ -8,11 +8,13 @@ export interface SourceState {
   lastCheckedAt: string; // ISO 8601
   latestReleasedAt?: string; // ISO 8601、github_releases ソース用
   latestVersion?: string; // html_scraping / html_headless ソース用
+  latestDate?: string; // ISO 8601、日付ベース差分検出用
+  latestSlug?: string; // 最新エントリの slug
 }
 
 export interface SnapshotState {
   lastRunAt: string; // ISO 8601
-  sources: Record<string, SourceState>;
+  sources: Record<string, SourceState | undefined>;
 }
 
 const EMPTY_STATE: SnapshotState = { lastRunAt: "", sources: {} };

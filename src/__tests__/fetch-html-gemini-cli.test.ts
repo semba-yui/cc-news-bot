@@ -119,7 +119,7 @@ describe("fetchHtmlGeminiCli", () => {
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["gemini-cli"].latestVersion).toBe("v0.31.0");
+      expect(savedState.sources["gemini-cli"]!.latestVersion).toBe("v0.31.0");
     });
   });
 
@@ -385,8 +385,8 @@ describe("fetchHtmlGeminiCli", () => {
       // Then: lastCheckedAt が更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["gemini-cli"].lastCheckedAt).toBeDefined();
-      expect(new Date(savedState.sources["gemini-cli"].lastCheckedAt).toISOString()).toBeTruthy();
+      expect(savedState.sources["gemini-cli"]!.lastCheckedAt).toBeDefined();
+      expect(new Date(savedState.sources["gemini-cli"]!.lastCheckedAt).toISOString()).toBeTruthy();
     });
   });
 });

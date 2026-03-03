@@ -9,7 +9,7 @@ export interface FetchOptions {
 
 export interface FetchAllOptions {
   githubToken?: string;
-  sourceStates?: Record<string, { latestReleasedAt?: string }>; // per-source since フィルタ用
+  sourceStates?: Record<string, { latestReleasedAt?: string } | undefined>; // per-source since フィルタ用
 }
 
 export interface FetchResult {

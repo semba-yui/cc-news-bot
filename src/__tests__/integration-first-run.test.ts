@@ -218,14 +218,14 @@ describe("結合テスト: 初回実行シナリオ", () => {
       expect(state.sources[source.name]).toBeDefined();
       if (source.type === "github_releases") {
         // github_releases: latestReleasedAt でトラッキング（hash は使わない）
-        expect(state.sources[source.name].latestReleasedAt).toBe("2026-02-28T00:00:00Z");
+        expect(state.sources[source.name]!.latestReleasedAt).toBe("2026-02-28T00:00:00Z");
       } else {
         // raw_markdown: hash が空でない
-        expect(state.sources[source.name].hash).toBeTruthy();
+        expect(state.sources[source.name]!.hash).toBeTruthy();
       }
       // lastCheckedAt が ISO 8601 形式で設定されている
-      expect(new Date(state.sources[source.name].lastCheckedAt).toISOString()).toBe(
-        state.sources[source.name].lastCheckedAt,
+      expect(new Date(state.sources[source.name]!.lastCheckedAt).toISOString()).toBe(
+        state.sources[source.name]!.lastCheckedAt,
       );
     }
 

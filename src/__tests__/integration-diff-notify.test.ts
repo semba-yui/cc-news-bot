@@ -406,12 +406,12 @@ describe("結合テスト: 差分検出と通知フロー", () => {
 
       // 両ソースのハッシュが記録されている
       for (const source of TEST_SOURCES) {
-        expect(state.sources[source.name].hash).toBeTruthy();
-        expect(state.sources[source.name].lastCheckedAt).toBeTruthy();
+        expect(state.sources[source.name]!.hash).toBeTruthy();
+        expect(state.sources[source.name]!.lastCheckedAt).toBeTruthy();
       }
 
       // 差分があったソースと無かったソースのハッシュが異なる
-      expect(state.sources["source-alpha"].hash).not.toBe(state.sources["source-beta"].hash);
+      expect(state.sources["source-alpha"]!.hash).not.toBe(state.sources["source-beta"]!.hash);
     });
 
     it("差分なしの場合は state ファイルが更新されない", async () => {

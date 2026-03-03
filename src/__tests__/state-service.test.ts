@@ -197,7 +197,7 @@ describe("saveState", () => {
 
     // Then: 上書きされる
     const loaded = await loadState(testDataRoot);
-    expect(loaded.sources.codex.hash).toBe("sha256-new");
+    expect(loaded.sources.codex!.hash).toBe("sha256-new");
   });
 
   it("書き出し後にソースごとのファイルが存在する", async () => {
