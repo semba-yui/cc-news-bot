@@ -135,10 +135,7 @@ export async function fetchHtmlAntigravity(
   }
 
   // フェーズ5: JSON 配列ファイル書き出し
-  writeFileSync(
-    resolve(deps.htmlCurrentDir, "antigravity.json"),
-    JSON.stringify(entries, null, 2),
-  );
+  writeFileSync(resolve(deps.htmlCurrentDir, "antigravity.json"), JSON.stringify(entries, null, 2));
 
   // フェーズ6: state 更新（最新バージョンで）
   state.sources[SOURCE_NAME] = {

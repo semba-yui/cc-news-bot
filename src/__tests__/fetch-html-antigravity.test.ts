@@ -161,9 +161,9 @@ describe("fetchHtmlAntigravity", () => {
       // Given: state にソースエントリが存在しない（初回実行）
       //        ページには6件以上のバージョンがある
       const deps = makeDeps({
-        parseAllVersions: vi.fn().mockReturnValue([
-          "1.19.6", "1.19.5", "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19.0",
-        ]),
+        parseAllVersions: vi
+          .fn()
+          .mockReturnValue(["1.19.6", "1.19.5", "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19.0"]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
           sources: {},

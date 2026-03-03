@@ -52,9 +52,7 @@ function makeDeps(overrides: Partial<FetchHtmlCursorDeps> = {}): FetchHtmlCursor
     fetchStaticHtml: vi
       .fn<(url: string, opts?: HtmlFetchOptions) => Promise<string>>()
       .mockResolvedValue("<html>mock cursor changelog</html>"),
-    parseAllVersions: vi
-      .fn<(html: string) => string[]>()
-      .mockReturnValue(["2.5", "2.4", "2.3"]),
+    parseAllVersions: vi.fn<(html: string) => string[]>().mockReturnValue(["2.5", "2.4", "2.3"]),
     extractArticleRscPayload: vi
       .fn<(html: string, version: string) => string | null>()
       .mockReturnValue(SAMPLE_RSC_PAYLOAD),
@@ -181,7 +179,9 @@ describe("fetchHtmlCursor", () => {
     it("最新5件まで取得し古い順で配列書き出しする", async () => {
       // Given: state にソースエントリが存在しない（初回実行）
       const deps = makeDeps({
-        parseAllVersions: vi.fn().mockReturnValue(["2.5", "2.4", "2.3", "2.2", "2.1", "2.0", "1.9"]),
+        parseAllVersions: vi
+          .fn()
+          .mockReturnValue(["2.5", "2.4", "2.3", "2.2", "2.1", "2.0", "1.9"]),
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
           sources: {},

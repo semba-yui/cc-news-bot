@@ -24,6 +24,7 @@ const MOCK_BLOCKS: SlackBlock[] = [
 function makeDeps(overrides: Partial<NotifyHtmlGeminiCliDeps> = {}): NotifyHtmlGeminiCliDeps {
   return {
     htmlSummariesDir: resolve(TEST_ROOT, "html-summaries"),
+    htmlCurrentDir: resolve(TEST_ROOT, "html-current"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
     botProfile: { name: "Gemini CLI Changelog", emoji: ":gemini:" },
@@ -42,13 +43,17 @@ function writeSummaryFile(
     version: string;
     summaryJa: string;
     imageUrls: string[];
-    githubReleasesText: string | null;
   }>,
 ): void {
   writeFileSync(
     resolve(TEST_ROOT, "html-summaries", "gemini-cli.json"),
     JSON.stringify(data, null, 2),
   );
+}
+
+function writeReleasesFile(text: string): void {
+  mkdirSync(resolve(TEST_ROOT, "html-current"), { recursive: true });
+  writeFileSync(resolve(TEST_ROOT, "html-current", "gemini-cli-releases.txt"), text);
 }
 
 describe("notifyHtmlGeminiCli", () => {
@@ -70,7 +75,6 @@ describe("notifyHtmlGeminiCli", () => {
           version: "v0.31.0",
           summaryJa: "テスト要約",
           imageUrls: ["https://example.com/img.png"],
-          githubReleasesText: null,
         },
       ]);
 
@@ -103,7 +107,6 @@ describe("notifyHtmlGeminiCli", () => {
           version: "v0.31.0",
           summaryJa: "テスト要約",
           imageUrls: [],
-          githubReleasesText: null,
         },
       ]);
 
@@ -143,13 +146,11 @@ describe("notifyHtmlGeminiCli", () => {
           version: "v0.30.0",
           summaryJa: "要約A",
           imageUrls: [],
-          githubReleasesText: null,
         },
         {
           version: "v0.31.0",
           summaryJa: "要約B",
           imageUrls: ["https://example.com/img.png"],
-          githubReleasesText: null,
         },
       ]);
 
@@ -198,13 +199,11 @@ describe("notifyHtmlGeminiCli", () => {
           version: "v0.30.0",
           summaryJa: "要約A",
           imageUrls: [],
-          githubReleasesText: null,
         },
         {
           version: "v0.31.0",
           summaryJa: "要約B",
           imageUrls: [],
-          githubReleasesText: null,
         },
       ]);
 
@@ -223,16 +222,16 @@ describe("notifyHtmlGeminiCli", () => {
   describe("返信スレッドへの投稿", () => {
     // What: githubReleasesText が存在するバージョンのみスレッド返信が投稿されること
     // Why: GitHub Releases テキストはスレッド返信として詳細を提供する
-    it("GitHub Releases テキストが存在する場合、返信スレッドに詳細を投稿する", async () => {
-      // Given: githubReleasesText が存在する翻訳済みコンテンツ（単一バージョン）
+    it("releases ファイルが存在する場合、最後のエントリのスレッドに詳細を投稿する", async () => {
+      // Given: 翻訳済みコンテンツ（単一バージョン）と releases ファイルが存在する
       writeSummaryFile([
         {
           version: "v0.31.0",
           summaryJa: "テスト要約",
           imageUrls: [],
-          githubReleasesText: "## v0.31.0\n\n- New feature\n- Bug fix",
         },
       ]);
+      writeReleasesFile("## v0.31.0\n\n- New feature\n- Bug fix");
 
       const deps = makeDeps();
 
@@ -249,14 +248,13 @@ describe("notifyHtmlGeminiCli", () => {
       );
     });
 
-    it("GitHub Releases テキストが null の場合、返信スレッドをスキップする", async () => {
-      // Given: githubReleasesText が null の翻訳済みコンテンツ
+    it("releases ファイルが存在しない場合、返信スレッドをスキップする", async () => {
+      // Given: 翻訳済みコンテンツのみ存在し、releases ファイルなし
       writeSummaryFile([
         {
           version: "v0.31.0",
           summaryJa: "テスト要約",
           imageUrls: [],
-          githubReleasesText: null,
         },
       ]);
 
@@ -269,32 +267,31 @@ describe("notifyHtmlGeminiCli", () => {
       expect(deps.postThreadReplies).not.toHaveBeenCalled();
     });
 
-    it("複数バージョンで githubReleasesText がある場合のみスレッド返信する", async () => {
-      // What: 複数バージョンのうち、githubReleasesText があるバージョンのみスレッド返信
-      // Why: 中間バージョンには githubReleasesText がなく、最新のみにある想定
+    it("複数バージョンで releases ファイルがある場合、最後のエントリのみスレッド返信する", async () => {
+      // What: 複数バージョンのうち、最後のエントリ（最新）のみスレッド返信
+      // Why: releases テキストは全体共通なので、最新バージョンのスレッドに投稿する
 
-      // Given: 2バージョン、最新のみ githubReleasesText あり
+      // Given: 2バージョンと releases ファイルが存在する
       writeSummaryFile([
         {
           version: "v0.30.0",
           summaryJa: "要約A",
           imageUrls: [],
-          githubReleasesText: null,
         },
         {
           version: "v0.31.0",
           summaryJa: "要約B",
           imageUrls: [],
-          githubReleasesText: "## v0.31.0\n\n- Details",
         },
       ]);
+      writeReleasesFile("## v0.31.0\n\n- Details");
 
       const deps = makeDeps();
 
       // When: 通知スクリプトを実行する
       await notifyHtmlGeminiCli(deps);
 
-      // Then: postThreadReplies は1回だけ呼ばれる（v0.31.0 のみ）
+      // Then: postThreadReplies は1回だけ呼ばれる（最後のエントリ v0.31.0 のみ）
       expect(deps.postThreadReplies).toHaveBeenCalledTimes(1);
       expect(deps.postThreadReplies).toHaveBeenCalledWith(
         "C_TEST",
@@ -306,15 +303,15 @@ describe("notifyHtmlGeminiCli", () => {
     });
 
     it("親スレッド投稿失敗時は返信スレッドをスキップする", async () => {
-      // Given: githubReleasesText が存在するが、親スレッド投稿が失敗する
+      // Given: releases ファイルが存在するが、親スレッド投稿が失敗する
       writeSummaryFile([
         {
           version: "v0.31.0",
           summaryJa: "テスト要約",
           imageUrls: [],
-          githubReleasesText: "## v0.31.0\n\n- Details",
         },
       ]);
+      writeReleasesFile("## v0.31.0\n\n- Details");
 
       const deps = makeDeps({
         postBlocks: vi.fn().mockResolvedValue({ success: false, error: "channel_not_found" }),
@@ -336,7 +333,6 @@ describe("notifyHtmlGeminiCli", () => {
           version: "v0.31.0",
           summaryJa: "テスト要約",
           imageUrls: [],
-          githubReleasesText: null,
         },
       ]);
 

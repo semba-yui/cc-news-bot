@@ -118,7 +118,6 @@ export async function fetchHtmlGeminiCli(
         version: latestVersion,
         rawSummaryEn: null,
         imageUrls: [] as string[],
-        githubReleasesText: ghText,
         mode: "fallback" as const,
         fetchedAt: now,
       },
@@ -128,6 +127,11 @@ export async function fetchHtmlGeminiCli(
       resolve(deps.htmlCurrentDir, "gemini-cli.json"),
       JSON.stringify(entries, null, 2),
     );
+
+    // releases テキストを別ファイルに保存
+    if (ghText) {
+      writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt"), ghText);
+    }
 
     state.sources[SOURCE_NAME] = {
       hash: "",
@@ -200,8 +204,6 @@ export async function fetchHtmlGeminiCli(
         version: r.version,
         rawSummaryEn: r.content!.rawSummaryEn,
         imageUrls: [...r.content!.imageUrls],
-        // githubReleasesText は最新バージョン（配列末尾）にのみ付与
-        githubReleasesText: r.version === latestVersion ? ghText : null,
         mode: "full" as const,
         fetchedAt: now,
       }));
@@ -210,6 +212,11 @@ export async function fetchHtmlGeminiCli(
       resolve(deps.htmlCurrentDir, "gemini-cli.json"),
       JSON.stringify(entries, null, 2),
     );
+
+    // releases テキストを別ファイルに保存
+    if (ghText) {
+      writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt"), ghText);
+    }
 
     state.sources[SOURCE_NAME] = {
       hash: "",
@@ -232,16 +239,17 @@ export async function fetchHtmlGeminiCli(
       version: latestVersion,
       rawSummaryEn: null,
       imageUrls: [] as string[],
-      githubReleasesText: ghText,
       mode: "fallback" as const,
       fetchedAt: now,
     },
   ];
 
-  writeFileSync(
-    resolve(deps.htmlCurrentDir, "gemini-cli.json"),
-    JSON.stringify(entries, null, 2),
-  );
+  writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli.json"), JSON.stringify(entries, null, 2));
+
+  // releases テキストを別ファイルに保存
+  if (ghText) {
+    writeFileSync(resolve(deps.htmlCurrentDir, "gemini-cli-releases.txt"), ghText);
+  }
 
   state.sources[SOURCE_NAME] = {
     hash: "",

@@ -10,9 +10,7 @@ try {
 
   if (result.success) {
     const versions = result.data.map((e) => e.version).join(", ");
-    console.log(
-      `Validation passed: ${result.data.length} entries, versions=[${versions}]`,
-    );
+    console.log(`Validation passed: ${result.data.length} entries, versions=[${versions}]`);
     process.exit(0);
   } else {
     console.error("Validation failed:");

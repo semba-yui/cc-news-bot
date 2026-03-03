@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GeminiCliVersionContent } from "../services/gemini-cli-parser.js";
@@ -18,7 +18,6 @@ interface GeminiCliCurrentEntry {
   version: string;
   rawSummaryEn: string | null;
   imageUrls: string[];
-  githubReleasesText: string | null;
   mode: "full" | "fallback";
   fetchedAt: string;
 }
@@ -98,7 +97,7 @@ describe("fetchHtmlGeminiCli", () => {
         mode: "full",
       });
 
-      // Then: html-current/gemini-cli.json が配列形式で書き出される
+      // Then: html-current/gemini-cli.json が配列形式で書き出される（githubReleasesText なし）
       const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
       ) as GeminiCliCurrentEntry[];
@@ -106,10 +105,15 @@ describe("fetchHtmlGeminiCli", () => {
       expect(entries[0].version).toBe("v0.31.0");
       expect(entries[0].rawSummaryEn).toBe("- Features for v0.31.0");
       expect(entries[0].mode).toBe("full");
-      // githubReleasesText は最新バージョンにのみ付与
-      expect(entries[0].githubReleasesText).toBe(
-        "## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes",
+      // githubReleasesText はエントリに含まれない
+      expect("githubReleasesText" in entries[0]).toBe(false);
+
+      // Then: releases テキストが別ファイルに書き出される
+      const releasesText = readFileSync(
+        resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"),
+        "utf-8",
       );
+      expect(releasesText).toBe("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes");
 
       // Then: state が更新される
       expect(deps.saveState).toHaveBeenCalledTimes(1);
@@ -152,11 +156,16 @@ describe("fetchHtmlGeminiCli", () => {
       expect(entries[0].version).toBe("v0.30.0");
       expect(entries[1].version).toBe("v0.31.0");
 
-      // Then: githubReleasesText は最新バージョンのみ
-      expect(entries[0].githubReleasesText).toBeNull();
-      expect(entries[1].githubReleasesText).toBe(
-        "## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes",
+      // Then: エントリに githubReleasesText は含まれない
+      expect("githubReleasesText" in entries[0]).toBe(false);
+      expect("githubReleasesText" in entries[1]).toBe(false);
+
+      // Then: releases テキストが別ファイルに書き出される
+      const releasesText = readFileSync(
+        resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"),
+        "utf-8",
       );
+      expect(releasesText).toBe("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes");
     });
   });
 
@@ -176,13 +185,16 @@ describe("fetchHtmlGeminiCli", () => {
       expect(result.hasChanges).toBe(true);
       expect(result.mode).toBe("full");
 
-      // Then: 全エントリの githubReleasesText が null
+      // Then: エントリに githubReleasesText は含まれない
       const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
       ) as GeminiCliCurrentEntry[];
       for (const entry of entries) {
-        expect(entry.githubReleasesText).toBeNull();
+        expect("githubReleasesText" in entry).toBe(false);
       }
+
+      // Then: releases ファイルは存在しない
+      expect(existsSync(resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"))).toBe(false);
     });
   });
 
@@ -208,7 +220,7 @@ describe("fetchHtmlGeminiCli", () => {
         mode: "fallback",
       });
 
-      // Then: 配列に1件の fallback エントリが含まれる
+      // Then: 配列に1件の fallback エントリが含まれる（githubReleasesText なし）
       const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "gemini-cli.json"), "utf-8"),
       ) as GeminiCliCurrentEntry[];
@@ -216,9 +228,14 @@ describe("fetchHtmlGeminiCli", () => {
       expect(entries[0].mode).toBe("fallback");
       expect(entries[0].rawSummaryEn).toBeNull();
       expect(entries[0].imageUrls).toEqual([]);
-      expect(entries[0].githubReleasesText).toBe(
-        "## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes",
+      expect("githubReleasesText" in entries[0]).toBe(false);
+
+      // Then: releases テキストが別ファイルに書き出される
+      const releasesText = readFileSync(
+        resolve(HTML_CURRENT_DIR, "gemini-cli-releases.txt"),
+        "utf-8",
       );
+      expect(releasesText).toBe("## v0.31.0 (2026-03-01T10:00:00Z)\n- Release notes");
     });
   });
 
