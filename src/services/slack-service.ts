@@ -165,10 +165,9 @@ export function summaryToBlocks(source: string, version: string, summary: string
       type: "section",
       text: { type: "mrkdwn", text: formatHeadingText("ひとこと", "ひとことサマリ") },
     });
-    for (const line of hitokoto.lines) {
-      for (const chunk of splitBlockText(convertItemLine(line))) {
-        blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
-      }
+    const combinedText = hitokoto.lines.map(convertItemLine).join("\n");
+    for (const chunk of splitBlockText(combinedText)) {
+      blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
     }
     blocks.push({ type: "divider" });
   }
@@ -182,10 +181,9 @@ export function summaryToBlocks(source: string, version: string, summary: string
       type: "section",
       text: { type: "mrkdwn", text: formatHeadingText(category) },
     });
-    for (const line of section.lines) {
-      for (const chunk of splitBlockText(convertItemLine(line))) {
-        blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
-      }
+    const combinedText = section.lines.map(convertItemLine).join("\n");
+    for (const chunk of splitBlockText(combinedText)) {
+      blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
     }
   }
 
@@ -196,10 +194,9 @@ export function summaryToBlocks(source: string, version: string, summary: string
       type: "section",
       text: { type: "mrkdwn", text: formatHeadingText("用語解説") },
     });
-    for (const line of glossary.lines) {
-      for (const chunk of splitBlockText(convertItemLine(line))) {
-        blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
-      }
+    const combinedText = glossary.lines.map(convertItemLine).join("\n");
+    for (const chunk of splitBlockText(combinedText)) {
+      blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
     }
   }
 

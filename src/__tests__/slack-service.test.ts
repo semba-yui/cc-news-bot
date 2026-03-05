@@ -370,33 +370,6 @@ describe("summaryToBlocks", () => {
     expect(headingBlock).not.toBe(itemBlock);
   });
 
-  it("ひとこと が複数行ある場合、各行が個別の section ブロックになる", () => {
-    // Given: ひとこと 3行の summary
-    const summary = "## ひとこと\n- 1行目の変更\n- 2行目の変更\n- 3行目の変更";
-    const blocks = summaryToBlocks("src", "1.0", summary);
-
-    // When: ひとこと各行を含むブロックを取得する
-    const line1Block = blocks.find(
-      (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("1行目の変更"),
-    );
-    const line2Block = blocks.find(
-      (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("2行目の変更"),
-    );
-    const line3Block = blocks.find(
-      (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("3行目の変更"),
-    );
-
-    // Then: 各行が個別のブロックとして存在する
-    expect(line1Block).toBeDefined();
-    expect(line2Block).toBeDefined();
-    expect(line3Block).toBeDefined();
-    expect(line1Block).not.toBe(line2Block);
-    expect(line2Block).not.toBe(line3Block);
-  });
-
   it("カテゴリ見出しが独立した section ブロックになる", () => {
     // Given: 新規追加カテゴリを含む summary
     const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
@@ -415,27 +388,6 @@ describe("summaryToBlocks", () => {
     expect(headingBlock).toBeDefined();
     expect(itemBlock).toBeDefined();
     expect(headingBlock).not.toBe(itemBlock);
-  });
-
-  it("カテゴリアイテムが個別の section ブロックになる", () => {
-    // Given: 複数アイテムを持つカテゴリの summary
-    const summary = "## 変更内容\n### 修正\n- バグA を修正\n- バグB を修正";
-    const blocks = summaryToBlocks("src", "1.0", summary);
-
-    // When: 各アイテムブロックを取得する
-    const itemABlock = blocks.find(
-      (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("バグA"),
-    );
-    const itemBBlock = blocks.find(
-      (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("バグB"),
-    );
-
-    // Then: 各アイテムが個別のブロックとして存在する
-    expect(itemABlock).toBeDefined();
-    expect(itemBBlock).toBeDefined();
-    expect(itemABlock).not.toBe(itemBBlock);
   });
 
   it("存在しないカテゴリのブロックは生成しない", () => {
@@ -521,6 +473,101 @@ describe("summaryToBlocks", () => {
         expect(block.text.text.length).toBeLessThanOrEqual(3000);
       }
     }
+  });
+
+  it("大量アイテムでも 50 ブロック制限を超えない", () => {
+    // What: 全カテゴリに多数のアイテムがあっても blocks.length が 50 以内であること
+    // Why: Slack の chat.postMessage は 50ブロック制限があり、超えると invalid_blocks エラーになる
+
+    // Given: 全カテゴリに10行ずつ含む大規模 summary
+    const manyLines = Array.from({ length: 10 }, (_, i) => `- アイテム${i + 1}`).join("\n");
+    const summary = [
+      "## ひとこと",
+      ...Array.from({ length: 3 }, (_, i) => `- ひとこと${i + 1}`),
+      "",
+      "## 変更内容",
+      "### 破壊的変更",
+      manyLines,
+      "### セキュリティ",
+      manyLines,
+      "### 新規追加",
+      manyLines,
+      "### 修正",
+      manyLines,
+      "### 改善",
+      manyLines,
+      "### パフォーマンス",
+      manyLines,
+      "### 削除",
+      manyLines,
+      "### 非推奨",
+      manyLines,
+      "### その他",
+      manyLines,
+      "",
+      "## 用語解説",
+      ...Array.from({ length: 5 }, (_, i) => `- 用語${i + 1}: 解説テキスト`),
+    ].join("\n");
+
+    // When: blocks を生成する
+    const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // Then: Slack の 50ブロック制限を超えない
+    expect(blocks.length).toBeLessThanOrEqual(50);
+  });
+
+  it("ひとこと 複数行は同一 section ブロックにまとまる", () => {
+    // What: ひとこと の複数行が1つの section ブロックにまとまること
+    // Why: 各行が個別ブロックになると大規模 changelog で 50ブロック制限を超えてしまう
+
+    // Given: ひとこと 3行の summary
+    const summary = "## ひとこと\n- 1行目の変更\n- 2行目の変更\n- 3行目の変更";
+    const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // When: ひとこと各行を含むブロックを取得する
+    const line1Block = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("1行目の変更"),
+    );
+    const line2Block = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("2行目の変更"),
+    );
+    const line3Block = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("3行目の変更"),
+    );
+
+    // Then: 全行が同一ブロックに含まれる
+    expect(line1Block).toBeDefined();
+    expect(line2Block).toBeDefined();
+    expect(line3Block).toBeDefined();
+    expect(line1Block).toBe(line2Block);
+    expect(line2Block).toBe(line3Block);
+  });
+
+  it("カテゴリ複数アイテムは同一 section ブロックにまとまる", () => {
+    // What: カテゴリ内の複数アイテムが1つの section ブロックにまとまること
+    // Why: 各行が個別ブロックになると大規模 changelog で 50ブロック制限を超えてしまう
+
+    // Given: 複数アイテムを持つカテゴリの summary
+    const summary = "## 変更内容\n### 修正\n- バグA を修正\n- バグB を修正";
+    const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // When: 各アイテムブロックを取得する
+    const itemABlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("バグA"),
+    );
+    const itemBBlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("バグB"),
+    );
+
+    // Then: 両アイテムが同一ブロックに含まれる
+    expect(itemABlock).toBeDefined();
+    expect(itemBBlock).toBeDefined();
+    expect(itemABlock).toBe(itemBBlock);
   });
 });
 
