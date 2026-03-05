@@ -289,6 +289,9 @@ describe("postThreadReplies", () => {
 });
 
 describe("summaryToBlocks", () => {
+  // What: summaryToBlocks が正しい Block Kit 構造を生成するかを検証する
+  // Why: Slack 通知の見た目に直結する関数であり、構造の正確さが視認性に影響する
+
   const SAMPLE_SUMMARY = `## ひとこと
 - 自動更新がバイナリまで対象に
 
@@ -311,34 +314,173 @@ describe("summaryToBlocks", () => {
     expect(header?.type === "header" && header.text.text).toContain("1.0.0");
   });
 
-  it("ひとこと セクションに 💬 絵文字が付く", () => {
+  it("header に :newspaper: 絵文字が前後に付く", () => {
+    // Given: source と version を渡す
+    const blocks = summaryToBlocks("copilot-cli", "0.0.421", SAMPLE_SUMMARY);
+
+    // When: header ブロックを取得する
+    const header = blocks.find((b) => b.type === "header");
+
+    // Then: :newspaper: が前後に含まれる
+    expect(header?.type === "header" && header.text.text).toMatch(/^:newspaper:/);
+    expect(header?.type === "header" && header.text.text).toMatch(/:newspaper:$/);
+  });
+
+  it("ヘッダー直後に divider が挿入される", () => {
+    // Given: summary を渡す
     const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
-    const section = blocks.find((b) => b.type === "section" && b.text.text.includes("💬"));
+
+    // When: header と divider のインデックスを取得する
+    const headerIdx = blocks.findIndex((b) => b.type === "header");
+    const firstDividerIdx = blocks.findIndex((b) => b.type === "divider");
+
+    // Then: header の直後に divider が来る
+    expect(firstDividerIdx).toBe(headerIdx + 1);
+  });
+
+  it("ひとこと セクションに :loud_sound: 絵文字が付く", () => {
+    // Given: ひとこと を含む summary
+    const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
+
+    // When: ひとことサマリ見出しのブロックを探す
+    const section = blocks.find((b) => b.type === "section" && b.text.text.includes(":loud_sound:"));
+
+    // Then: :loud_sound: を含む section ブロックが存在する
     expect(section).toBeDefined();
   });
 
+  it("ひとこと見出しが独立した section ブロックになる", () => {
+    // Given: ひとこと行を含む summary
+    const summary = "## ひとこと\n- テスト行";
+    const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // When: ひとことサマリ見出しブロックとアイテムブロックを取得する
+    const headingBlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("ひとことサマリ"),
+    );
+    const itemBlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("テスト行"),
+    );
+
+    // Then: 見出しとアイテムが別々のブロックになっている
+    expect(headingBlock).toBeDefined();
+    expect(itemBlock).toBeDefined();
+    expect(headingBlock).not.toBe(itemBlock);
+  });
+
+  it("ひとこと が複数行ある場合、各行が個別の section ブロックになる", () => {
+    // Given: ひとこと 3行の summary
+    const summary = "## ひとこと\n- 1行目の変更\n- 2行目の変更\n- 3行目の変更";
+    const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // When: ひとこと各行を含むブロックを取得する
+    const line1Block = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("1行目の変更"),
+    );
+    const line2Block = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("2行目の変更"),
+    );
+    const line3Block = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("3行目の変更"),
+    );
+
+    // Then: 各行が個別のブロックとして存在する
+    expect(line1Block).toBeDefined();
+    expect(line2Block).toBeDefined();
+    expect(line3Block).toBeDefined();
+    expect(line1Block).not.toBe(line2Block);
+    expect(line2Block).not.toBe(line3Block);
+  });
+
+  it("カテゴリ見出しが独立した section ブロックになる", () => {
+    // Given: 新規追加カテゴリを含む summary
+    const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
+
+    // When: 新規追加の見出しブロックとアイテムブロックを取得する
+    const headingBlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("新規追加") && b.text.text.includes(":new:"),
+    );
+    const itemBlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("GitHub Issue"),
+    );
+
+    // Then: 見出しとアイテムが別々のブロックになっている
+    expect(headingBlock).toBeDefined();
+    expect(itemBlock).toBeDefined();
+    expect(headingBlock).not.toBe(itemBlock);
+  });
+
+  it("カテゴリアイテムが個別の section ブロックになる", () => {
+    // Given: 複数アイテムを持つカテゴリの summary
+    const summary = "## 変更内容\n### 修正\n- バグA を修正\n- バグB を修正";
+    const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // When: 各アイテムブロックを取得する
+    const itemABlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("バグA"),
+    );
+    const itemBBlock = blocks.find(
+      (b): b is Extract<typeof b, { type: "section" }> =>
+        b.type === "section" && b.text.text.includes("バグB"),
+    );
+
+    // Then: 各アイテムが個別のブロックとして存在する
+    expect(itemABlock).toBeDefined();
+    expect(itemBBlock).toBeDefined();
+    expect(itemABlock).not.toBe(itemBBlock);
+  });
+
   it("存在しないカテゴリのブロックは生成しない", () => {
+    // Given: ひとことのみの summary
     const blocks = summaryToBlocks("src", "1.0", "## ひとこと\n- only this");
+
+    // When: section ブロックのテキストを取得する
     const blockTexts = blocks.filter((b) => b.type === "section").map((b) => b.text.text);
-    expect(blockTexts.some((t) => t.includes("🆕"))).toBe(false);
-    expect(blockTexts.some((t) => t.includes("🔧"))).toBe(false);
+
+    // Then: 存在しないカテゴリ（新規追加・修正）のブロックが生成されない
+    expect(blockTexts.some((t) => t.includes(":new:"))).toBe(false);
+    expect(blockTexts.some((t) => t.includes(":wrench:"))).toBe(false);
   });
 
   it("divider が ひとこと とカテゴリ群の間に挿入される", () => {
+    // Given: ひとこととカテゴリを含む summary
     const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
-    const hitokotoIdx = blocks.findIndex((b) => b.type === "section" && b.text.text.includes("💬"));
-    const dividerIdx = blocks.findIndex((b) => b.type === "divider");
-    expect(dividerIdx).toBeGreaterThan(hitokotoIdx);
+
+    // When: ひとことサマリ見出しブロックと divider のインデックスを取得する
+    const hitokotoHeadingIdx = blocks.findIndex(
+      (b) => b.type === "section" && b.text.text.includes("ひとことサマリ"),
+    );
+    const dividerIdxAfterHitokoto = blocks
+      .map((b, i) => ({ type: b.type, i }))
+      .filter(({ type, i }) => type === "divider" && i > hitokotoHeadingIdx)
+      .map(({ i }) => i)[0];
+
+    // Then: ひとこと見出しの後に divider が存在する
+    expect(dividerIdxAfterHitokoto).toBeDefined();
+    expect(dividerIdxAfterHitokoto).toBeGreaterThan(hitokotoHeadingIdx);
   });
 
   it("- xxx を • xxx に変換する", () => {
+    // Given: ひとこと行を含む summary
     const blocks = summaryToBlocks("src", "1.0", "## ひとこと\n- テスト行");
-    const section = blocks.find(
+
+    // When: ひとこと行のアイテムブロックを取得する
+    const itemBlock = blocks.find(
       (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("ひとこと"),
+        b.type === "section" && (b.text.text.includes("テスト行") || b.text.text.includes("•")),
     );
-    expect(section?.text.text).toContain("• テスト行");
-    expect(section?.text.text).not.toContain("- テスト行");
+
+    // Then: - が • に変換されている
+    expect(itemBlock?.text.text).toContain("• テスト行");
+    expect(itemBlock?.text.text).not.toContain("- テスト行");
   });
 
   it("空の summary でも header ブロックが生成される", () => {
@@ -347,19 +489,33 @@ describe("summaryToBlocks", () => {
   });
 
   it("**bold** を Slack mrkdwn の *bold* に変換する", () => {
+    // Given: bold テキストを含む用語解説
     const blocks = summaryToBlocks("src", "1.0", "## 用語解説\n- **用語**: 解説テキスト");
-    const section = blocks.find(
+
+    // When: 用語解説のアイテムブロックを取得する
+    const itemBlock = blocks.find(
       (b): b is Extract<typeof b, { type: "section" }> =>
-        b.type === "section" && b.text.text.includes("用語解説"),
+        b.type === "section" && b.text.text.includes("用語"),
     );
-    expect(section?.text.text).toContain("*用語*");
-    expect(section?.text.text).not.toContain("**用語**");
+
+    // Then: **bold** が *bold* に変換されている（アイテムブロック内）
+    const allText = blocks
+      .filter((b): b is Extract<typeof b, { type: "section" }> => b.type === "section")
+      .map((b) => b.text.text)
+      .join("\n");
+    expect(allText).toContain("*用語*");
+    expect(allText).not.toContain("**用語**");
   });
 
   it("section text が 3000 文字を超えない", () => {
+    // Given: 大量のアイテムを含む summary
     const longLines = Array.from({ length: 100 }, (_, i) => `- ${"x".repeat(50)} ${i}`).join("\n");
     const summary = `## 新規追加\n${longLines}`;
+
+    // When: blocks を生成する
     const blocks = summaryToBlocks("src", "1.0", summary);
+
+    // Then: 各 section ブロックのテキスト長が 3000 文字以内
     for (const block of blocks) {
       if (block.type === "section") {
         expect(block.text.text.length).toBeLessThanOrEqual(3000);

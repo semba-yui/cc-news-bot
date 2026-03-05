@@ -33,17 +33,17 @@ export interface PostOptions {
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  ひとこと: "💬",
-  破壊的変更: "⚠️",
-  セキュリティ: "🔒",
-  新規追加: "🆕",
-  修正: "🔧",
-  改善: "✨",
-  パフォーマンス: "⚡",
-  削除: "🗑️",
-  非推奨: "⏸️",
-  その他: "📦",
-  用語解説: "📖",
+  ひとこと: ":loud_sound:",
+  破壊的変更: ":rotating_light:",
+  セキュリティ: ":lock:",
+  新規追加: ":new:",
+  修正: ":wrench:",
+  改善: ":sparkles:",
+  パフォーマンス: ":zap:",
+  削除: ":wastebasket:",
+  非推奨: ":pause_button:",
+  その他: ":package:",
+  用語解説: ":book:",
 };
 
 const CATEGORY_ORDER = [
@@ -97,15 +97,15 @@ function markdownToMrkdwn(text: string): string {
   return text.replace(/\*\*(.+?)\*\*/g, "*$1*");
 }
 
-function formatSectionText(heading: string, lines: string[]): string {
-  const emoji = CATEGORY_EMOJI[heading] ?? "•";
-  const body = lines
-    .map((line) => {
-      const converted = line.startsWith("- ") ? `• ${line.slice(2)}` : line;
-      return markdownToMrkdwn(converted);
-    })
-    .join("\n");
-  return `${emoji} *${heading}*\n${body}`;
+function formatHeadingText(heading: string, displayName?: string): string {
+  const emoji = CATEGORY_EMOJI[heading] ?? ":black_small_square:";
+  const name = displayName ?? heading;
+  return `${emoji} *${name}* ${emoji}`;
+}
+
+function convertItemLine(line: string): string {
+  const converted = line.startsWith("- ") ? `• ${line.slice(2)}` : line;
+  return markdownToMrkdwn(converted);
 }
 
 function splitBlockText(text: string): string[] {
@@ -151,15 +151,25 @@ export function summaryToBlocks(source: string, version: string, summary: string
 
   blocks.push({
     type: "header",
-    text: { type: "plain_text", text: `${source} ${version} の更新`.slice(0, 150), emoji: true },
+    text: {
+      type: "plain_text",
+      text: `:newspaper: ${source} ${version} の更新 :newspaper:`.slice(0, 150),
+      emoji: true,
+    },
   });
+  blocks.push({ type: "divider" });
 
   const hitokoto = sections.find((s) => s.heading === "ひとこと");
   if (hitokoto && hitokoto.lines.length > 0) {
     blocks.push({
       type: "section",
-      text: { type: "mrkdwn", text: formatSectionText("ひとこと", hitokoto.lines) },
+      text: { type: "mrkdwn", text: formatHeadingText("ひとこと", "ひとことサマリ") },
     });
+    for (const line of hitokoto.lines) {
+      for (const chunk of splitBlockText(convertItemLine(line))) {
+        blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
+      }
+    }
     blocks.push({ type: "divider" });
   }
 
@@ -168,8 +178,14 @@ export function summaryToBlocks(source: string, version: string, summary: string
     const section = sections.find((s) => s.heading === category);
     if (!section || section.lines.length === 0) continue;
     hasCategories = true;
-    for (const chunk of splitBlockText(formatSectionText(category, section.lines))) {
-      blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: formatHeadingText(category) },
+    });
+    for (const line of section.lines) {
+      for (const chunk of splitBlockText(convertItemLine(line))) {
+        blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
+      }
     }
   }
 
@@ -178,8 +194,13 @@ export function summaryToBlocks(source: string, version: string, summary: string
     if (hasCategories) blocks.push({ type: "divider" });
     blocks.push({
       type: "section",
-      text: { type: "mrkdwn", text: formatSectionText("用語解説", glossary.lines) },
+      text: { type: "mrkdwn", text: formatHeadingText("用語解説") },
     });
+    for (const line of glossary.lines) {
+      for (const chunk of splitBlockText(convertItemLine(line))) {
+        blocks.push({ type: "section", text: { type: "mrkdwn", text: chunk } });
+      }
+    }
   }
 
   return blocks;
