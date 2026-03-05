@@ -1,80 +1,139 @@
-## rust-v0.107.0 (2026-03-02T18:00:16Z)
+## rust-v0.110.0 (2026-03-05T02:22:46Z)
 ## New Features
-- You can now fork a thread into sub-agents, making it easier to branch work without leaving the current conversation. (#12499)
-- Realtime voice sessions now let you pick microphone and speaker devices, persist those choices, and send audio in a format better aligned with transcription. (#12849, #12850, #13030)
-- Custom tools can now return multimodal output, including structured content like images, instead of being limited to plain text. (#12948)
-- The app server now exposes richer model availability and upgrade metadata, and the TUI uses it to explain plan-gated models with limited-run tooltips. (#12958, #12972, #13021)
-- Memories are now configurable, and there is a new `codex debug clear-memories` command to fully reset saved memory state when needed. (#12997, #12999, #13002, #13085)
+- Added a plugin system that can load skills, MCP entries, and app connectors from config or a local marketplace, with an install endpoint for enabling plugins from the app server. (#12864, #13333, #13401, #13422)
+- Expanded the TUI multi-agent flow with approval prompts, `/agent`-based enablement, clearer prompts, ordinal nicknames, and role-labeled handoff context. (#12995, #13246, #13404, #13412, #13505)
+- Added a persisted `/fast` toggle in the TUI and app-server support for `fast` and `flex` service tiers. (#13212, #13334, #13391)
+- Improved memories with workspace-scoped writes, renamed memory settings, and guardrails against saving stale or polluted facts. (#13008, #13088, #13237, #13467)
+- Added a direct Windows installer script to published release artifacts. (#12741)
 
 ## Bug Fixes
-- Reconnecting with `thread/resume` now restores pending approval and input requests instead of leaving clients out of sync. (#12560)
-- `thread/start` no longer blocks unrelated app-server requests, reducing stalls during slow startup paths such as MCP auth checks. (#13033)
-- Interactive terminal sessions no longer print the final assistant response twice. (#13082)
-- Large pasted-content placeholders now survive file completion correctly, fixing a regression from `0.106.0`. (#13070)
-- ChatGPT accounts that arrive without plan info now handle account reads correctly instead of triggering repeated login issues. (#13072)
-- Diff rendering in the TUI now respects theme colors better and displays more cleanly in Windows Terminal and other low-color environments. (#13016, #13037)
-- MCP OAuth login flows now forward configured `oauth_resource` values correctly for servers that require a `resource` parameter. (#12866)
+- Fixed `@` file mentions so parent-directory `.gitignore` rules no longer hide valid repository files. (#13250)
+- Made sub-agents faster and more reliable by reusing shell state correctly and fixing `/status`, `Esc`, pending-message handling, and startup/profile race conditions. (#12935, #13052, #13130, #13131, #13235, #13240, #13248)
+- Fixed project trust parsing so CLI overrides apply correctly to trusted project-local MCP transports. (#13090)
+- Fixed read-only sandbox policies so network access is preserved when it is explicitly enabled. (#13409)
+- Fixed multiline environment export capture and Windows state DB path handling in session state. (#12642, #13336)
+- Fixed ANSI/base16 syntax highlighting so terminal-themed colors render correctly in the TUI. (#13382)
 
 ## Documentation
-- Updated sandbox escalation guidance so dependency-install failures caused by sandboxed network access are more clearly treated as escalation candidates. (#13051)
+- Expanded app-server docs around service tiers, plugin installation, renaming unloaded threads, and the new `skills/changed` notification. (#13282, #13391, #13414, #13422)
 
 ## Chores
-- Tightened sandbox filesystem behavior by improving restricted read-only handling on Linux and avoiding sensitive directories like `~/.ssh` on Windows. (#12369, #12835)
-- Escalated shell commands now keep their sandbox configuration when rerun, closing a gap where approvals could lose the intended restrictions. (#12839)
+- Removed the remaining legacy app-server v1 websocket/RPC surfaces in favor of the current protocol. (#13364, #13375, #13397)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.106.0...rust-v0.107.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.107.0...rust-v0.110.0
 
-- #12925 chore: calm down awaiter @jif-oai
-- #12499 feat: fork thread multi agent @jif-oai
-- #12837 Log js_repl nested tool responses in rollout history @fjord-oai
-- #12774 feat: add post-compaction sub-agent infos @jif-oai
-- #12929 Remove noisy log @pakrym-oai
-- #12835 don't grant sandbox read access to ~/.ssh and a few other dirs. @iceweasel-oai
-- #12839 feat: include sandbox config with escalation request @bolinfest
-- #12940 feat: add git info to memories @jif-oai
-- #12727 tui: use thread_id for resume/fork cwd resolution @charley-oai
-- #12950 Allow clients not to send summary as an option @pakrym-oai
-- #12944 fix: sort codex features list alphabetically @bolinfest
-- #12849 Add realtime audio device config @aibrahim-oai
-- #12957 test: move unix_escalation tests into sibling file @bolinfest
-- #12947 feat: add local date/timezone to turn environment context @celia-oai
-- #12959 Make realtime audio test deterministic @aibrahim-oai
-- #12958 Feat: cxa-1833 update model/list @shijie-oai
-- #12850 Add realtime audio device picker @aibrahim-oai
-- #12948 Support multimodal custom tool outputs @fjord-oai
-- #12745 [apps] Improve app/list with force_fetch=true @mzeng-openai
-- #12866 Add oauth_resource handling for MCP login flows @etraut-openai
-- #12936 Add a background job to refresh the requirements local cache @alexsong-oai
-- #12972 Add model availability NUX metadata @aibrahim-oai
-- #12981 Add realtime websocket tracing @aibrahim-oai
-- #12968 notify: include client in legacy hook payload @bolinfest
-- #12997 feat: add use memories config @jif-oai
-- #12999 feat: gen memories config @jif-oai
-- #13002 feat: use the memory mode for phase 1 extraction @jif-oai
-- #13001 chore: tmp remove awaiter @jif-oai
-- #13011 fix: more stable notify script @jif-oai
-- #12970 fix: use AbsolutePathBuf for permission profile file roots @bolinfest
-- #13016 fix(tui): promote windows terminal diff ansi16 to truecolor @fcoury
-- #13030 Align TUI voice transcription audio with 4o ASR @nornagon-openai
-- #13047 app-server: deflake running thread resume tests @bolinfest
-- #12560 app-server: Replay pending item requests on `thread/resume` @euroelessar
-- #13055 fix: disable Bazel builds in CI on ubuntu-24.04-arm until we can stabilize them @bolinfest
-- #12964 execpolicy: add host_executable() path mappings @bolinfest
-- #13051 Clarify escalation guidance for sandbox-related network failures @daniel-oai
-- #12612 Unify rollout reconstruction with resume/fork TurnContext hydration @charley-oai
-- #13067 [apps] Stablize app list updated event. @mzeng-openai
-- #12369 feat(linux-sandbox): support restricted ReadOnlyAccess in bwrap @viyatb-oai
-- #13037 fix(tui): theme-aware diff backgrounds with fallback behavior @fcoury
-- #13070 Keep large-paste placeholders intact during file completion @etraut-openai
-- #13072 Handle missing plan info for ChatGPT accounts @etraut-openai
-- #13021 Add model availability NUX tooltips @aibrahim-oai
-- #13080 app-server: Add an ability to watch events in the test client @euroelessar
-- #13082 Suppress duplicate assistant output on stdout in interactive sessions @etraut-openai
-- #13033 fix(app-server): make thread/start non-blocking @owenlin0
-- #13046 core: adopt host_executable() rules in zsh-fork @bolinfest
-- #13084 app-server: Add `ephemeral` field to `Thread` object @euroelessar
-- #13085 feat: add debug clear-memories command to hard-wipe memories state @sayan-oai
-
-
+- #13086 Fix CLI feedback link @etraut-openai
+- #13063 Make cloud_requirements fail close @alexsong-oai
+- #13083 Enable analytics in codex exec and codex mcp-server @etraut-openai
+- #12995 feat: approval for sub-agent in the TUI @jif-oai
+- #13027 feat: skill disable respect config layer @jif-oai
+- #13125 chore: change mem default @jif-oai
+- #13088 Tune memory read-path for stale facts @andi-oai
+- #13128 nit: ignore `resume_startup_does_not_consume_model_availability_nux_c… @jif-oai
+- #12935 Speed up subagent startup @daveaitel-openai
+- #13127 nit: disable on windows @jif-oai
+- #13129 fix: package `models.json` for Bazel tests @jif-oai
+- #13065 core: resolve host_executable() rules during preflight @bolinfest
+- #12864 feat: load from plugins @xl-openai
+- #12989 fix: MacOSAutomationPermission::BundleIDs should allow communicating … @leoshimo-oai
+- #13181 [codex] include plan type in account updates @tibo-openai
+- #13058 Record realtime close marker on replacement @aibrahim-oai
+- #13215 Fix issue deduplication workflow for Codex issues @etraut-openai
+- #13197 Improve subagent contrast in TUI @gabec-openai
+- #13130 fix: `/status` when sub-agent @jif-oai
+- #13008 feat: polluted memories @jif-oai
+- #13237 feat: update memories config names @jif-oai
+- #13131 fix: esc in `/agent` @jif-oai
+- #13052 core: reuse parent shell snapshot for thread-spawn subagents @daveaitel-openai
+- #13249 chore: `/multiagent` alias for `/agent` @jif-oai
+- #13057 fix: use https://git.savannah.gnu.org/git/bash instead of https://github.com/bolinfest/bash @bolinfest
+- #13090 Fix project trust config parsing so CLI overrides work @etraut-openai
+- #13202 tui: restore draft footer hints @charley-oai
+- #13246 feat: enable ma through `/agent` @jif-oai
+- #12642 fix(core) shell_snapshot multiline exports @dylan-hurd-oai
+- #11814 test(app-server): increase flow test timeout to reduce flake @joshka-oai
+- #13282 app-server: Update `thread/name/set` to support not-loaded threads @euroelessar
+- #13285 feat(app-server): add tracing to all app-server APIs @owenlin0
+- #13265 Update realtime websocket API @aibrahim-oai
+- #13261 fix(app-server): emit turn/started only when turn actually starts @owenlin0
+- #13079 app-server: Silence thread status changes caused by thread being created @euroelessar
+- #13284 Adjusting plan prompt for clarity and verbosity @bfioca-openai
+- #13286 feat(app-server-test-client): support tracing @owenlin0
+- #13061 chore:  remove SkillMetadata.permissions and derive skill sandboxing from permission_profile @celia-oai
+- #12006 tui: preserve kill buffer across submit and slash-command clears @rakan-oai
+- #13212 add fast mode toggle @pash-openai
+- #13250 fix(core): scope file search gitignore to repository context @fcoury
+- #13313 Renaming Team to Business plan during TUI onboarding @bwanner-oai
+- #13248 fix: agent race @jif-oai
+- #13235 fix: agent when profile @jif-oai
+- #13336 fix: db windows path @jif-oai
+- #13334 app-server service tier plumbing (plus some cleanup) @pash-openai
+- #13341 feat: presentation artifact p1 @jif-oai
+- #13344 feat: pres artifact 2 @jif-oai
+- #13346 feat: pres artifact 3 @jif-oai
+- #13345 feat: spreadsheet artifact @jif-oai
+- #13347 feat: spreadsheet v2 @jif-oai
+- #13348 feat: presentation part 4 @jif-oai
+- #13350 feat: spreadsheet part 3 @jif-oai
+- #13355 feat: pres artifact part 5 @jif-oai
+- #13357 feat: add multi-actions to presentation tool @jif-oai
+- #13360 feat: artifact presentation part 7 @jif-oai
+- #13362 feat: wire spreadsheet artifact @jif-oai
+- #12741 Add Windows direct install script @efrazer-oai
+- #13376 realtime prompt changes @aibrahim-oai
+- #13324 app-server-protocol: export flat v2 schema bundle @apanasenko-oai
+- #13364 Remove Responses V1 websocket implementation @pakrym-oai
+- #12969 app-server: source /feedback logs from sqlite at trace level @charley-oai
+- #13381 chore: rm --all-features flag from rust-analyzer @sayan-oai
+- #13043 Collapse parsed command summaries when any stage is unknown @nornagon-openai
+- #13385 Revert "realtime prompt changes" @aibrahim-oai
+- #13389 fix @aibrahim-oai
+- #13375 chore(app-server): delete v1 RPC methods and notifications @owenlin0
+- #13397 chore(app-server): restore EventMsg TS types @owenlin0
+- #13395 Build delegated realtime handoff text from all messages @aibrahim-oai
+- #13399 Require deduplicator success before commenting @etraut-openai
+- #13398 Revert "Revert "realtime prompt changes"" @aibrahim-oai
+- #13333 Refactor plugin config and cache path @xl-openai
+- #13275 fix(network-proxy): reject mismatched host headers @viyatb-oai
+- #12868 tui: align pending steers with core acceptance @charley-oai
+- #13280 Add thread metadata update endpoint to app server @joeytrasatti-openai
+- #13050 Add under-development original-resolution view_image support @fjord-oai
+- #13402 Ensure the env values of imported shell_environment_policy.set is string @alexsong-oai
+- #13331 Make js_repl image output controllable @fjord-oai
+- #13401 feat: load plugin apps @sayan-oai
+- #13292 [feedback] diagnostics @rhan-oai
+- #13414 feat(app-server): add a skills/changed v2 notification @owenlin0
+- #13368 feat(app-server): propagate app-server trace context into core @owenlin0
+- #13413 copy command-runner to CODEX_HOME so sandbox users can always execute it @iceweasel-oai
+- #13366 [bazel] Bump rules_rs and llvm @zbarsky-openai
+- #13409 Feat: Preserve network access on read-only sandbox policies @celia-oai
+- #13388 config: enforce enterprise feature requirements @bolinfest
+- #13218 Add role-specific subagent nickname overrides @gabec-openai
+- #13427 chore: Nest skill and protocol network permissions under `network.enabled` @celia-oai
+- #13429 core: box wrapper futures to reduce stack pressure @bolinfest
+- #13391 support 'flex' tier in app-server in addition to 'fast' @kharvd
+- #13290 image-gen-core @won-openai
+- #13404 feat: better multi-agent prompt @jif-oai
+- #13412 feat: ordinal nick name @jif-oai
+- #13454 add metric for per-turn token usage @jif-oai
+- #13240 fix: pending messages in `/agent` @jif-oai
+- #13461 fix: bad merge @jif-oai
+- #13460 feat: disable request input on sub agent @jif-oai
+- #13456 feat: add metric for per-turn tool count and add tmp_mem flag @jif-oai
+- #13468 nit: citation prompt @jif-oai
+- #13467 feat: memories in workspace write @jif-oai
+- #12383 add new scopes to login @adaley-openai
+- #13484 allow apps to specify cwd for sandbox setup. @iceweasel-oai
+- #13424 feat(core, tracing): add a span representing a turn @owenlin0
+- #13489 remove serviceTier from app-server examples @kharvd
+- #13458 [tui] Update Fast slash command description @pash-openai
+- #13382 fix(tui): decode ANSI alpha-channel encoding in syntax themes @fcoury
+- #13485 feat: external artifacts builder @jif-oai
+- #13493 feat(app-server-test-client): OTEL setup for tracing @owenlin0
+- #13501 add metrics for external config import @alexsong-oai
+- #13495 Notify TUI about plan mode prompts and user input requests @etraut-openai
+- #13506 [release] temporarily use thin LTO for releases @bolinfest
+- #13505 Prefix handoff messages with role @aibrahim-oai
+- #13422 plugin: support local-based marketplace.json + install endpoint. @xl-openai
