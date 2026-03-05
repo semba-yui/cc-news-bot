@@ -175,6 +175,37 @@ describe("notifySlack", () => {
     });
   });
 
+  describe("エラーハンドリング", () => {
+    it("postSummary 失敗時に console.error でエラーを出力する", async () => {
+      // What: postSummary が失敗した時にエラーログが出力されること
+      // Why: サイレント失敗を防ぎ、次回 Actions ログで原因特定できるようにする
+
+      // Given: postSummary が失敗を返す状態
+      writeFileSync(
+        resolve(TEST_ROOT, "run-result.json"),
+        JSON.stringify({
+          changedSources: ["source-a"],
+          firstRunSources: [],
+          errors: [],
+          hasChanges: true,
+        }),
+      );
+      writeFileSync(resolve(TEST_ROOT, "diffs/source-a-v1.0.0.md"), "+diff");
+      writeFileSync(resolve(TEST_ROOT, "current/source-a.md"), "new-content");
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+      // When: notifySlack を実行
+      const deps = makeDeps({
+        postSummary: vi.fn().mockResolvedValue({ success: false, error: "invalid_blocks" }),
+      });
+      await notifySlack(deps);
+
+      // Then: console.error が Slack エラー情報を含んで呼ばれる
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("invalid_blocks"));
+      consoleSpy.mockRestore();
+    });
+  });
+
   describe("changedSources が空", () => {
     it("何も投稿せず正常終了する", async () => {
       writeFileSync(

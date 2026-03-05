@@ -68,6 +68,11 @@ export async function notifySlack(deps: NotifyDeps): Promise<void> {
       await Promise.all(
         getChannels(source).map(async (ch) => {
           const result = await postSummary(ch, source, version, summary, slackToken, botProfile);
+          if (!result.success) {
+            console.error(
+              `[notify] Failed to post to Slack: source=${source} version=${version} channel=${ch} error=${result.error}`,
+            );
+          }
           if (result.success && result.ts && diffText) {
             await postThreadReplies(ch, result.ts, diffText, slackToken, { botProfile });
           }
