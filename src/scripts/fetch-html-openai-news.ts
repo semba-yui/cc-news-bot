@@ -60,7 +60,7 @@ export async function fetchHtmlOpenAINews(
   // Phase 1: Playwright 経由で一覧ページを取得
   let listHtml: string;
   try {
-    listHtml = await deps.fetchHeadlessHtml(LIST_URL, { timeoutMs: 60_000, waitUntil: "load", waitForSelector: 'a[href*="/index/"]' });
+    listHtml = await deps.fetchHeadlessHtml(LIST_URL, { timeoutMs: 60_000, waitUntil: "load", waitForSelector: 'a[href*="/index/"]', stealth: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logError(`Playwright fetch failed: ${message}`);
@@ -110,7 +110,7 @@ export async function fetchHtmlOpenAINews(
   for (const article of newArticles) {
     let articleHtml: string;
     try {
-      articleHtml = await deps.fetchHeadlessHtml(`${ARTICLE_BASE_URL}${article.slug}/`, { timeoutMs: 60_000, waitUntil: "load", waitForSelector: "article" });
+      articleHtml = await deps.fetchHeadlessHtml(`${ARTICLE_BASE_URL}${article.slug}/`, { timeoutMs: 60_000, waitUntil: "load", waitForSelector: "article", stealth: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logError(`Failed to fetch article ${article.slug}: ${message}`);

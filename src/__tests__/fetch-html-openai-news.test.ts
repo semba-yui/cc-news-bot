@@ -102,18 +102,19 @@ describe("fetchHtmlOpenAINews", () => {
         newArticles: ["article-a"],
       });
 
-      // Then: 一覧ページは waitUntil: "load" + waitForSelector で取得される
+      // Then: 一覧ページは stealth + waitUntil: "load" + waitForSelector で取得される
       expect(deps.fetchHeadlessHtml).toHaveBeenCalledTimes(2); // 一覧 + article-a
       expect(deps.fetchHeadlessHtml).toHaveBeenNthCalledWith(1, "https://openai.com/ja-JP/news/", {
         timeoutMs: 60_000,
         waitUntil: "load",
         waitForSelector: 'a[href*="/index/"]',
+        stealth: true,
       });
-      // Then: 個別記事ページは waitUntil: "load" + waitForSelector で取得される
+      // Then: 個別記事ページは stealth + waitUntil: "load" + waitForSelector で取得される
       expect(deps.fetchHeadlessHtml).toHaveBeenNthCalledWith(
         2,
         "https://openai.com/ja-JP/index/article-a/",
-        { timeoutMs: 60_000, waitUntil: "load", waitForSelector: "article" },
+        { timeoutMs: 60_000, waitUntil: "load", waitForSelector: "article", stealth: true },
       );
 
       // Then: html-current/openai-news.json が書き出される
