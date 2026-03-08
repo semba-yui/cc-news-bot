@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-03-08T13:55:52.212Z",
+  "lastCheckedAt": "2026-03-08T18:09:15.839Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -11,6 +11,7 @@
     "the-five-ai-value-models-driving-business-reinvention",
     "introducing-the-adoption-news-channel",
     "extending-single-minus-amplitudes-to-gravitons",
-    "gpt-5-3-instant-system-card"
+    "gpt-5-3-instant-system-card",
+    "gpt-5-3-instant"
   ]
 }
