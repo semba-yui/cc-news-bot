@@ -1,6 +1,6 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { DATA_DIR } from "../config/sources.js";
+import { DATA_DIR, HTML_SOURCE_URLS } from "../config/sources.js";
 import { ensureDataDirs } from "../config/init-dirs.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
 import { fetchStaticHtml as fetchStaticHtmlImpl } from "../services/html-fetch-service.js";
@@ -13,7 +13,7 @@ import {
 } from "../services/state-service.js";
 
 const SOURCE_NAME = "jules-changelog";
-const LIST_URL = "https://jules.google/docs/changelog/";
+const { listUrl: LIST_URL } = HTML_SOURCE_URLS[SOURCE_NAME];
 const MAX_INITIAL_ARTICLES = 3;
 
 export interface FetchHtmlJulesChangelogDeps {

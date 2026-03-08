@@ -85,6 +85,20 @@ export function getChannelsForSource(sourceName: string): string[] {
     .filter(Boolean);
 }
 
+export const HTML_SOURCE_URLS = {
+  "openai-news": {
+    listUrl: "https://openai.com/ja-JP/news/",
+    articleBaseUrl: "https://openai.com/ja-JP/index/",
+  },
+  "anthropic-news": {
+    listUrl: "https://www.anthropic.com/news",
+    articleBaseUrl: "https://www.anthropic.com/news/",
+  },
+  "jules-changelog": {
+    listUrl: "https://jules.google/docs/changelog/",
+  },
+} as const;
+
 const DATA_ROOT = resolve(import.meta.dirname, "../../data");
 
 export const DATA_DIR = {

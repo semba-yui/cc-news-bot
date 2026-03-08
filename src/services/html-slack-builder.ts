@@ -1,3 +1,4 @@
+import { HTML_SOURCE_URLS } from "../config/sources.js";
 import type { SlackBlock } from "./slack-service.js";
 
 export interface GeminiCliTranslatedContent {
@@ -78,9 +79,6 @@ export interface TranslatedArticle {
   readonly fullTextJa: string;
 }
 
-const OPENAI_NEWS_BASE_URL = "https://openai.com/ja-JP/index/";
-const ANTHROPIC_NEWS_BASE_URL = "https://www.anthropic.com/news/";
-
 const SLACK_TEXT_LIMIT = 3000;
 const SLACK_HEADER_LIMIT = 150;
 
@@ -112,7 +110,7 @@ export function buildOpenAINewsBlocks(article: TranslatedArticle): SlackBlock[] 
 
   blocks.push({
     type: "context",
-    elements: [{ type: "mrkdwn", text: `🔗 <${OPENAI_NEWS_BASE_URL}${article.slug}/|記事を読む>` }],
+    elements: [{ type: "mrkdwn", text: `🔗 <${HTML_SOURCE_URLS["openai-news"].articleBaseUrl}${article.slug}/|記事を読む>` }],
   });
 
   return blocks;
@@ -143,7 +141,7 @@ export function buildAnthropicNewsBlocks(article: TranslatedArticle): SlackBlock
 
   blocks.push({
     type: "context",
-    elements: [{ type: "mrkdwn", text: `🔗 <${ANTHROPIC_NEWS_BASE_URL}${article.slug}|記事を読む>` }],
+    elements: [{ type: "mrkdwn", text: `🔗 <${HTML_SOURCE_URLS["anthropic-news"].articleBaseUrl}${article.slug}|記事を読む>` }],
   });
 
   return blocks;
