@@ -19,7 +19,7 @@ interface JulesChangelogCurrentEntry {
   dateSlug: string;
   title: string;
   date: string;
-  contentEn: string;
+  contentHtml: string;
   fetchedAt: string;
 }
 
@@ -39,6 +39,7 @@ function makeEntry(dateSlug: string, index: number = 0): JulesChangelogEntry {
     title: `Entry ${dateSlug}`,
     date: `2026-03-0${8 - index}`,
     contentEn: `Content of ${dateSlug}`,
+    contentHtml: `<p>Content of ${dateSlug}</p>`,
   };
 }
 
@@ -111,7 +112,7 @@ describe("fetchHtmlJulesChangelog", () => {
       ) as JulesChangelogCurrentEntry[];
       expect(entries).toHaveLength(1);
       expect(entries[0].dateSlug).toBe("2026-03-08");
-      expect(entries[0].contentEn).toBe("Content of 2026-03-08");
+      expect(entries[0].contentHtml).toBe("<p>Content of 2026-03-08</p>");
       expect(entries[0].fetchedAt).toBeDefined();
 
       // Then: state が更新され 2026-03-08 が knownSlugs に追加される

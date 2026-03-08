@@ -34,51 +34,75 @@ jobs:
         if: steps.fetch.outputs.has_changes == 'true'
         run: mkdir -p data/html-summaries
 
-      - name: Translate with Claude
+      - name: Convert to Slack blocks with Claude
         if: steps.fetch.outputs.has_changes == 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            あなたはニュース記事の翻訳エキスパートです。
-            Jules Changelog の記事データを処理し、Slack 通知に適した形式に変換してください。
+            あなたは Slack 通知フォーマッターです。
+            Jules Changelog の記事データを Slack Block Kit 形式に正確に変換する専門家として振る舞ってください。
 
             ## タスク
 
             data/html-current/jules-changelog.json を読み取ってください。
-            このファイルは JSON 配列で、各要素は以下の構造を持ちます:
-            { dateSlug, title, date, contentEn, fetchedAt }
+            このファイルは JSON 配列で、各要素は1つの記事のデータです。
+            各要素の contentHtml フィールドの HTML を解析して
+            Slack Block Kit 形式の JSON に変換してください。
 
-            各記事について以下の処理を行い、結果を data/html-summaries/jules-changelog.json に書き出してください。
+            ## 入力仕様
 
-            ## 処理ルール
+            data/html-current/jules-changelog.json の構造（配列）:
+            各要素:
+            - dateSlug (string): 記事の識別子（例: "2026-02-19", "2026-01-26-1"）
+            - title (string): 記事のタイトル（例: "Auto-Fixing CI Failures and configure Jules to commit as you"）
+            - date (string): 日付 ISO 8601（例: "2026-02-19"）
+            - contentHtml (string): 記事本文の HTML。
+              <p>, <h3>, <h4>, <ul>, <ol>, <li>, <strong>, <a>, <code> 等の HTML タグを含む。
+              <div class="sl-heading-wrapper"> で見出しがラップされている場合がある。
 
-            ### 言語判定と翻訳
+            ## 変換ルール
 
-            - contentEn フィールドのテキストが英語の場合: 日本語に翻訳する
-            - contentEn フィールドのテキストが日本語の場合: そのまま使用する
+            ### テキスト要素
+            - <h3> または <div class="sl-heading-wrapper"><h3>...</h3></div> → divider ブロック + section ブロック（"*見出しテキスト*" bold 形式）
+            - <h4> または <div class="sl-heading-wrapper"><h4>...</h4></div> → section ブロック（"*見出しテキスト*" bold 形式）
+            - <p> → section ブロック（type: mrkdwn）。連続する短い p は1つの section にまとめてよい
+            - <ul> 内 <li> → 各項目を "• テキスト" 形式でリスト化
+            - <ol> 内 <li> → 各項目を "1. テキスト" 形式で番号付きリスト化
 
-            ### 全文翻訳（fullTextJa）
+            ### インライン要素（Slack mrkdwn 記法）
+            - <a href="url">text</a> → "<url|text>"
+            - <code>text</code> → "`text`"
+            - <strong>text</strong> → "*text*"
 
-            - 本文全文を日本語に翻訳して保持する（日本語の場合はそのまま）
-            - Markdown 形式を維持する
-            - 要約は不要（記事が短いため親メッセージに全文を含める）
+            ### ブロック構成
+            1. 先頭は必ず header ブロック: "Jules Changelog: {title}" (150文字以内)
+            2. header の直後に日付セクション: "📅 {date}"
+            3. セクション間（h3 の前）に divider ブロックを挿入
+            4. 各 section.text は 3000 文字以内。超える場合は複数 section に分割
 
-            ## 出力仕様
-
-            結果を data/html-summaries/jules-changelog.json に JSON 配列で書き出してください。
-
-            出力スキーマ（配列の各要素）:
-            { "dateSlug": "string (入力からコピー)", "title": "string (入力からコピー)", "date": "string (入力からコピー)", "fullTextJa": "string (日本語全文)" }
+            ### 言語処理
+            - contentHtml のテキストが英語の場合: 日本語に翻訳してからブロックに変換する
+            - contentHtml のテキストが日本語の場合: そのまま使用する
 
             ## 制約
-
             - 入力配列の順序を維持すること
-            - dateSlug, title, date フィールドは入力からそのままコピーすること
-            - fullTextJa は必ず日本語で出力すること
+            - section.text.text は 3000 文字以内
+            - header.text.text は 150 文字以内
+
+            ## 出力
+            結果を data/html-summaries/jules-changelog.json に JSON 配列で書き出してください。
+            出力スキーマ（配列の各要素）:
+            - dateSlug (string): 入力からコピー
+            - title (string): 入力からコピー
+            - date (string): 入力からコピー
+            - fallbackText (string): Slack の通知テキスト（例: "Jules Changelog: Auto-Fixing CI Failures"）
+            - blocks (array): Slack Block Kit ブロック配列
+              - header: { type: "header", text: { type: "plain_text", text: string (150文字以内), emoji: true } }
+              - section: { type: "section", text: { type: "mrkdwn", text: string (3000文字以内) } }
+              - divider: { type: "divider" }
 
             ## 検証
-
             書き出し後、以下のコマンドで JSON を検証してください:
             npx tsx src/scripts/validate-news-summary.ts jules-changelog
             検証に失敗した場合は、エラーメッセージを読み取り、JSON を修正して再度検証してください。

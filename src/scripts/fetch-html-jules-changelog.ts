@@ -96,7 +96,7 @@ export async function fetchHtmlJulesChangelog(
     dateSlug: article.dateSlug,
     title: article.title,
     date: article.date,
-    contentEn: article.contentEn,
+    contentHtml: article.contentHtml,
     fetchedAt: now,
   }));
 

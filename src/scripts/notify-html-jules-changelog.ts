@@ -1,8 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DATA_DIR, getChannelsForSource } from "../config/sources.js";
-import type { TranslatedJulesEntry } from "../services/html-slack-builder.js";
-import { buildJulesChangelogBlocks } from "../services/html-slack-builder.js";
 import type { BotProfile, PostResult, SlackBlock } from "../services/slack-service.js";
 import { postBlocks as postBlocksImpl } from "../services/slack-service.js";
 
@@ -13,7 +11,6 @@ export interface NotifyHtmlJulesChangelogDeps {
   readonly getChannels: (source: string) => string[];
   readonly slackToken: string;
   readonly botProfile?: BotProfile;
-  readonly buildBlocks: (entry: TranslatedJulesEntry) => SlackBlock[];
   readonly postBlocks: (
     channel: string,
     blocks: SlackBlock[],
@@ -23,18 +20,29 @@ export interface NotifyHtmlJulesChangelogDeps {
   ) => Promise<PostResult>;
 }
 
+interface JulesChangelogSummariesEntry {
+  dateSlug: string;
+  title: string;
+  date: string;
+  fallbackText: string;
+  blocks: SlackBlock[];
+}
+
 export async function notifyHtmlJulesChangelog(deps: NotifyHtmlJulesChangelogDeps): Promise<void> {
   const filePath = resolve(deps.htmlSummariesDir, "jules-changelog.json");
-  const entries = JSON.parse(readFileSync(filePath, "utf-8")) as TranslatedJulesEntry[];
+  const entries = JSON.parse(readFileSync(filePath, "utf-8")) as JulesChangelogSummariesEntry[];
   const channels = deps.getChannels(SOURCE_NAME);
 
   for (const entry of entries) {
-    const blocks = deps.buildBlocks(entry);
-    const fallbackText = `Jules Changelog: ${entry.title}`;
-
     await Promise.all(
       channels.map(async (channel) => {
-        await deps.postBlocks(channel, blocks, fallbackText, deps.slackToken, deps.botProfile);
+        await deps.postBlocks(
+          channel,
+          entry.blocks,
+          entry.fallbackText,
+          deps.slackToken,
+          deps.botProfile,
+        );
       }),
     );
   }
@@ -51,7 +59,6 @@ async function main(): Promise<void> {
     getChannels: getChannelsForSource,
     slackToken,
     botProfile: { name: "Jules Changelog", emoji: ":jules:" },
-    buildBlocks: buildJulesChangelogBlocks,
     postBlocks: postBlocksImpl,
   });
 

@@ -172,6 +172,61 @@ describe("jules-changelog-parser", () => {
       expect(result).toEqual([]);
     });
 
+    it("contentHtml に HTML 構造が保持される", () => {
+      // What: article 内の HTML タグ構造（p, h3, ul, ol）が contentHtml に保持されるか
+      // Why: Claude が HTML を直接 Slack Block Kit に変換するため、HTML 構造の保持が必須
+
+      // Given: 実際のフィクスチャ HTML
+      // When: parseArticleList を呼び出す
+      const result = parseArticleList(fixtureHtml);
+
+      // Then: contentHtml に HTML タグが含まれる
+      const entry = result.find((e) => e.dateSlug === "2026-02-19");
+      expect(entry!.contentHtml).toContain("<p>");
+      expect(entry!.contentHtml).toContain("<h3");
+      expect(entry!.contentHtml).toContain("<ul>");
+      expect(entry!.contentHtml).toContain("<ol>");
+    });
+
+    it("contentHtml にヘッダー要素が含まれない", () => {
+      // What: article 内の header 要素が contentHtml から除外されるか
+      // Why: title と date は別フィールドで抽出済みなので重複を避ける
+
+      // Given: 実際のフィクスチャ HTML
+      // When: parseArticleList を呼び出す
+      const result = parseArticleList(fixtureHtml);
+
+      // Then: contentHtml に header タグが含まれない
+      const entry = result.find((e) => e.dateSlug === "2026-02-19");
+      expect(entry!.contentHtml).not.toContain("<header");
+    });
+
+    it("contentHtml に video 要素が含まれない", () => {
+      // What: video 要素が contentHtml から除外されるか
+      // Why: Slack Block Kit では video を扱わないため
+
+      // Given: 実際のフィクスチャ HTML（video 要素を含む記事がある）
+      // When: parseArticleList を呼び出す
+      const result = parseArticleList(fixtureHtml);
+
+      // Then: contentHtml に video タグが含まれない
+      const entry = result.find((e) => e.dateSlug === "2026-02-19");
+      expect(entry!.contentHtml).not.toContain("<video");
+    });
+
+    it("contentHtml から画像のみの p 要素が除外される", () => {
+      // What: img のみを含む p 要素が contentHtml から除外されるか
+      // Why: 画像は通知に含めないため
+
+      // Given: 実際のフィクスチャ HTML
+      // When: parseArticleList を呼び出す
+      const result = parseArticleList(fixtureHtml);
+
+      // Then: contentHtml に img タグが含まれない
+      const entry = result.find((e) => e.dateSlug === "2026-02-19");
+      expect(entry!.contentHtml).not.toContain("<img");
+    });
+
     it("article 要素が存在しない HTML では空配列を返す", () => {
       // What: article 要素がない HTML に対して空配列を返すか
       // Why: DOM 構造が変更された場合のフォールバック動作を保証するため

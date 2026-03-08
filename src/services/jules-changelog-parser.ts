@@ -6,6 +6,7 @@ export interface JulesChangelogEntry {
   readonly title: string;
   readonly date: string; // ISO 8601 (YYYY-MM-DD)
   readonly contentEn: string; // HTML→Markdown converted
+  readonly contentHtml: string; // Raw HTML content (for Block Kit conversion)
 }
 
 const DATESLUG_PATTERN = /^\/docs\/changelog\/(.+)$/;
@@ -80,6 +81,27 @@ function extractMarkdown($: cheerio.CheerioAPI, article: cheerio.Cheerio<AnyNode
   return parts.join("\n\n");
 }
 
+function extractHtml($: cheerio.CheerioAPI, article: cheerio.Cheerio<AnyNode>): string {
+  const parts: string[] = [];
+
+  article.children().each((_, el) => {
+    const node = $(el);
+    const tag = $(el).prop("tagName")?.toLowerCase();
+
+    if (tag === "header") return;
+    if (tag === "video" || tag === "img") return;
+
+    if (tag === "p") {
+      if (node.find("img").length > 0 && node.text().trim() === "") return;
+    }
+
+    const html = $.html(node);
+    if (html) parts.push(html);
+  });
+
+  return parts.join("\n");
+}
+
 export function parseArticleList(html: string): JulesChangelogEntry[] {
   if (html === "") return [];
 
@@ -111,8 +133,9 @@ export function parseArticleList(html: string): JulesChangelogEntry[] {
     if (!title || !dateSlug) return;
 
     const contentEn = extractMarkdown($, article);
+    const contentHtml = extractHtml($, article);
 
-    entries.push({ dateSlug, title, date, contentEn });
+    entries.push({ dateSlug, title, date, contentEn, contentHtml });
   });
 
   // Sort by date descending

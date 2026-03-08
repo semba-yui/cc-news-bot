@@ -8,8 +8,8 @@ import {
 } from "../scripts/notify-html-jules-changelog.js";
 
 // What: Jules Changelog の Slack 通知スクリプトのテスト
-// Why: 翻訳済み JSON を読み込み、記事ごとに親メッセージのみで通知を完結するフローが
-//      正しく動作することを保証する（スレッド返信なし、fullTextJa を親メッセージに含める）
+// Why: Claude が生成した pre-built Block Kit JSON を読み込み、
+//      記事ごとに親メッセージのみで Slack に直接投稿するフローが正しく動作することを保証する
 
 const TEST_ROOT = resolve(import.meta.dirname, "../../data-test-notify-jules-changelog");
 
@@ -19,14 +19,15 @@ const MOCK_BLOCKS: SlackBlock[] = [
     text: { type: "plain_text", text: "Jules Changelog: テストエントリ", emoji: true },
   },
   { type: "section", text: { type: "mrkdwn", text: "📅 2026-03-08" } },
-  { type: "section", text: { type: "mrkdwn", text: "翻訳済み本文" } },
+  { type: "section", text: { type: "mrkdwn", text: "新機能が追加されました。" } },
 ];
 
 interface SummaryEntry {
   dateSlug: string;
   title: string;
   date: string;
-  fullTextJa: string;
+  fallbackText: string;
+  blocks: SlackBlock[];
 }
 
 function makeDeps(
@@ -37,7 +38,6 @@ function makeDeps(
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
     botProfile: { name: "Jules Changelog", emoji: ":jules:" },
-    buildBlocks: vi.fn().mockReturnValue(MOCK_BLOCKS),
     postBlocks: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,
       ts: "1234567890.123456",
@@ -63,17 +63,17 @@ describe("notifyHtmlJulesChangelog", () => {
   });
 
   describe("単一エントリの投稿", () => {
-    // What: 1つの翻訳済みエントリを Slack に親メッセージのみで投稿する
-    // Why: Jules Changelog は記事が短いため要約不要、fullTextJa を親メッセージに含めて
-    //      スレッド返信なしで通知が完結することを検証する
-    it("親メッセージのみで通知を完結する（スレッド返信なし）", async () => {
-      // Given: 翻訳済み JSON に1エントリが存在する
+    // What: 1つの pre-built Block Kit エントリを Slack に投稿する
+    // Why: Claude が生成した blocks と fallbackText がそのまま postBlocks に渡されることを検証する
+    it("pre-built blocks を直接 Slack に投稿する", async () => {
+      // Given: Block Kit JSON に1エントリが存在する
       writeSummaryFile([
         {
           dateSlug: "2026-03-08",
           title: "New features",
           date: "2026-03-08",
-          fullTextJa: "新機能が追加されました。",
+          fallbackText: "Jules Changelog: New features",
+          blocks: MOCK_BLOCKS,
         },
       ]);
 
@@ -82,15 +82,7 @@ describe("notifyHtmlJulesChangelog", () => {
       // When: 通知スクリプトを実行する
       await notifyHtmlJulesChangelog(deps);
 
-      // Then: buildBlocks に正しいエントリデータが渡される
-      expect(deps.buildBlocks).toHaveBeenCalledWith({
-        dateSlug: "2026-03-08",
-        title: "New features",
-        date: "2026-03-08",
-        fullTextJa: "新機能が追加されました。",
-      });
-
-      // Then: 親メッセージが Slack に投稿される
+      // Then: postBlocks に pre-built blocks と fallbackText が直接渡される
       expect(deps.postBlocks).toHaveBeenCalledWith(
         "C_TEST",
         MOCK_BLOCKS,
@@ -102,7 +94,7 @@ describe("notifyHtmlJulesChangelog", () => {
   });
 
   describe("複数エントリの投稿", () => {
-    // What: 複数の翻訳済みエントリを記事ごとに独立メッセージとして投稿する
+    // What: 複数の Block Kit エントリを記事ごとに独立メッセージとして投稿する
     // Why: 各エントリが独立した親メッセージとして投稿されることを検証する
     it("各エントリごとに独立した親メッセージを投稿する", async () => {
       // Given: 2つのエントリが存在する
@@ -111,13 +103,15 @@ describe("notifyHtmlJulesChangelog", () => {
           dateSlug: "2026-03-08",
           title: "Entry 1",
           date: "2026-03-08",
-          fullTextJa: "本文1",
+          fallbackText: "Jules Changelog: Entry 1",
+          blocks: MOCK_BLOCKS,
         },
         {
           dateSlug: "2026-03-05",
           title: "Entry 2",
           date: "2026-03-05",
-          fullTextJa: "本文2",
+          fallbackText: "Jules Changelog: Entry 2",
+          blocks: MOCK_BLOCKS,
         },
       ]);
 
@@ -125,9 +119,6 @@ describe("notifyHtmlJulesChangelog", () => {
 
       // When: 通知スクリプトを実行する
       await notifyHtmlJulesChangelog(deps);
-
-      // Then: buildBlocks が2回呼ばれる
-      expect(deps.buildBlocks).toHaveBeenCalledTimes(2);
 
       // Then: postBlocks が2回呼ばれる（各エントリ1回ずつ）
       expect(deps.postBlocks).toHaveBeenCalledTimes(2);
@@ -144,7 +135,8 @@ describe("notifyHtmlJulesChangelog", () => {
           dateSlug: "2026-03-08",
           title: "Entry 1",
           date: "2026-03-08",
-          fullTextJa: "本文",
+          fallbackText: "Jules Changelog: Entry 1",
+          blocks: MOCK_BLOCKS,
         },
       ]);
 
@@ -186,6 +178,18 @@ describe("notifyHtmlJulesChangelog", () => {
     });
   });
 
+  describe("Deps に buildBlocks がない", () => {
+    // What: Jules Changelog の Deps インターフェースに buildBlocks メソッドが含まれないこと
+    // Why: pre-built blocks パターンではビルダー関数が不要であることを型レベルで保証する
+    it("NotifyHtmlJulesChangelogDeps に buildBlocks プロパティが存在しない", () => {
+      // Given: Jules Changelog の Deps
+      const deps = makeDeps();
+
+      // Then: buildBlocks プロパティが存在しない
+      expect("buildBlocks" in deps).toBe(false);
+    });
+  });
+
   describe("botProfile なし", () => {
     // What: botProfile が未設定の場合の動作
     // Why: botProfile はオプショナルであり、未設定でも正常に動作することを検証する
@@ -196,7 +200,8 @@ describe("notifyHtmlJulesChangelog", () => {
           dateSlug: "2026-03-08",
           title: "Entry 1",
           date: "2026-03-08",
-          fullTextJa: "本文",
+          fallbackText: "Jules Changelog: Entry 1",
+          blocks: MOCK_BLOCKS,
         },
       ]);
 

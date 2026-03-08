@@ -22,11 +22,46 @@ const AnthropicNewsSummarySchema = z.object({
 
 const AnthropicNewsSummariesSchema = z.array(AnthropicNewsSummarySchema).min(1);
 
+const JulesHeaderBlock = z.object({
+  type: z.literal("header"),
+  text: z.object({
+    type: z.literal("plain_text"),
+    text: z.string().max(150),
+    emoji: z.literal(true),
+  }),
+});
+
+const JulesSectionBlock = z.object({
+  type: z.literal("section"),
+  text: z.object({
+    type: z.literal("mrkdwn"),
+    text: z.string().max(3000),
+  }),
+});
+
+const JulesDividerBlock = z.object({
+  type: z.literal("divider"),
+});
+
+const JulesImageBlock = z.object({
+  type: z.literal("image"),
+  image_url: z.url(),
+  alt_text: z.string(),
+});
+
+const JulesSlackBlockSchema = z.discriminatedUnion("type", [
+  JulesHeaderBlock,
+  JulesSectionBlock,
+  JulesDividerBlock,
+  JulesImageBlock,
+]);
+
 const JulesChangelogSummarySchema = z.object({
   dateSlug: z.string(),
   title: z.string(),
   date: z.string(),
-  fullTextJa: z.string(),
+  fallbackText: z.string(),
+  blocks: z.array(JulesSlackBlockSchema).min(1),
 });
 
 const JulesChangelogSummariesSchema = z.array(JulesChangelogSummarySchema).min(1);

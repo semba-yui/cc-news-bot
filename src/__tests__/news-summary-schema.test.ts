@@ -176,17 +176,30 @@ describe("validateAnthropicNewsSummaries", () => {
 });
 
 describe("validateJulesChangelogSummaries", () => {
-  // What: Jules Changelog の翻訳済み JSON のバリデーション
-  // Why: dateSlug ベースで summaryJa なし、fullTextJa のみの構造を検証する
+  // What: Jules Changelog の Block Kit JSON のバリデーション
+  // Why: Claude が生成した Slack Block Kit ブロック配列の構造を検証し、
+  //      不正な出力にフィードバックを返すことで LLM のリトライループを実現する
 
-  it("正しい構造の JSON を受け入れる", () => {
-    // Given: 正しい構造のデータ
+  const validBlocks = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: "Jules Changelog: テスト", emoji: true },
+    },
+    {
+      type: "section",
+      text: { type: "mrkdwn", text: "新機能が追加されました。" },
+    },
+  ];
+
+  it("正しい Block Kit 構造の JSON を受け入れる", () => {
+    // Given: Block Kit ブロック配列を含む正しい構造のデータ
     const data = [
       {
         dateSlug: "2026-03-08",
         title: "New features",
         date: "2026-03-08",
-        fullTextJa: "新機能が追加されました。",
+        fallbackText: "Jules Changelog: New features",
+        blocks: validBlocks,
       },
     ];
 
@@ -197,39 +210,115 @@ describe("validateJulesChangelogSummaries", () => {
     expect(result.success).toBe(true);
   });
 
-  it("長い fullTextJa も受け入れる（スレッド分割で対応するため文字数制限なし）", () => {
-    // Given: fullTextJa が非常に長い
+  it("divider と image ブロックを含む構造を受け入れる", () => {
+    // Given: divider と image ブロックを含むデータ
     const data = [
       {
         dateSlug: "2026-03-08",
-        title: "Long entry",
+        title: "Rich content",
         date: "2026-03-08",
-        fullTextJa: "う".repeat(10000),
+        fallbackText: "Jules Changelog: Rich content",
+        blocks: [
+          ...validBlocks,
+          { type: "divider" },
+          { type: "image", image_url: "https://example.com/img.png", alt_text: "screenshot" },
+        ],
       },
     ];
 
     // When: バリデーションを実行する
     const result = validateJulesChangelogSummaries(data);
 
-    // Then: 成功する（分割は postThreadReplies が担当）
+    // Then: 成功する
     expect(result.success).toBe(true);
   });
 
-  it("slug フィールドがある場合はエラーになる（dateSlug を使用）", () => {
-    // Given: slug がある（dateSlug ではなく）
+  it("section.text が 3000 文字を超える場合はエラーになる", () => {
+    // Given: section.text が 3001 文字
     const data = [
       {
-        slug: "wrong-field",
-        title: "Wrong",
+        dateSlug: "2026-03-08",
+        title: "Long section",
         date: "2026-03-08",
-        fullTextJa: "テスト",
+        fallbackText: "Jules Changelog: Long section",
+        blocks: [
+          {
+            type: "header",
+            text: { type: "plain_text", text: "Jules Changelog: Long section", emoji: true },
+          },
+          {
+            type: "section",
+            text: { type: "mrkdwn", text: "あ".repeat(3001) },
+          },
+        ],
       },
     ];
 
     // When: バリデーションを実行する
     const result = validateJulesChangelogSummaries(data);
 
-    // Then: 失敗する（dateSlug が必須）
+    // Then: 失敗する
+    expect(result.success).toBe(false);
+  });
+
+  it("header.text が 150 文字を超える場合はエラーになる", () => {
+    // Given: header.text が 151 文字
+    const data = [
+      {
+        dateSlug: "2026-03-08",
+        title: "Long header",
+        date: "2026-03-08",
+        fallbackText: "Jules Changelog: Long header",
+        blocks: [
+          {
+            type: "header",
+            text: { type: "plain_text", text: "あ".repeat(151), emoji: true },
+          },
+        ],
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateJulesChangelogSummaries(data);
+
+    // Then: 失敗する
+    expect(result.success).toBe(false);
+  });
+
+  it("blocks が空配列の場合はエラーになる", () => {
+    // Given: blocks が空
+    const data = [
+      {
+        dateSlug: "2026-03-08",
+        title: "Empty blocks",
+        date: "2026-03-08",
+        fallbackText: "Jules Changelog: Empty blocks",
+        blocks: [],
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateJulesChangelogSummaries(data);
+
+    // Then: 失敗する
+    expect(result.success).toBe(false);
+  });
+
+  it("fallbackText が欠けている場合はエラーになる", () => {
+    // Given: fallbackText がないデータ
+    const data = [
+      {
+        dateSlug: "2026-03-08",
+        title: "Missing fallback",
+        date: "2026-03-08",
+        blocks: validBlocks,
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateJulesChangelogSummaries(data);
+
+    // Then: 失敗する
     expect(result.success).toBe(false);
   });
 
@@ -241,6 +330,24 @@ describe("validateJulesChangelogSummaries", () => {
     const result = validateJulesChangelogSummaries(data);
 
     // Then: 失敗する
+    expect(result.success).toBe(false);
+  });
+
+  it("旧形式（fullTextJa）はエラーになる", () => {
+    // Given: 旧形式のデータ（fullTextJa あり、blocks なし）
+    const data = [
+      {
+        dateSlug: "2026-03-08",
+        title: "Old format",
+        date: "2026-03-08",
+        fullTextJa: "旧形式のテキスト",
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateJulesChangelogSummaries(data);
+
+    // Then: 失敗する（blocks と fallbackText が必須）
     expect(result.success).toBe(false);
   });
 });
