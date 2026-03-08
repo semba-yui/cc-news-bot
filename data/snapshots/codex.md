@@ -1,42 +1,39 @@
-## rust-v0.111.0 (2026-03-05T19:12:13Z)
+## rust-v0.112.0 (2026-03-08T20:44:14Z)
 ## New Features
-- Fast mode is now enabled by default, and the TUI header shows whether the session is running in Fast or Standard mode. (#13450, #13446)
-- `js_repl` can now dynamically import local `.js` and `.mjs` files, making it easier to reuse workspace scripts from the REPL. (#13437)
-- Codex now tells the model which plugins are enabled at session start, improving discovery of installed MCPs, apps, and skills. (#13433)
-- App-server v2 now exposes MCP elicitation as a structured request/response flow instead of raw events, which simplifies client integrations. (#13425)
-- Expanded image workflow support for clients, including client-side handling of image-generation events and model metadata for image-capable web search. (#13512, #13538)
+- Added `@plugin` mentions so users can reference plugins directly in chat and auto-include their associated MCP/app/skill context. (#13510)
+- Added a new model-selection surface update so the latest model catalog changes are surfaced in the TUI picker flow. (#13617)
+- Merged executable permission profiles into per-turn sandbox policy for zsh-fork skill execution, allowing safer, additive privilege handling for tool runs. (#13496)
 
 ## Bug Fixes
-- Resuming a thread now preserves its stored git context and keeps apps enabled, avoiding broken state after `codex resume`. (#13504, #13533)
+- Fixed JS REPL state handling so previously-initialized bindings persist after a failed cell, reducing brittle restarts during iterative sessions. (#13482)
+- Treated `SIGTERM` like Ctrl-C for graceful app-server websocket shutdown instead of abrupt termination behavior. (#13594)
+- Hardened js_repl image emission to accept only `data:` URLs, preventing external URL forwarding through `emitImage`. (#13507)
+- Ensured Linux bubblewrap sandbox runs always unshare the user namespace to keep isolation consistent even for root-owned invocations. (#13624)
+- Improved macOS sandbox network and unix-socket handling in Seatbelt, improving reliability for constrained subprocess environments. (#12702)
+- Surfaced feedback/diagnostics earlier in the workflow so connectivity and diagnostics are visible before later steps. (#13604)
 
 ## Documentation
-- Added sample skill documentation for artifact workflows, including slide deck and spreadsheet examples. (#13525)
+- Clarified js_repl image guidance (emission and encoding semantics), including clearer usage around repeated `emitImage` calls. (#13639)
+
+## Chores
+- Fixed a small codespell warning in the TUI theme picker path. (#13605)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.110.0...rust-v0.111.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.111.0...rust-v0.112.0
 
-- #13516 Log non-audio realtime events @aibrahim-oai
-- #13208 chore(deps): bump actions/download-artifact from 7 to 8 @dependabot
-- #13512 image-gen-event/client_processing @won-openai
-- #13210 chore(deps): bump strum_macros from 0.27.2 to 0.28.0 in /codex-rs @dependabot
-- #13209 chore(deps): bump serde_with from 3.16.1 to 3.17.0 in /codex-rs @dependabot
-- #13504 Preserve persisted thread git info in resume @joeytrasatti-openai
-- #13207 chore(deps): bump actions/upload-artifact from 6 to 7 @dependabot
-- #13433 feat: track plugins mcps/apps and add plugin info to user_instructions @sayan-oai
-- #13450 [core] Enable fast mode by default @pash-openai
-- #13438 [tui] rotate paid promo tips to include fast mode @pash-openai
-- #13515 [tui] Update fast mode plan usage copy @pash-openai
-- #13533 [apps] Fix the issue where apps is not enabled after codex resume. @mzeng-openai
-- #13437 [js_repl] Support local ESM file imports @aaronl-openai
-- #13539 Reduce realtime audio submission log noise @aibrahim-oai
-- #13538 chore: add web_search_tool_type for image support @sayan-oai
-- #13446 [tui] Show speed in session header @pash-openai
-- #13392 refactor: prepare unified exec for zsh-fork backend @bolinfest
-- #13571 feat: bind package manager @jif-oai
-- #13525 feat: skills for artifacts @jif-oai
-- #13573 feat: ultra polish package manager @jif-oai
-- #13577 chore: ultra-clean artifacts @jif-oai
-- #13425 feat(app-server): support mcp elicitations in v2 api @owenlin0
+- #13594 treat SIGTERM like ctrl-c for graceful shutdown @maxj-oai
+- #13605 Fix codespell warning about pre-selects @fjord-oai
+- #13482 Persist initialized js_repl bindings after failed cells @fjord-oai
+- #13604 [diagnostics] show diagnostics earlier in workflow @rhan-oai
+- #13496 feat: merge skill permission profiles into the turn sandbox for zsh-fork execs @celia-oai
+- #13507 Harden js_repl emitImage to accept only data: URLs @fjord-oai
+- #13602 feat(core): persist trace_id for turns in RolloutItem::TurnContext @owenlin0
+- #13624 fix(linux-sandbox): always unshare bwrap userns @viyatb-oai
+- #12702 Improve macOS Seatbelt network and unix socket handling @viyatb-oai
+- #13639 Clarify js_repl image emission and encoding guidance @fjord-oai
+- #13510 add @plugin mentions @sayan-oai
+- #13499 core/protocol: add structured macOS additional permissions and merge them into sandbox execution @celia-oai
+- #13617 Update models.json @aibrahim-oai
 
 
