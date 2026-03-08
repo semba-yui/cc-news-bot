@@ -102,8 +102,17 @@ describe("fetchHtmlOpenAINews", () => {
         newArticles: ["article-a"],
       });
 
-      // Then: 個別記事ページが Playwright で取得される
+      // Then: 一覧ページ・個別記事ページともに waitUntil: "load" で取得される
       expect(deps.fetchHeadlessHtml).toHaveBeenCalledTimes(2); // 一覧 + article-a
+      expect(deps.fetchHeadlessHtml).toHaveBeenNthCalledWith(1, "https://openai.com/ja-JP/news/", {
+        timeoutMs: 60_000,
+        waitUntil: "load",
+      });
+      expect(deps.fetchHeadlessHtml).toHaveBeenNthCalledWith(
+        2,
+        "https://openai.com/ja-JP/index/article-a/",
+        { timeoutMs: 60_000, waitUntil: "load" },
+      );
 
       // Then: html-current/openai-news.json が書き出される
       const entries = JSON.parse(
