@@ -3,18 +3,60 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { DATA_DIR } from "../config/sources.js";
 
-export interface SourceState {
-  hash: string;
+interface SourceStateBase {
   lastCheckedAt: string; // ISO 8601
-  latestReleasedAt?: string; // ISO 8601、github_releases ソース用
-  latestVersion?: string; // html_scraping / html_headless ソース用
-  latestDate?: string; // ISO 8601、日付ベース差分検出用
-  latestSlug?: string; // 最新エントリの slug
 }
+
+export interface HashBasedSourceState extends SourceStateBase {
+  type: "hash";
+  hash: string;
+  latestReleasedAt?: string; // github_releases 用
+}
+
+export interface VersionBasedSourceState extends SourceStateBase {
+  type: "version";
+  hash: string;
+  latestVersion: string;
+}
+
+export interface DateSlugBasedSourceState extends SourceStateBase {
+  type: "date_slug";
+  hash: string;
+  latestDate: string;
+  latestSlug: string;
+}
+
+export interface SlugListBasedSourceState extends SourceStateBase {
+  type: "slug_list";
+  hash: string;
+  knownSlugs: string[];
+}
+
+export type SourceState =
+  | HashBasedSourceState
+  | VersionBasedSourceState
+  | DateSlugBasedSourceState
+  | SlugListBasedSourceState;
 
 export interface SnapshotState {
   lastRunAt: string; // ISO 8601
   sources: Record<string, SourceState | undefined>;
+}
+
+export function migrateSourceState(raw: Record<string, unknown>): SourceState {
+  if (raw.type) {
+    return raw as unknown as SourceState;
+  }
+  if (Array.isArray(raw.knownSlugs)) {
+    return { ...raw, type: "slug_list" } as unknown as SlugListBasedSourceState;
+  }
+  if (typeof raw.latestDate === "string" && typeof raw.latestSlug === "string") {
+    return { ...raw, type: "date_slug" } as unknown as DateSlugBasedSourceState;
+  }
+  if (typeof raw.latestVersion === "string") {
+    return { ...raw, type: "version" } as unknown as VersionBasedSourceState;
+  }
+  return { ...raw, type: "hash" } as unknown as HashBasedSourceState;
 }
 
 const EMPTY_STATE: SnapshotState = { lastRunAt: "", sources: {} };
@@ -67,7 +109,7 @@ export async function loadState(dataRoot: string = DATA_DIR.root): Promise<Snaps
     for (const file of files) {
       const raw = await readFile(resolve(dir, file), "utf-8");
       const sourceName = file.replace(/\.json$/, "");
-      sources[sourceName] = JSON.parse(raw) as SourceState;
+      sources[sourceName] = migrateSourceState(JSON.parse(raw) as Record<string, unknown>);
     }
 
     return { lastRunAt: "", sources };

@@ -218,7 +218,10 @@ describe("結合テスト: 初回実行シナリオ", () => {
       expect(state.sources[source.name]).toBeDefined();
       if (source.type === "github_releases") {
         // github_releases: latestReleasedAt でトラッキング（hash は使わない）
-        expect(state.sources[source.name]!.latestReleasedAt).toBe("2026-02-28T00:00:00Z");
+        const s = state.sources[
+          source.name
+        ]! as import("../services/state-service.js").HashBasedSourceState;
+        expect(s.latestReleasedAt).toBe("2026-02-28T00:00:00Z");
       } else {
         // raw_markdown: hash が空でない
         expect(state.sources[source.name]!.hash).toBeTruthy();

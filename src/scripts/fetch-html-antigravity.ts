@@ -51,7 +51,8 @@ export async function fetchHtmlAntigravity(
 ): Promise<FetchHtmlAntigravityResult> {
   const state = await deps.loadState(deps.dataRoot);
   const now = new Date().toISOString();
-  const existingVersion = state.sources[SOURCE_NAME]?.latestVersion;
+  const sourceState = state.sources[SOURCE_NAME];
+  const existingVersion = sourceState?.type === "version" ? sourceState.latestVersion : undefined;
 
   // フェーズ1: Playwright 経由で changelog ページを取得
   let html: string;
@@ -139,6 +140,7 @@ export async function fetchHtmlAntigravity(
 
   // フェーズ6: state 更新（最新バージョンで）
   state.sources[SOURCE_NAME] = {
+    type: "version",
     hash: "",
     lastCheckedAt: now,
     latestVersion,

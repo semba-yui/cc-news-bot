@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GeminiCliVersionContent } from "../services/gemini-cli-parser.js";
 import type { GitHubReleaseEntry } from "../services/fetch-service.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
-import type { SnapshotState } from "../services/state-service.js";
+import type { SnapshotState, VersionBasedSourceState } from "../services/state-service.js";
 import {
   fetchHtmlGeminiCli,
   type FetchHtmlGeminiCliDeps,
@@ -63,6 +63,7 @@ function makeDeps(overrides: Partial<FetchHtmlGeminiCliDeps> = {}): FetchHtmlGem
       lastRunAt: "",
       sources: {
         "gemini-cli": {
+          type: "version",
           hash: "",
           lastCheckedAt: "2026-03-01T00:00:00.000Z",
           latestVersion: "v0.30.0",
@@ -123,7 +124,9 @@ describe("fetchHtmlGeminiCli", () => {
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["gemini-cli"]!.latestVersion).toBe("v0.31.0");
+      expect((savedState.sources["gemini-cli"] as VersionBasedSourceState).latestVersion).toBe(
+        "v0.31.0",
+      );
     });
   });
 
@@ -137,6 +140,7 @@ describe("fetchHtmlGeminiCli", () => {
           lastRunAt: "",
           sources: {
             "gemini-cli": {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "v0.29.0",
@@ -297,6 +301,7 @@ describe("fetchHtmlGeminiCli", () => {
           lastRunAt: "",
           sources: {
             "gemini-cli": {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "v0.31.0",

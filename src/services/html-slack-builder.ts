@@ -69,6 +69,103 @@ function buildCategorySection(title: string, items: readonly string[]): SlackBlo
   ];
 }
 
+export interface TranslatedArticle {
+  readonly slug: string;
+  readonly title: string;
+  readonly date: string;
+  readonly summaryJa: string;
+  readonly fullTextJa: string;
+}
+
+export interface TranslatedJulesEntry {
+  readonly dateSlug: string;
+  readonly title: string;
+  readonly date: string;
+  readonly fullTextJa: string;
+}
+
+const SLACK_TEXT_LIMIT = 3000;
+const SLACK_HEADER_LIMIT = 150;
+
+function truncate(text: string, limit: number): string {
+  return text.length > limit ? text.slice(0, limit) : text;
+}
+
+export function buildOpenAINewsBlocks(article: TranslatedArticle): SlackBlock[] {
+  const blocks: SlackBlock[] = [];
+
+  blocks.push({
+    type: "header",
+    text: {
+      type: "plain_text",
+      text: truncate(`OpenAI News: ${article.title}`, SLACK_HEADER_LIMIT),
+      emoji: true,
+    },
+  });
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: `📅 ${article.date}` },
+  });
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: truncate(markdownToMrkdwn(article.summaryJa), SLACK_TEXT_LIMIT) },
+  });
+
+  return blocks;
+}
+
+export function buildAnthropicNewsBlocks(article: TranslatedArticle): SlackBlock[] {
+  const blocks: SlackBlock[] = [];
+
+  blocks.push({
+    type: "header",
+    text: {
+      type: "plain_text",
+      text: truncate(`Anthropic News: ${article.title}`, SLACK_HEADER_LIMIT),
+      emoji: true,
+    },
+  });
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: `📅 ${article.date}` },
+  });
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: truncate(markdownToMrkdwn(article.summaryJa), SLACK_TEXT_LIMIT) },
+  });
+
+  return blocks;
+}
+
+export function buildJulesChangelogBlocks(entry: TranslatedJulesEntry): SlackBlock[] {
+  const blocks: SlackBlock[] = [];
+
+  blocks.push({
+    type: "header",
+    text: {
+      type: "plain_text",
+      text: truncate(`Jules Changelog: ${entry.title}`, SLACK_HEADER_LIMIT),
+      emoji: true,
+    },
+  });
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: `📅 ${entry.date}` },
+  });
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: truncate(markdownToMrkdwn(entry.fullTextJa), SLACK_TEXT_LIMIT) },
+  });
+
+  return blocks;
+}
+
 export function buildAntigravityBlocks(content: AntigravityTranslatedContent): SlackBlock[] {
   const blocks: SlackBlock[] = [];
 

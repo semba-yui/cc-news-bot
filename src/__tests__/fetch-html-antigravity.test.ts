@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AntigravityVersionContent } from "../services/antigravity-parser.js";
 import type { PlaywrightFetchOptions } from "../services/playwright-service.js";
-import type { SnapshotState } from "../services/state-service.js";
+import type { SnapshotState, VersionBasedSourceState } from "../services/state-service.js";
 import {
   fetchHtmlAntigravity,
   type FetchHtmlAntigravityDeps,
@@ -58,6 +58,7 @@ function makeDeps(overrides: Partial<FetchHtmlAntigravityDeps> = {}): FetchHtmlA
       lastRunAt: "",
       sources: {
         antigravity: {
+          type: "version",
           hash: "",
           lastCheckedAt: "2026-03-01T00:00:00.000Z",
           latestVersion: "1.19.5",
@@ -109,7 +110,9 @@ describe("fetchHtmlAntigravity", () => {
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"]!.latestVersion).toBe("1.19.6");
+      expect((savedState.sources["antigravity"] as VersionBasedSourceState).latestVersion).toBe(
+        "1.19.6",
+      );
     });
   });
 
@@ -123,6 +126,7 @@ describe("fetchHtmlAntigravity", () => {
           lastRunAt: "",
           sources: {
             antigravity: {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "1.19.3",
@@ -150,7 +154,9 @@ describe("fetchHtmlAntigravity", () => {
       // Then: state は最新バージョンで更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"]!.latestVersion).toBe("1.19.6");
+      expect((savedState.sources["antigravity"] as VersionBasedSourceState).latestVersion).toBe(
+        "1.19.6",
+      );
     });
   });
 
@@ -180,7 +186,9 @@ describe("fetchHtmlAntigravity", () => {
       // Then: state は最新バージョンで更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["antigravity"]!.latestVersion).toBe("1.19.6");
+      expect((savedState.sources["antigravity"] as VersionBasedSourceState).latestVersion).toBe(
+        "1.19.6",
+      );
     });
   });
 
@@ -195,6 +203,7 @@ describe("fetchHtmlAntigravity", () => {
           lastRunAt: "",
           sources: {
             antigravity: {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "1.15.0",
@@ -227,6 +236,7 @@ describe("fetchHtmlAntigravity", () => {
           lastRunAt: "",
           sources: {
             antigravity: {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "1.19.3",
@@ -284,6 +294,7 @@ describe("fetchHtmlAntigravity", () => {
           lastRunAt: "",
           sources: {
             antigravity: {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "1.19.6",

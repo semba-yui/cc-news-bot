@@ -71,7 +71,14 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
   } = deps;
 
   const state = await loadState(dataRoot);
-  const fetchResults = await fetchAll(sources, { sourceStates: state.sources });
+  const fetchResults = await fetchAll(sources, {
+    sourceStates: Object.fromEntries(
+      Object.entries(state.sources).map(([k, v]) => [
+        k,
+        v?.type === "hash" ? { latestReleasedAt: v.latestReleasedAt } : undefined,
+      ]),
+    ),
+  });
   const now = new Date().toISOString();
 
   const changedSources: string[] = [];
@@ -98,7 +105,9 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     // github_releases 型: タイムスタンプベース差分検出（スナップショット比較を使わない）
     const sourceConfig = sources.find((s) => s.name === sourceName)!;
     if (sourceConfig.type === "github_releases") {
-      const prevLatestReleasedAt = state.sources[sourceName]?.latestReleasedAt;
+      const existingState = state.sources[sourceName];
+      const prevLatestReleasedAt =
+        existingState?.type === "hash" ? existingState.latestReleasedAt : undefined;
       const newLatestReleasedAt = fetchResult.latestReleasedAt;
 
       writeFileSync(resolve(currentDir, `${sourceName}.md`), content);
@@ -120,7 +129,8 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
       }
 
       state.sources[sourceName] = {
-        hash: state.sources[sourceName]?.hash ?? "",
+        type: "hash",
+        hash: existingState?.hash ?? "",
         lastCheckedAt: now,
         latestReleasedAt: newLatestReleasedAt ?? prevLatestReleasedAt,
       };
@@ -135,6 +145,7 @@ export async function fetchAndDiff(deps: FetchAndDiffDeps): Promise<RunResultDat
     const diffResult = detectChanges(sourceName, content, previousSnapshot);
 
     state.sources[sourceName] = {
+      type: "hash",
       hash: diffResult.newHash,
       lastCheckedAt: now,
     };

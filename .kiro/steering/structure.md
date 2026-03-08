@@ -16,7 +16,17 @@
 
 **Location**: `src/services/`
 **Purpose**: 単一責務のビジネスロジック。各サービスは独立してテスト可能
-**Example**: `fetch-service.ts`（取得）、`diff-service.ts`（差分検出）、`slack-service.ts`（通知）、`state-service.ts`（状態管理）
+**Categories**:
+
+- **Core**: `fetch-service.ts`（取得）、`diff-service.ts`（差分検出）、`slack-service.ts`（通知）、`state-service.ts`（状態管理）
+- **HTML 系**: `html-fetch-service.ts`（HTML 取得）、`html-slack-builder.ts`（Slack Block 構築）、`playwright-service.ts`（Headless ブラウザ取得）
+- **パーサー**: `antigravity-parser.ts`、`gemini-cli-parser.ts`、`cursor-article-extractor.ts`、`cursor-summary-schema.ts`（各サイト固有の記事抽出・バリデーション）
+
+### Scripts
+
+**Location**: `src/scripts/`
+**Purpose**: CI/CD から実行されるエントリーポイント。各スクリプトがサービスを組み合わせてワークフローを実行
+**Pattern**: `fetch-html-{source}.ts`（取得系）、`notify-html-{source}.ts`（通知系）、`fetch-and-diff.ts`（Markdown 系一括処理）、`notify.ts`（Markdown 系通知）
 
 ### Tests
 
@@ -28,7 +38,7 @@
 
 **Location**: `data/`（実行時生成、gitignore 対象）
 **Purpose**: スナップショット、差分ファイル、状態ファイルの永続化
-**Subdirs**: `snapshots/`、`diffs/`、`summaries/`、`current/`
+**Subdirs**: `snapshots/`、`diffs/`、`summaries/`、`current/`、`html-current/`、`html-summaries/`
 
 ## Naming Conventions
 
@@ -58,4 +68,5 @@ import { DATA_DIR } from "../config/sources.js";
 
 - 各サービスは副作用（ディレクトリパス等）をデフォルト引数で受け取り、テストでオーバーライド可能にする
 - Interface を export し、サービス間の契約を明確にする
-- `SourceConfig.type` による分岐で取得方式を切り替える（Union Type パターン）
+- `SourceConfig.type` による分岐で取得方式を切り替える（Union Type パターン: `raw_markdown` / `github_releases` / `html_scraping` / `html_headless`）
+- HTML 系ソースはサイトごとに専用パーサーを持ち、`{source}-parser.ts` / `{source}-extractor.ts` の命名パターンに従う

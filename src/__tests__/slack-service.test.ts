@@ -343,7 +343,9 @@ describe("summaryToBlocks", () => {
     const blocks = summaryToBlocks("src", "1.0", SAMPLE_SUMMARY);
 
     // When: ひとことサマリ見出しのブロックを探す
-    const section = blocks.find((b) => b.type === "section" && b.text.text.includes(":loud_sound:"));
+    const section = blocks.find(
+      (b) => b.type === "section" && b.text.text.includes(":loud_sound:"),
+    );
 
     // Then: :loud_sound: を含む section ブロックが存在する
     expect(section).toBeDefined();
@@ -445,7 +447,7 @@ describe("summaryToBlocks", () => {
     const blocks = summaryToBlocks("src", "1.0", "## 用語解説\n- **用語**: 解説テキスト");
 
     // When: 用語解説のアイテムブロックを取得する
-    const itemBlock = blocks.find(
+    const _itemBlock = blocks.find(
       (b): b is Extract<typeof b, { type: "section" }> =>
         b.type === "section" && b.text.text.includes("用語"),
     );

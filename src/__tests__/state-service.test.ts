@@ -5,6 +5,7 @@ import {
   type SnapshotState,
   loadSnapshot,
   loadState,
+  migrateSourceState,
   saveSnapshot,
   saveState,
 } from "../services/state-service.js";
@@ -110,15 +111,17 @@ describe("loadState", () => {
     // When
     const state = await loadState(testDataRoot);
 
-    // Then
+    // Then: マイグレーションにより type: "hash" が付与される
     expect(state).toEqual({
       lastRunAt: "",
       sources: {
         "claude-code": {
+          type: "hash",
           hash: "sha256-abc123",
           lastCheckedAt: "2026-02-28T12:00:00Z",
         },
         codex: {
+          type: "hash",
           hash: "sha256-def456",
           lastCheckedAt: "2026-02-28T11:00:00Z",
         },
@@ -134,6 +137,7 @@ describe("loadState", () => {
 
     const state = await loadState(testDataRoot);
     expect(state.sources["copilot-cli"]).toEqual({
+      type: "hash",
       hash: "sha256-ghi789",
       lastCheckedAt: "2026-02-28T15:00:00Z",
     });
@@ -157,6 +161,7 @@ describe("saveState", () => {
       lastRunAt: "2026-02-28T12:00:00Z",
       sources: {
         "claude-code": {
+          type: "hash",
           hash: "sha256-abc123",
           lastCheckedAt: "2026-02-28T12:00:00Z",
         },
@@ -171,6 +176,7 @@ describe("saveState", () => {
       readFileSync(resolve(testStateDir, "claude-code.json"), "utf-8"),
     ) as { hash: string; lastCheckedAt: string };
     expect(sourceState).toEqual({
+      type: "hash",
       hash: "sha256-abc123",
       lastCheckedAt: "2026-02-28T12:00:00Z",
     });
@@ -188,6 +194,7 @@ describe("saveState", () => {
       lastRunAt: "2026-02-28T12:00:00Z",
       sources: {
         codex: {
+          type: "hash",
           hash: "sha256-new",
           lastCheckedAt: "2026-02-28T12:00:00Z",
         },
@@ -204,7 +211,7 @@ describe("saveState", () => {
     await saveState(
       {
         lastRunAt: "",
-        sources: { test: { hash: "h", lastCheckedAt: "2026-01-01T00:00:00Z" } },
+        sources: { test: { type: "hash", hash: "h", lastCheckedAt: "2026-01-01T00:00:00Z" } },
       },
       testDataRoot,
     );
@@ -216,6 +223,7 @@ describe("saveState", () => {
       lastRunAt: "2026-03-02T06:00:00Z",
       sources: {
         "gemini-cli": {
+          type: "version",
           hash: "",
           lastCheckedAt: "2026-03-02T06:00:00Z",
           latestVersion: "v0.31.0",
@@ -225,6 +233,173 @@ describe("saveState", () => {
 
     await saveState(state, testDataRoot);
     const loaded = await loadState(testDataRoot);
-    expect(loaded.sources["gemini-cli"]?.latestVersion).toBe("v0.31.0");
+    const geminiState = loaded.sources["gemini-cli"];
+    expect(geminiState?.type).toBe("version");
+    if (geminiState?.type === "version") {
+      expect(geminiState.latestVersion).toBe("v0.31.0");
+    }
+  });
+
+  it("knownSlugs フィールドを含む slug_list 型状態を保存・復元できる", async () => {
+    // What: SlugListBasedSourceState の保存・復元が正しく動作することを検証する
+    // Why: ニュースページプロバイダの差分検出に knownSlugs が必要
+    const state: SnapshotState = {
+      lastRunAt: "2026-03-08T00:00:00Z",
+      sources: {
+        "openai-news": {
+          type: "slug_list",
+          hash: "",
+          lastCheckedAt: "2026-03-08T00:00:00Z",
+          knownSlugs: ["article-1", "article-2", "article-3"],
+        },
+      },
+    };
+
+    // When: 保存して復元する
+    await saveState(state, testDataRoot);
+    const loaded = await loadState(testDataRoot);
+
+    // Then: slug_list 型として復元され、knownSlugs が保持されている
+    const openaiState = loaded.sources["openai-news"];
+    expect(openaiState?.type).toBe("slug_list");
+    if (openaiState?.type === "slug_list") {
+      expect(openaiState.knownSlugs).toEqual(["article-1", "article-2", "article-3"]);
+    }
+  });
+});
+
+describe("migrateSourceState", () => {
+  // What: type フィールドを持たない既存状態ファイルのマイグレーションを検証する
+  // Why: 既存の状態ファイルには type フィールドがないため、
+  //      フィールドの存在チェックで適切な型に振り分ける必要がある
+
+  it("hash のみの状態を hash 型に振り分ける", () => {
+    // Given: type フィールドなし、hash と lastCheckedAt のみ
+    const raw = { hash: "sha256-abc", lastCheckedAt: "2026-01-01T00:00:00Z" };
+
+    // When
+    const result = migrateSourceState(raw);
+
+    // Then
+    expect(result.type).toBe("hash");
+    expect(result).toEqual({
+      type: "hash",
+      hash: "sha256-abc",
+      lastCheckedAt: "2026-01-01T00:00:00Z",
+    });
+  });
+
+  it("latestReleasedAt を持つ状態を hash 型に振り分ける", () => {
+    // Given: github_releases 用の latestReleasedAt フィールドを持つ
+    const raw = {
+      hash: "sha256-abc",
+      lastCheckedAt: "2026-01-01T00:00:00Z",
+      latestReleasedAt: "2026-01-01T00:00:00Z",
+    };
+
+    // When
+    const result = migrateSourceState(raw);
+
+    // Then
+    expect(result.type).toBe("hash");
+    if (result.type === "hash") {
+      expect(result.latestReleasedAt).toBe("2026-01-01T00:00:00Z");
+    }
+  });
+
+  it("latestVersion を持つ状態を version 型に振り分ける", () => {
+    // Given: html_scraping / html_headless 用の latestVersion フィールドを持つ
+    const raw = {
+      hash: "",
+      lastCheckedAt: "2026-03-07T06:05:49.726Z",
+      latestVersion: "1.20.4",
+    };
+
+    // When
+    const result = migrateSourceState(raw);
+
+    // Then
+    expect(result.type).toBe("version");
+    if (result.type === "version") {
+      expect(result.latestVersion).toBe("1.20.4");
+    }
+  });
+
+  it("latestDate と latestSlug を持つ状態を date_slug 型に振り分ける", () => {
+    // Given: Cursor 用の latestDate + latestSlug フィールドを持つ
+    const raw = {
+      hash: "",
+      lastCheckedAt: "2026-03-06T06:20:46.363Z",
+      latestDate: "2026-03-05T00:00:00.000Z",
+      latestSlug: "03-05-26",
+    };
+
+    // When
+    const result = migrateSourceState(raw);
+
+    // Then
+    expect(result.type).toBe("date_slug");
+    if (result.type === "date_slug") {
+      expect(result.latestDate).toBe("2026-03-05T00:00:00.000Z");
+      expect(result.latestSlug).toBe("03-05-26");
+    }
+  });
+
+  it("knownSlugs を持つ状態を slug_list 型に振り分ける", () => {
+    // Given: ニュースページプロバイダ用の knownSlugs フィールドを持つ
+    const raw = {
+      hash: "",
+      lastCheckedAt: "2026-03-08T00:00:00Z",
+      knownSlugs: ["slug-1", "slug-2"],
+    };
+
+    // When
+    const result = migrateSourceState(raw);
+
+    // Then
+    expect(result.type).toBe("slug_list");
+    if (result.type === "slug_list") {
+      expect(result.knownSlugs).toEqual(["slug-1", "slug-2"]);
+    }
+  });
+
+  it("既に type フィールドを持つ状態はそのまま返す", () => {
+    // Given: type フィールドが既に設定されている
+    const raw = {
+      type: "version",
+      hash: "",
+      lastCheckedAt: "2026-03-07T00:00:00Z",
+      latestVersion: "v1.0.0",
+    };
+
+    // When
+    const result = migrateSourceState(raw);
+
+    // Then: そのまま返す
+    expect(result).toEqual(raw);
+  });
+
+  it("loadState で type なしの既存状態ファイルを読み込むとマイグレーションされる", async () => {
+    // Given: type フィールドなしの既存状態ファイル
+    const testStateDir = resolve(testDataRoot, "state");
+    mkdirSync(testStateDir, { recursive: true });
+    writeFileSync(
+      resolve(testStateDir, "antigravity.json"),
+      JSON.stringify({
+        hash: "",
+        lastCheckedAt: "2026-03-07T06:05:49.726Z",
+        latestVersion: "1.20.4",
+      }),
+    );
+
+    // When
+    const state = await loadState(testDataRoot);
+
+    // Then: version 型にマイグレーションされている
+    const antigravityState = state.sources.antigravity;
+    expect(antigravityState?.type).toBe("version");
+
+    // Cleanup
+    rmSync(testDataRoot, { recursive: true, force: true });
   });
 });

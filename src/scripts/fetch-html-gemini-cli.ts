@@ -75,7 +75,8 @@ export async function fetchHtmlGeminiCli(
 ): Promise<FetchHtmlGeminiCliResult> {
   const state = await deps.loadState(deps.dataRoot);
   const now = new Date().toISOString();
-  const existingVersion = state.sources[SOURCE_NAME]?.latestVersion;
+  const sourceState = state.sources[SOURCE_NAME];
+  const existingVersion = sourceState?.type === "version" ? sourceState.latestVersion : undefined;
 
   // フェーズ1: geminicli.com からの取得を試行
   let html: string | null = null;
@@ -134,6 +135,7 @@ export async function fetchHtmlGeminiCli(
     );
 
     state.sources[SOURCE_NAME] = {
+      type: "version",
       hash: "",
       lastCheckedAt: now,
       latestVersion,
@@ -222,6 +224,7 @@ export async function fetchHtmlGeminiCli(
     }
 
     state.sources[SOURCE_NAME] = {
+      type: "version",
       hash: "",
       lastCheckedAt: now,
       latestVersion,
@@ -258,6 +261,7 @@ export async function fetchHtmlGeminiCli(
   }
 
   state.sources[SOURCE_NAME] = {
+    type: "version",
     hash: "",
     lastCheckedAt: now,
     latestVersion,

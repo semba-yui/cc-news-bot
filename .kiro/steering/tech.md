@@ -15,7 +15,11 @@
 ## Key Libraries
 
 - **diff**: unified diff 生成
+- **cheerio / domhandler**: HTML パース・記事抽出
+- **playwright**: Headless ブラウザによる動的ページ取得
+- **zod**: スキーマバリデーション（記事データ構造の検証）
 - **msw**: テストでの HTTP モック
+- **takt**: タスクランナー（スクリプト実行）
 
 ## Development Standards
 

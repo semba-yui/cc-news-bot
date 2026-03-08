@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head><title>Changelog | Jules</title></head>
+<body>
+<main>
+<nav>
+  <div class="changelog-sidebar">
+    <a href="/docs/changelog/2026-02-19" class="changelog-entry astro-ssfzsv2f current"> <span class="changelog-title astro-ssfzsv2f">Auto-Fixing CI Failures and configure Jules to commit as you</span> <span class="changelog-date astro-ssfzsv2f">Feb 19, 2026</span> </a>
+    <a href="/docs/changelog/2026-02-02" class="changelog-entry astro-ssfzsv2f"> <span class="changelog-title astro-ssfzsv2f">MCP support comes to Jules</span> <span class="changelog-date astro-ssfzsv2f">Feb 02, 2026</span> </a>
+    <a href="/docs/changelog/2026-01-30" class="changelog-entry astro-ssfzsv2f"> <span class="changelog-title astro-ssfzsv2f">Gemini 3 Flash is now the base model in Jules</span> <span class="changelog-date astro-ssfzsv2f">Jan 30, 2026</span> </a>
+    <a href="/docs/changelog/2026-01-26-1" class="changelog-entry astro-ssfzsv2f"> <span class="changelog-title astro-ssfzsv2f">Introducing the Planning Critic for Auto-Approved Plans</span> <span class="changelog-date astro-ssfzsv2f">Jan 26, 2026</span> </a>
+    <a href="/docs/changelog/2026-01-26-3" class="changelog-entry astro-ssfzsv2f"> <span class="changelog-title astro-ssfzsv2f">Jules now finds performance optimizations</span> <span class="changelog-date astro-ssfzsv2f">Jan 26, 2026</span> </a>
+  </div>
+</nav>
+
+<div class="changelog-content">
+<article class="changelog-entry astro-bd6alw26"> <header class="astro-bd6alw26"> <h2 class="title mb-4 astro-bd6alw26" id="auto-fixing-ci-failures-and-configure-jules-to-commit-as-you"> Auto-Fixing CI Failures and configure Jules to commit as you </h2> <span class="date mb-4 astro-bd6alw26" id="wed-feb-18-2026-190000-gmt-0500-eastern-standard-time"> February 19, 2026 </span> </header> <video preload="none" poster="https://firebasestorage.googleapis.com/v0/b/aida-async-workflow.firebasestorage.app/o/media%2FJULESVC000_CI_FIXER%2Fposter.png?alt=media" src="https://firebasestorage.googleapis.com/v0/b/aida-async-workflow.firebasestorage.app/o/media%2FJULESVC000_CI_FIXER%2Fvideo.mp4?alt=media" controls></video>
+<div class="sl-heading-wrapper level-h3"><h3 id="ci-fixer">CI Fixer</h3><a class="sl-anchor-link" href="#ci-fixer"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only">Section titled “CI Fixer”</span></a></div>
+<p>Jules now automatically detects and fixes CI failures on pull requests it creates. When a check fails in GitHub Actions, Jules receives the error, works through a fix, and resubmits the PR — all without manual intervention.</p>
+<p><img src="/docs/_astro/ci-fixer.DvE-FgVC_Z29Qsdr.webp" alt="ci-fixer" width="1595" height="897" loading="lazy" decoding="async"></p>
+<p>Previously, a failed CI check on a Jules PR would stall your workflow. Resolving it required setting up REST API calls or manually copy-pasting error logs back to Jules. CI Fixer closes that gap. Jules now operates in a loop — fixing, committing, and resubmitting — so your PRs keep moving forward.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="commit-authoring">Commit Authoring</h3><a class="sl-anchor-link" href="#commit-authoring"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only">Section titled “Commit Authoring”</span></a></div>
+<p>You can now control how commits from Jules are attributed on GitHub. Three authorship modes are available:</p>
+<ul>
+<li><strong>Jules:</strong> Jules is the sole author of all commits (default, existing behavior).</li>
+<li><strong>Co-authored (Jules + You or You + Jules):</strong> Commits are co-authored by both you and Jules, crediting both contributors.</li>
+<li><strong>User only:</strong> You are the sole author. Jules applies its changes under your identity.</li>
+</ul>
+<p><img src="/docs/_astro/authorship.BOAG-F4i_1urpra.webp" alt="authorship" width="1595" height="897" loading="lazy" decoding="async"></p>
+<p>Previously, Jules authored every commit and PR, which meant your GitHub contribution graph didn’t reflect the work you initiated. Setting the commit authorship in to co-authored to you or you + Jules, makes it clear to contributors and PR reviewers who is driving each change.</p>
+<p>It applies at the user level across all repositories and all task types — scheduled, suggested, and manually triggered tasks.</p>
+<div class="sl-heading-wrapper level-h4"><h4 id="setting-commit-authorship">Setting commit authorship</h4><a class="sl-anchor-link" href="#setting-commit-authorship"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only">Section titled “Setting commit authorship”</span></a></div>
+<ol>
+<li>Go to the Jules Settings page</li>
+<li>Open the <strong>Commit Authoring</strong> section</li>
+<li>Select your preferred authorship mode</li>
+<li>All future sessions will use the selected attribution</li>
+</ol> </article>
+
+<article class="changelog-entry astro-bd6alw26"> <header class="astro-bd6alw26"> <h2 class="title mb-4 astro-bd6alw26" id="mcp-support-comes-to-jules"> MCP support comes to Jules </h2> <span class="date mb-4 astro-bd6alw26" id="sun-feb-01-2026-190000-gmt-0500-eastern-standard-time"> February 2, 2026 </span> </header> <p><img src="/docs/_astro/mcp-support.DfBfW7lh_Z11sr7i.webp" alt="mcp-support" width="512" height="288" loading="lazy" decoding="async"></p>
+<p>Today we’re launching MCP Server support in Jules starting with: Linear, Stitch, Neon, Tinybird, Context7, and Supabase.</p>
+<p>Add a service connection in the Settings page and will trigger the MCP server tools in a session when it detects the need for a tool call.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="getting-started">Getting started</h3><a class="sl-anchor-link" href="#getting-started"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only">Section titled “Getting started”</span></a></div>
+<p>Our MCP server integration uses API key authentication. To get started:</p>
+<ol>
+<li>Get the service’s API key (such as Linear or Stitch)</li>
+<li>Go to the Jules Settings page</li>
+<li>Click on the MCP section</li>
+<li>Plug in your API key for that specific service</li>
+<li>Kick off a new session</li>
+<li>Jules will trigger the MCP server tools when it detects the need for the call</li>
+</ol>
+<p><img src="/docs/_astro/mcp-settings.CdNqjk-x_ZE2NM7.webp" alt="mcp-settings" width="1728" height="1080" loading="lazy" decoding="async"></p>
+<div class="sl-heading-wrapper level-h3"><h3 id="focus-on-security">Focus on Security</h3><a class="sl-anchor-link" href="#focus-on-security"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only">Section titled “Focus on Security”</span></a></div>
+<p>It might seem odd for us to limit which MCP servers Jules can connect to. However, we are wanted to start with a focus on security. Jules operates within a cloud development environment connected to your GitHub repositories, so we prioritize a <strong>security-first</strong> approach to third-party integrations.</p>
+<p>By hand-selecting these initial servers, we can:</p>
+<ul>
+<li><strong>Validate Data Flow:</strong> We ensure that each server adheres to strict data-handling standards, keeping your source code and API keys isolated.</li>
+<li><strong>Audit Tool Permissions:</strong> We verify that each server only requests the specific permissions it needs to function, preventing “over-privileged” access to your environment.</li>
+<li><strong>Ensure Stability:</strong> A vetted integration means fewer connection drops and a more predictable experience when Jules interacts with your external data.</li>
+</ul>
+<p>We plan to expand this list as we work with more partners.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="tell-us-what-to-add-next">Tell us what to add next</h3><a class="sl-anchor-link" href="#tell-us-what-to-add-next"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only">Section titled “Tell us what to add next”</span></a></div>
+<p>If you have an MCP server in mind, you can let us know in the settings panel what we should add next.</p> </article>
+
+<article class="changelog-entry astro-bd6alw26"> <header class="astro-bd6alw26"> <h2 class="title mb-4 astro-bd6alw26" id="gemini-3-flash-is-now-the-base-model-in-jules"> Gemini 3 Flash is now the base model in Jules </h2> <span class="date mb-4 astro-bd6alw26" id="thu-jan-29-2026-190000-gmt-0500-eastern-standard-time"> January 30, 2026 </span> </header> <p><img src="/docs/_astro/gemini-3-flash@2x.Jb2wbw3a_ZNqXuy.webp" alt="gemini-3-flash" width="2400" height="1350" loading="lazy" decoding="async"></p>
+<p>Today we’re launching Gemini 3 Flash in Jules for all users on all tiers.</p>
+<p>It’s our new base model that’s faster and significantly more capable than our previous base model, Gemini 2.5 Pro. If it feels like Jules feels like it had a double espresso, you now know why.</p>
+<p><img src="/docs/_astro/gemini-3-flash-web-app.sc6E0AWS_gxKKs.webp" alt="gemini-3-flash-web-app" width="1728" height="1080" loading="lazy" decoding="async"></p>
+<p>Give it a spin and let us know what you think.</p> </article>
+
+</div>
+</main>
+</body>
+</html>

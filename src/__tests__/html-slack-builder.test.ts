@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildGeminiCliBlocks, buildAntigravityBlocks } from "../services/html-slack-builder.js";
+import {
+  buildGeminiCliBlocks,
+  buildAntigravityBlocks,
+  buildOpenAINewsBlocks,
+  buildAnthropicNewsBlocks,
+  buildJulesChangelogBlocks,
+} from "../services/html-slack-builder.js";
 import type {
   GeminiCliTranslatedContent,
   AntigravityTranslatedContent,
+  TranslatedArticle,
+  TranslatedJulesEntry,
 } from "../services/html-slack-builder.js";
 import type { SlackBlock } from "../services/slack-service.js";
 
@@ -269,5 +277,382 @@ describe("buildAntigravityBlocks", () => {
     expect(allText).toContain("• エディタのパフォーマンス改善");
     expect(allText).toContain("• クラッシュバグを修正");
     expect(allText).toContain("• 依存ライブラリの更新");
+  });
+});
+
+describe("buildOpenAINewsBlocks", () => {
+  // What: OpenAI News の翻訳・要約済み記事から Slack Block Kit メッセージを生成する
+  // Why: Header（ソース名 + タイトル）→ Section（日付）→ Section（要約文）構造の
+  //      親メッセージブロックが正しく構築されることを保証する
+
+  const baseArticle: TranslatedArticle = {
+    slug: "new-model-release",
+    title: "新しいモデルのリリース",
+    date: "2026-03-08",
+    summaryJa:
+      "OpenAI は新しいモデルをリリースしました。\n- 性能が大幅に向上\n- **コスト削減**を実現",
+    fullTextJa: "本文の全文テキスト...",
+  };
+
+  it("header ブロックにソース名とタイトルが含まれる", () => {
+    // Given: OpenAI News の翻訳済み記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: header にソース名とタイトルが含まれる
+    const header = blocks.find((b) => b.type === "header");
+    expect(header).toBeDefined();
+    expect(header?.type === "header" && header.text.text).toContain("OpenAI");
+    expect(header?.type === "header" && header.text.text).toContain("新しいモデルのリリース");
+  });
+
+  it("日付が section ブロックに含まれる", () => {
+    // Given: 日付付きの記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: section ブロックに日付が含まれる
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("2026-03-08");
+  });
+
+  it("要約テキストが section ブロックに含まれる", () => {
+    // Given: 要約付きの記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: section ブロックに要約テキストが含まれる
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("OpenAI は新しいモデルをリリースしました");
+  });
+
+  it("image ブロックが含まれない", () => {
+    // Given: OpenAI News の記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: image ブロックが存在しない
+    const imageBlocks = blocks.filter((b) => b.type === "image");
+    expect(imageBlocks).toHaveLength(0);
+  });
+
+  it("Markdown を Slack mrkdwn に変換する", () => {
+    // Given: Markdown 記法を含む要約
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: - が • に、**bold** が *bold* に変換される
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("• 性能が大幅に向上");
+    expect(allText).toContain("*コスト削減*");
+    expect(allText).not.toContain("**コスト削減**");
+  });
+
+  it("header テキストが150文字で切り詰められる", () => {
+    // Given: 非常に長いタイトルの記事
+    const article: TranslatedArticle = {
+      ...baseArticle,
+      title: "あ".repeat(200),
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: header テキストが150文字以内
+    const header = blocks.find(
+      (b): b is Extract<SlackBlock, { type: "header" }> => b.type === "header",
+    );
+    expect(header).toBeDefined();
+    expect(header!.text.text.length).toBeLessThanOrEqual(150);
+  });
+
+  it("要約テキストが3000文字で切り詰められる", () => {
+    // Given: 非常に長い要約テキストの記事
+    const article: TranslatedArticle = {
+      ...baseArticle,
+      summaryJa: "あ".repeat(4000),
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: section テキストが3000文字以内
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    for (const section of sections) {
+      expect(section.text.text.length).toBeLessThanOrEqual(3000);
+    }
+  });
+});
+
+describe("buildAnthropicNewsBlocks", () => {
+  // What: Anthropic News の翻訳・要約済み記事から Slack Block Kit メッセージを生成する
+  // Why: OpenAI News と同じ構造（要約 + スレッド全文パターン）の
+  //      親メッセージブロックが正しく構築されることを保証する
+
+  const baseArticle: TranslatedArticle = {
+    slug: "claude-4-release",
+    title: "Claude 4 リリース",
+    date: "2026-03-07",
+    summaryJa:
+      "Anthropic は Claude 4 をリリースしました。\n- 推論能力が向上\n- **マルチモーダル**対応を強化",
+    fullTextJa: "本文の全文テキスト...",
+  };
+
+  it("header ブロックにソース名とタイトルが含まれる", () => {
+    // Given: Anthropic News の翻訳済み記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: header にソース名とタイトルが含まれる
+    const header = blocks.find((b) => b.type === "header");
+    expect(header).toBeDefined();
+    expect(header?.type === "header" && header.text.text).toContain("Anthropic");
+    expect(header?.type === "header" && header.text.text).toContain("Claude 4 リリース");
+  });
+
+  it("日付が section ブロックに含まれる", () => {
+    // Given: 日付付きの記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: section ブロックに日付が含まれる
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("2026-03-07");
+  });
+
+  it("要約テキストが section ブロックに含まれる", () => {
+    // Given: 要約付きの記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: section ブロックに要約テキストが含まれる
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("Anthropic は Claude 4 をリリースしました");
+  });
+
+  it("image ブロックが含まれない", () => {
+    // Given: Anthropic News の記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: image ブロックが存在しない
+    const imageBlocks = blocks.filter((b) => b.type === "image");
+    expect(imageBlocks).toHaveLength(0);
+  });
+
+  it("Markdown を Slack mrkdwn に変換する", () => {
+    // Given: Markdown 記法を含む要約
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: - が • に、**bold** が *bold* に変換される
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("• 推論能力が向上");
+    expect(allText).toContain("*マルチモーダル*");
+    expect(allText).not.toContain("**マルチモーダル**");
+  });
+
+  it("header テキストが150文字で切り詰められる", () => {
+    // Given: 非常に長いタイトルの記事
+    const article: TranslatedArticle = {
+      ...baseArticle,
+      title: "い".repeat(200),
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: header テキストが150文字以内
+    const header = blocks.find(
+      (b): b is Extract<SlackBlock, { type: "header" }> => b.type === "header",
+    );
+    expect(header).toBeDefined();
+    expect(header!.text.text.length).toBeLessThanOrEqual(150);
+  });
+
+  it("要約テキストが3000文字で切り詰められる", () => {
+    // Given: 非常に長い要約テキストの記事
+    const article: TranslatedArticle = {
+      ...baseArticle,
+      summaryJa: "い".repeat(4000),
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: section テキストが3000文字以内
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    for (const section of sections) {
+      expect(section.text.text.length).toBeLessThanOrEqual(3000);
+    }
+  });
+});
+
+describe("buildJulesChangelogBlocks", () => {
+  // What: Jules Changelog の翻訳済みエントリから Slack Block Kit メッセージを生成する
+  // Why: Header（ソース名 + タイトル）→ Section（日付）→ Section（翻訳済み本文）構造の
+  //      親メッセージブロックが正しく構築されることを保証する
+  //      Jules は要約不要で fullTextJa を親メッセージに含める
+
+  const baseEntry: TranslatedJulesEntry = {
+    dateSlug: "2026-03-08",
+    title: "New features and improvements",
+    date: "2026-03-08",
+    fullTextJa:
+      "新機能と改善点が追加されました。\n- コード補完の精度向上\n- **エージェント機能**の強化",
+  };
+
+  it("header ブロックにソース名とタイトルが含まれる", () => {
+    // Given: Jules Changelog の翻訳済みエントリ
+    const entry = { ...baseEntry };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: header にソース名とタイトルが含まれる
+    const header = blocks.find((b) => b.type === "header");
+    expect(header).toBeDefined();
+    expect(header?.type === "header" && header.text.text).toContain("Jules");
+    expect(header?.type === "header" && header.text.text).toContain(
+      "New features and improvements",
+    );
+  });
+
+  it("日付が section ブロックに含まれる", () => {
+    // Given: 日付付きのエントリ
+    const entry = { ...baseEntry };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: section ブロックに日付が含まれる
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("2026-03-08");
+  });
+
+  it("翻訳済み本文が section ブロックに含まれる", () => {
+    // Given: fullTextJa 付きのエントリ
+    const entry = { ...baseEntry };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: section ブロックに翻訳済み本文が含まれる
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("新機能と改善点が追加されました");
+  });
+
+  it("image ブロックが含まれない", () => {
+    // Given: Jules Changelog のエントリ
+    const entry = { ...baseEntry };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: image ブロックが存在しない
+    const imageBlocks = blocks.filter((b) => b.type === "image");
+    expect(imageBlocks).toHaveLength(0);
+  });
+
+  it("Markdown を Slack mrkdwn に変換する", () => {
+    // Given: Markdown 記法を含む本文
+    const entry = { ...baseEntry };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: - が • に、**bold** が *bold* に変換される
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    const allText = sections.map((s) => s.text.text).join("\n");
+    expect(allText).toContain("• コード補完の精度向上");
+    expect(allText).toContain("*エージェント機能*");
+    expect(allText).not.toContain("**エージェント機能**");
+  });
+
+  it("header テキストが150文字で切り詰められる", () => {
+    // Given: 非常に長いタイトルのエントリ
+    const entry: TranslatedJulesEntry = {
+      ...baseEntry,
+      title: "う".repeat(200),
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: header テキストが150文字以内
+    const header = blocks.find(
+      (b): b is Extract<SlackBlock, { type: "header" }> => b.type === "header",
+    );
+    expect(header).toBeDefined();
+    expect(header!.text.text.length).toBeLessThanOrEqual(150);
+  });
+
+  it("本文テキストが3000文字で切り詰められる", () => {
+    // Given: 非常に長い本文のエントリ
+    const entry: TranslatedJulesEntry = {
+      ...baseEntry,
+      fullTextJa: "う".repeat(4000),
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildJulesChangelogBlocks(entry);
+
+    // Then: section テキストが3000文字以内
+    const sections = blocks.filter(
+      (b): b is Extract<SlackBlock, { type: "section" }> => b.type === "section",
+    );
+    for (const section of sections) {
+      expect(section.text.text.length).toBeLessThanOrEqual(3000);
+    }
   });
 });

@@ -80,10 +80,10 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
   let cutoffDate: string | undefined;
   let cutoffSlug: string | undefined;
 
-  if (sourceState?.latestDate) {
+  if (sourceState?.type === "date_slug") {
     cutoffDate = sourceState.latestDate;
     cutoffSlug = sourceState.latestSlug;
-  } else if (sourceState?.latestVersion) {
+  } else if (sourceState?.type === "version") {
     // マイグレーション: latestVersion → latestDate/latestSlug
     const matched = allEntries.find((e) => e.version === sourceState.latestVersion);
     if (matched) {
@@ -166,6 +166,7 @@ export async function fetchHtmlCursor(deps: FetchHtmlCursorDeps): Promise<FetchH
   // フェーズ7: state 更新（最新エントリの date/slug を保存）
   const latestEntry = allEntries[0];
   state.sources[SOURCE_NAME] = {
+    type: "date_slug",
     hash: "",
     lastCheckedAt: now,
     latestDate: latestEntry.date,

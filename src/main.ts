@@ -104,6 +104,7 @@ export async function run(deps: RunDeps): Promise<RunResult> {
     const diffResult = detectChanges(sourceName, fetchResult.content!, previousSnapshot);
 
     state.sources[sourceName] = {
+      type: "hash",
       hash: diffResult.newHash,
       lastCheckedAt: now,
     };

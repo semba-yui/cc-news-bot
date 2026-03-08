@@ -36,6 +36,8 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "playwright": "catalog:",
+    "playwright-extra": "catalog:",
+    "puppeteer-extra-plugin-stealth": "catalog:",
     "secretlint": "catalog:",
     "takt": "catalog:",
     "tsx": "catalog:",

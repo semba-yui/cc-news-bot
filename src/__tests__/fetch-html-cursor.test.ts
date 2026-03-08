@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CursorEntry, MuxVideo } from "../services/cursor-article-extractor.js";
 import type { HtmlFetchOptions } from "../services/html-fetch-service.js";
-import type { SnapshotState } from "../services/state-service.js";
+import type { DateSlugBasedSourceState, SnapshotState } from "../services/state-service.js";
 import {
   fetchHtmlCursor,
   type FetchHtmlCursorDeps,
@@ -81,6 +81,7 @@ function makeDeps(overrides: Partial<FetchHtmlCursorDeps> = {}): FetchHtmlCursor
       lastRunAt: "",
       sources: {
         cursor: {
+          type: "date_slug",
           hash: "",
           lastCheckedAt: "2026-03-01T00:00:00.000Z",
           latestDate: "2026-02-17T00:00:00.000Z",
@@ -132,8 +133,12 @@ describe("fetchHtmlCursor", () => {
       expect(deps.saveState).toHaveBeenCalledTimes(1);
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["cursor"]!.latestDate).toBe("2026-02-26T00:00:00.000Z");
-      expect(savedState.sources["cursor"]!.latestSlug).toBe("02-26-26");
+      expect((savedState.sources["cursor"] as DateSlugBasedSourceState).latestDate).toBe(
+        "2026-02-26T00:00:00.000Z",
+      );
+      expect((savedState.sources["cursor"] as DateSlugBasedSourceState).latestSlug).toBe(
+        "02-26-26",
+      );
     });
 
     it("extractArticleRscPayload に slug が直接渡される", async () => {
@@ -181,6 +186,7 @@ describe("fetchHtmlCursor", () => {
           lastRunAt: "",
           sources: {
             cursor: {
+              type: "date_slug",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestDate: "2026-02-17T00:00:00.000Z",
@@ -220,6 +226,7 @@ describe("fetchHtmlCursor", () => {
           lastRunAt: "",
           sources: {
             cursor: {
+              type: "date_slug",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestDate: "2026-02-17T00:00:00.000Z",
@@ -269,6 +276,7 @@ describe("fetchHtmlCursor", () => {
           lastRunAt: "",
           sources: {
             cursor: {
+              type: "date_slug",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestDate: "2026-02-12T00:00:00.000Z",
@@ -318,8 +326,10 @@ describe("fetchHtmlCursor", () => {
       // Then: state は最新エントリの date/slug で更新される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["cursor"]!.latestDate).toBe("2026-03-07T00:00:00.000Z");
-      expect(savedState.sources["cursor"]!.latestSlug).toBe("e7");
+      expect((savedState.sources["cursor"] as DateSlugBasedSourceState).latestDate).toBe(
+        "2026-03-07T00:00:00.000Z",
+      );
+      expect((savedState.sources["cursor"] as DateSlugBasedSourceState).latestSlug).toBe("e7");
     });
   });
 
@@ -348,6 +358,7 @@ describe("fetchHtmlCursor", () => {
           lastRunAt: "",
           sources: {
             cursor: {
+              type: "version",
               hash: "",
               lastCheckedAt: "2026-03-01T00:00:00.000Z",
               latestVersion: "2.5",
@@ -366,8 +377,12 @@ describe("fetchHtmlCursor", () => {
       // Then: state が latestDate/latestSlug 形式に移行される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as SnapshotState;
-      expect(savedState.sources["cursor"]!.latestDate).toBe("2026-02-26T00:00:00.000Z");
-      expect(savedState.sources["cursor"]!.latestSlug).toBe("02-26-26");
+      expect((savedState.sources["cursor"] as DateSlugBasedSourceState).latestDate).toBe(
+        "2026-02-26T00:00:00.000Z",
+      );
+      expect((savedState.sources["cursor"] as DateSlugBasedSourceState).latestSlug).toBe(
+        "02-26-26",
+      );
     });
   });
 
