@@ -410,25 +410,46 @@ describe("buildAnthropicNewsBlocks", () => {
 
   const baseArticle: TranslatedArticle = {
     slug: "claude-4-release",
-    title: "Claude 4 リリース",
+    title: "Claude 4 Release",
+    titleJa: "Claude 4 リリース",
     date: "2026-03-07",
     summaryJa:
       "Anthropic は Claude 4 をリリースしました。\n- 推論能力が向上\n- **マルチモーダル**対応を強化",
     fullTextJa: "本文の全文テキスト...",
   };
 
-  it("header ブロックにソース名とタイトルが含まれる", () => {
-    // Given: Anthropic News の翻訳済み記事
+  it("header ブロックに titleJa が使われる", () => {
+    // Given: titleJa を持つ Anthropic News の翻訳済み記事
     const article = { ...baseArticle };
 
     // When: Block Kit メッセージを生成する
     const blocks = buildAnthropicNewsBlocks(article);
 
-    // Then: header にソース名とタイトルが含まれる
+    // Then: header に titleJa（日本語タイトル）が含まれる
     const header = blocks.find((b) => b.type === "header");
     expect(header).toBeDefined();
     expect(header?.type === "header" && header.text.text).toContain("Anthropic");
     expect(header?.type === "header" && header.text.text).toContain("Claude 4 リリース");
+    expect(header?.type === "header" && header.text.text).not.toContain("Claude 4 Release");
+  });
+
+  it("titleJa がない場合は title にフォールバックする", () => {
+    // Given: titleJa を持たない記事
+    const article: TranslatedArticle = {
+      slug: "claude-4-release",
+      title: "Claude 4 Release",
+      date: "2026-03-07",
+      summaryJa: "要約",
+      fullTextJa: "全文",
+    };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: header に title（英語）がフォールバックとして含まれる
+    const header = blocks.find((b) => b.type === "header");
+    expect(header).toBeDefined();
+    expect(header?.type === "header" && header.text.text).toContain("Claude 4 Release");
   });
 
   it("日付が section ブロックに含まれる", () => {
@@ -527,4 +548,3 @@ describe("buildAnthropicNewsBlocks", () => {
     }
   });
 });
-

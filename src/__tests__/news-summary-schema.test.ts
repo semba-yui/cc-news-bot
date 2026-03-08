@@ -137,11 +137,51 @@ describe("validateAnthropicNewsSummaries", () => {
   // Why: OpenAI News と同じ構造だが category フィールドも含まれることを検証する
 
   it("正しい構造の JSON を受け入れる", () => {
-    // Given: 正しい構造のデータ
+    // Given: 正しい構造のデータ（titleJa を含む）
     const data = [
       {
         slug: "claude-release",
-        title: "Claude リリース",
+        title: "Claude Release",
+        titleJa: "Claude リリース",
+        date: "2026-03-08",
+        summaryJa: "要約テキスト",
+        fullTextJa: "全文テキスト",
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateAnthropicNewsSummaries(data);
+
+    // Then: 成功する
+    expect(result.success).toBe(true);
+  });
+
+  it("titleJa フィールドが必須である", () => {
+    // Given: titleJa が欠けているデータ
+    const data = [
+      {
+        slug: "missing-titleJa",
+        title: "Missing titleJa",
+        date: "2026-03-08",
+        summaryJa: "要約",
+        fullTextJa: "全文",
+      },
+    ];
+
+    // When: バリデーションを実行する
+    const result = validateAnthropicNewsSummaries(data);
+
+    // Then: 失敗する
+    expect(result.success).toBe(false);
+  });
+
+  it("titleJa が含まれる正しい構造を受け入れる", () => {
+    // Given: titleJa を含む正しい構造のデータ
+    const data = [
+      {
+        slug: "claude-release",
+        title: "Claude Release",
+        titleJa: "Claude リリース",
         date: "2026-03-08",
         summaryJa: "要約テキスト",
         fullTextJa: "全文テキスト",
@@ -161,6 +201,7 @@ describe("validateAnthropicNewsSummaries", () => {
       {
         slug: "long",
         title: "長い",
+        titleJa: "長い",
         date: "2026-03-08",
         summaryJa: "い".repeat(401),
         fullTextJa: "全文",

@@ -75,12 +75,13 @@ jobs:
             結果を data/html-summaries/anthropic-news.json に JSON 配列で書き出してください。
 
             出力スキーマ（配列の各要素）:
-            { "slug": "string (入力からコピー)", "title": "string (入力からコピー)", "date": "string (入力からコピー)", "summaryJa": "string (日本語要約、400文字以内)", "fullTextJa": "string (日本語全文)" }
+            { "slug": "string (入力からコピー)", "title": "string (入力からコピー)", "titleJa": "string (タイトルを日本語に翻訳)", "date": "string (入力からコピー)", "summaryJa": "string (日本語要約、400文字以内)", "fullTextJa": "string (日本語全文)" }
 
             ## 制約
 
             - 入力配列の順序を維持すること
             - slug, title, date フィールドは入力からそのままコピーすること
+            - titleJa フィールドは title を日本語に翻訳したものを出力すること（既に日本語の場合はそのまま）
             - summaryJa は必ず日本語で出力すること
             - fullTextJa は必ず日本語で出力すること
 

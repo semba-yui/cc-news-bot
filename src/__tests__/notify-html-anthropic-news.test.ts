@@ -26,6 +26,7 @@ const MOCK_BLOCKS: SlackBlock[] = [
 interface SummaryEntry {
   slug: string;
   title: string;
+  titleJa?: string;
   date: string;
   summaryJa: string;
   fullTextJa: string;
@@ -69,11 +70,12 @@ describe("notifyHtmlAnthropicNews", () => {
     // What: 1つの翻訳済み記事を Slack に投稿する標準フロー
     // Why: 親メッセージに要約、スレッド返信に全文が正しく投稿されることを検証する
     it("親メッセージに要約を Block Kit で投稿し、スレッド返信に全文を投稿する", async () => {
-      // Given: 翻訳・要約済み JSON に1記事が存在する
+      // Given: 翻訳・要約済み JSON に1記事が存在する（titleJa 付き）
       writeSummaryFile([
         {
           slug: "claude-4-release",
-          title: "Claude 4 リリース",
+          title: "Claude 4 Release",
+          titleJa: "Claude 4 リリース",
           date: "2026-03-08",
           summaryJa: "テスト要約テキスト",
           fullTextJa: "全文テキスト...",
@@ -88,13 +90,14 @@ describe("notifyHtmlAnthropicNews", () => {
       // Then: buildBlocks に正しい記事データが渡される
       expect(deps.buildBlocks).toHaveBeenCalledWith({
         slug: "claude-4-release",
-        title: "Claude 4 リリース",
+        title: "Claude 4 Release",
+        titleJa: "Claude 4 リリース",
         date: "2026-03-08",
         summaryJa: "テスト要約テキスト",
         fullTextJa: "全文テキスト...",
       });
 
-      // Then: 親メッセージが Slack に投稿される
+      // Then: 親メッセージの fallbackText に titleJa（日本語）が使われる
       expect(deps.postBlocks).toHaveBeenCalledWith(
         "C_TEST",
         MOCK_BLOCKS,

@@ -40,7 +40,7 @@ export async function notifyHtmlAnthropicNews(deps: NotifyHtmlAnthropicNewsDeps)
 
   for (const entry of entries) {
     const blocks = deps.buildBlocks(entry);
-    const fallbackText = `Anthropic News: ${entry.title}`;
+    const fallbackText = `Anthropic News: ${entry.titleJa ?? entry.title}`;
 
     await Promise.all(
       channels.map(async (channel) => {

@@ -15,6 +15,7 @@ const OpenAINewsSummariesSchema = z.array(OpenAINewsSummarySchema).min(1);
 const AnthropicNewsSummarySchema = z.object({
   slug: z.string(),
   title: z.string(),
+  titleJa: z.string(),
   date: z.string(),
   summaryJa: z.string().max(SUMMARY_MAX_LENGTH),
   fullTextJa: z.string(),

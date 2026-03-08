@@ -72,6 +72,7 @@ function buildCategorySection(title: string, items: readonly string[]): SlackBlo
 export interface TranslatedArticle {
   readonly slug: string;
   readonly title: string;
+  readonly titleJa?: string;
   readonly date: string;
   readonly summaryJa: string;
   readonly fullTextJa: string;
@@ -111,12 +112,13 @@ export function buildOpenAINewsBlocks(article: TranslatedArticle): SlackBlock[] 
 
 export function buildAnthropicNewsBlocks(article: TranslatedArticle): SlackBlock[] {
   const blocks: SlackBlock[] = [];
+  const displayTitle = article.titleJa ?? article.title;
 
   blocks.push({
     type: "header",
     text: {
       type: "plain_text",
-      text: truncate(`Anthropic News: ${article.title}`, SLACK_HEADER_LIMIT),
+      text: truncate(`Anthropic News: ${displayTitle}`, SLACK_HEADER_LIMIT),
       emoji: true,
     },
   });
