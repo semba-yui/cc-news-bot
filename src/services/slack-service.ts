@@ -13,6 +13,7 @@ export type ImageBlock = {
 export type SlackBlock =
   | { type: "header"; text: { type: "plain_text"; text: string; emoji: boolean } }
   | { type: "section"; text: { type: "mrkdwn"; text: string } }
+  | { type: "context"; elements: ReadonlyArray<{ type: "mrkdwn"; text: string }> }
   | { type: "divider" }
   | ImageBlock;
 

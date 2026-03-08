@@ -78,6 +78,9 @@ export interface TranslatedArticle {
   readonly fullTextJa: string;
 }
 
+const OPENAI_NEWS_BASE_URL = "https://openai.com/ja-JP/index/";
+const ANTHROPIC_NEWS_BASE_URL = "https://www.anthropic.com/news/";
+
 const SLACK_TEXT_LIMIT = 3000;
 const SLACK_HEADER_LIMIT = 150;
 
@@ -107,6 +110,11 @@ export function buildOpenAINewsBlocks(article: TranslatedArticle): SlackBlock[] 
     text: { type: "mrkdwn", text: truncate(markdownToMrkdwn(article.summaryJa), SLACK_TEXT_LIMIT) },
   });
 
+  blocks.push({
+    type: "context",
+    elements: [{ type: "mrkdwn", text: `🔗 <${OPENAI_NEWS_BASE_URL}${article.slug}/|記事を読む>` }],
+  });
+
   return blocks;
 }
 
@@ -131,6 +139,11 @@ export function buildAnthropicNewsBlocks(article: TranslatedArticle): SlackBlock
   blocks.push({
     type: "section",
     text: { type: "mrkdwn", text: truncate(markdownToMrkdwn(article.summaryJa), SLACK_TEXT_LIMIT) },
+  });
+
+  blocks.push({
+    type: "context",
+    elements: [{ type: "mrkdwn", text: `🔗 <${ANTHROPIC_NEWS_BASE_URL}${article.slug}|記事を読む>` }],
   });
 
   return blocks;

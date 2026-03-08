@@ -401,6 +401,27 @@ describe("buildOpenAINewsBlocks", () => {
       expect(section.text.text.length).toBeLessThanOrEqual(3000);
     }
   });
+
+  it("記事 URL の context ブロックが含まれる", () => {
+    // What: OpenAI News のブロック末尾に記事リンクの context ブロックが生成される
+    // Why: チームメンバーが元記事にすぐアクセスできるようにするため
+
+    // Given: slug 付きの OpenAI News 記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildOpenAINewsBlocks(article);
+
+    // Then: 末尾のブロックが context 型で、記事 URL リンクを含む
+    const lastBlock = blocks[blocks.length - 1];
+    expect(lastBlock.type).toBe("context");
+    const contextBlock = lastBlock as { type: "context"; elements: Array<{ type: string; text: string }> };
+    expect(contextBlock.elements).toHaveLength(1);
+    expect(contextBlock.elements[0].type).toBe("mrkdwn");
+    expect(contextBlock.elements[0].text).toContain(
+      "<https://openai.com/ja-JP/index/new-model-release/|記事を読む>",
+    );
+  });
 });
 
 describe("buildAnthropicNewsBlocks", () => {
@@ -546,5 +567,26 @@ describe("buildAnthropicNewsBlocks", () => {
     for (const section of sections) {
       expect(section.text.text.length).toBeLessThanOrEqual(3000);
     }
+  });
+
+  it("記事 URL の context ブロックが含まれる", () => {
+    // What: Anthropic News のブロック末尾に記事リンクの context ブロックが生成される
+    // Why: チームメンバーが元記事にすぐアクセスできるようにするため
+
+    // Given: slug 付きの Anthropic News 記事
+    const article = { ...baseArticle };
+
+    // When: Block Kit メッセージを生成する
+    const blocks = buildAnthropicNewsBlocks(article);
+
+    // Then: 末尾のブロックが context 型で、記事 URL リンクを含む
+    const lastBlock = blocks[blocks.length - 1];
+    expect(lastBlock.type).toBe("context");
+    const contextBlock = lastBlock as { type: "context"; elements: Array<{ type: string; text: string }> };
+    expect(contextBlock.elements).toHaveLength(1);
+    expect(contextBlock.elements[0].type).toBe("mrkdwn");
+    expect(contextBlock.elements[0].text).toContain(
+      "<https://www.anthropic.com/news/claude-4-release|記事を読む>",
+    );
   });
 });
