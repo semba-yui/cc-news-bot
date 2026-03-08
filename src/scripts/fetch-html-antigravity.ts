@@ -174,7 +174,10 @@ async function main(): Promise<void> {
 
   console.log(`Has changes: ${result.hasChanges}`);
   if (result.newVersions) console.log(`New versions: ${result.newVersions.join(", ")}`);
-  if (result.error) console.error(`Error: ${result.error}`);
+  if (result.error) {
+    console.error(`Error: ${result.error}`);
+    process.exit(1);
+  }
 }
 
 // CLI entry point
