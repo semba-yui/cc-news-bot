@@ -88,12 +88,8 @@ function extractHtml($: cheerio.CheerioAPI, article: cheerio.Cheerio<AnyNode>): 
     const node = $(el);
     const tag = $(el).prop("tagName")?.toLowerCase();
 
+    // Skip header (title + date already extracted separately)
     if (tag === "header") return;
-    if (tag === "video" || tag === "img") return;
-
-    if (tag === "p") {
-      if (node.find("img").length > 0 && node.text().trim() === "") return;
-    }
 
     const html = $.html(node);
     if (html) parts.push(html);

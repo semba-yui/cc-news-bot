@@ -60,6 +60,8 @@ jobs:
             - contentHtml (string): 記事本文の HTML。
               <p>, <h3>, <h4>, <ul>, <ol>, <li>, <strong>, <a>, <code> 等の HTML タグを含む。
               <div class="sl-heading-wrapper"> で見出しがラップされている場合がある。
+              <p><img src="..." alt="..."></p> 形式で画像が埋め込まれている。
+              <video poster="..." src="..."> 形式で動画が埋め込まれている場合がある。
 
             ## 変換ルール
 
@@ -75,6 +77,14 @@ jobs:
             - <code>text</code> → "`text`"
             - <strong>text</strong> → "*text*"
 
+            ### メディア要素
+            - <p><img src="..." alt="..."></p>（画像のみの p 要素）:
+              image ブロック {"type":"image","image_url":"URL","alt_text":"alt属性値"}
+              ※ 相対 URL（/docs/_astro/... など）は https://jules.google を付与して絶対 URL にすること
+            - <video poster="POSTER_URL" src="VIDEO_URL">:
+              image ブロック（poster URL をサムネイルとして使用）+ section ブロック "🎬 <VIDEO_URL|動画を再生>"
+              ※ poster/src が絶対 URL（https://...）ならそのまま使用
+
             ### ブロック構成
             1. 先頭は必ず header ブロック: "Jules Changelog: {title}" (150文字以内)
             2. header の直後に日付セクション: "📅 {date}"
@@ -89,6 +99,7 @@ jobs:
             - 入力配列の順序を維持すること
             - section.text.text は 3000 文字以内
             - header.text.text は 150 文字以内
+            - image_url は公開 HTTPS URL であること（相対パスは https://jules.google を付与して解決）
 
             ## 出力
             結果を data/html-summaries/jules-changelog.json に JSON 配列で書き出してください。
@@ -101,6 +112,7 @@ jobs:
               - header: { type: "header", text: { type: "plain_text", text: string (150文字以内), emoji: true } }
               - section: { type: "section", text: { type: "mrkdwn", text: string (3000文字以内) } }
               - divider: { type: "divider" }
+              - image: { type: "image", image_url: string (HTTPS URL), alt_text: string }
 
             ## 検証
             書き出し後、以下のコマンドで JSON を検証してください:

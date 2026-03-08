@@ -201,30 +201,32 @@ describe("jules-changelog-parser", () => {
       expect(entry!.contentHtml).not.toContain("<header");
     });
 
-    it("contentHtml に video 要素が含まれない", () => {
-      // What: video 要素が contentHtml から除外されるか
-      // Why: Slack Block Kit では video を扱わないため
+    it("contentHtml に video 要素が含まれる", () => {
+      // What: video 要素が contentHtml に保持されるか
+      // Why: Claude が video の poster 画像を Slack image ブロックに変換するため
 
       // Given: 実際のフィクスチャ HTML（video 要素を含む記事がある）
       // When: parseArticleList を呼び出す
       const result = parseArticleList(fixtureHtml);
 
-      // Then: contentHtml に video タグが含まれない
+      // Then: contentHtml に video タグが含まれる
       const entry = result.find((e) => e.dateSlug === "2026-02-19");
-      expect(entry!.contentHtml).not.toContain("<video");
+      expect(entry!.contentHtml).toContain("<video");
+      expect(entry!.contentHtml).toContain("poster=");
     });
 
-    it("contentHtml から画像のみの p 要素が除外される", () => {
-      // What: img のみを含む p 要素が contentHtml から除外されるか
-      // Why: 画像は通知に含めないため
+    it("contentHtml に画像を含む p 要素が保持される", () => {
+      // What: img を含む p 要素が contentHtml に保持されるか
+      // Why: Claude が img を Slack image ブロックに変換するため
 
       // Given: 実際のフィクスチャ HTML
       // When: parseArticleList を呼び出す
       const result = parseArticleList(fixtureHtml);
 
-      // Then: contentHtml に img タグが含まれない
+      // Then: contentHtml に img タグが含まれる
       const entry = result.find((e) => e.dateSlug === "2026-02-19");
-      expect(entry!.contentHtml).not.toContain("<img");
+      expect(entry!.contentHtml).toContain("<img");
+      expect(entry!.contentHtml).toContain(".webp");
     });
 
     it("article 要素が存在しない HTML では空配列を返す", () => {
