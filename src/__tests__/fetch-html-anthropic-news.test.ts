@@ -149,17 +149,17 @@ describe("fetchHtmlAnthropicNews", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlAnthropicNews(deps);
 
-      // Then: 2件の新着記事が返される
+      // Then: 2件の新着記事が返される（古い順）
       expect(result.hasChanges).toBe(true);
-      expect(result.newArticles).toEqual(["article-a", "article-b"]);
+      expect(result.newArticles).toEqual(["article-b", "article-a"]);
 
-      // Then: JSON に2件書き出される
+      // Then: JSON に2件書き出される（古い順）
       const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "anthropic-news.json"), "utf-8"),
       ) as AnthropicNewsCurrentEntry[];
       expect(entries).toHaveLength(2);
-      expect(entries[0].slug).toBe("article-a");
-      expect(entries[1].slug).toBe("article-b");
+      expect(entries[0].slug).toBe("article-b");
+      expect(entries[1].slug).toBe("article-a");
     });
   });
 
@@ -178,9 +178,9 @@ describe("fetchHtmlAnthropicNews", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlAnthropicNews(deps);
 
-      // Then: 最新3件が通知対象として返される
+      // Then: 最新3件が通知対象として返される（古い順）
       expect(result.hasChanges).toBe(true);
-      expect(result.newArticles).toEqual(["article-a", "article-b", "article-c"]);
+      expect(result.newArticles).toEqual(["article-c", "article-b", "article-a"]);
 
       // Then: 全5件の slug が knownSlugs に登録される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock
@@ -273,7 +273,6 @@ describe("fetchHtmlAnthropicNews", () => {
     //      失敗した slug は knownSlugs に追加されないことを検証する
     it("fetch 例外の記事をスキップし成功記事のみ通知対象にする", async () => {
       // Given: article-a と article-b が新着、article-a の fetch が例外
-      let callCount = 0;
       const deps = makeDeps({
         loadState: vi.fn().mockResolvedValue({
           lastRunAt: "",
@@ -286,11 +285,8 @@ describe("fetchHtmlAnthropicNews", () => {
             },
           },
         }),
-        fetchStaticHtml: vi.fn().mockImplementation((_url: string) => {
-          callCount++;
-          // 1回目は一覧ページ、2回目は article-a（失敗）、3回目は article-b（成功）
-          if (callCount === 1) return Promise.resolve("<html>list</html>");
-          if (callCount === 2) return Promise.reject(new Error("Network timeout"));
+        fetchStaticHtml: vi.fn().mockImplementation((url: string) => {
+          if (url.includes("article-a")) return Promise.reject(new Error("Network timeout"));
           return Promise.resolve("<html>article</html>");
         }),
       });

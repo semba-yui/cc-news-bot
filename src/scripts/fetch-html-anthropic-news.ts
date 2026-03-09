@@ -84,10 +84,10 @@ export async function fetchHtmlAnthropicNews(
   let allSlugsForState: string[];
 
   if (isFirstRun) {
-    newArticles = allArticles.slice(0, MAX_INITIAL_ARTICLES);
+    newArticles = allArticles.slice(0, MAX_INITIAL_ARTICLES).reverse();
     allSlugsForState = allArticles.map((a) => a.slug);
   } else {
-    newArticles = allArticles.filter((a) => !knownSlugs.has(a.slug));
+    newArticles = allArticles.filter((a) => !knownSlugs.has(a.slug)).reverse();
     allSlugsForState = [...knownSlugs];
   }
 

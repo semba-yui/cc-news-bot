@@ -80,10 +80,10 @@ export async function fetchHtmlJulesChangelog(
   let allSlugsForState: string[];
 
   if (isFirstRun) {
-    newArticles = allArticles.slice(0, MAX_INITIAL_ARTICLES);
+    newArticles = allArticles.slice(0, MAX_INITIAL_ARTICLES).reverse();
     allSlugsForState = allArticles.map((a) => a.dateSlug);
   } else {
-    newArticles = allArticles.filter((a) => !knownSlugs.has(a.dateSlug));
+    newArticles = allArticles.filter((a) => !knownSlugs.has(a.dateSlug)).reverse();
     allSlugsForState = [...knownSlugs];
   }
 

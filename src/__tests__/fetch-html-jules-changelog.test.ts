@@ -148,17 +148,17 @@ describe("fetchHtmlJulesChangelog", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlJulesChangelog(deps);
 
-      // Then: 2件の新着記事が返される
+      // Then: 2件の新着記事が返される（古い順）
       expect(result.hasChanges).toBe(true);
-      expect(result.newArticles).toEqual(["2026-03-08", "2026-03-05"]);
+      expect(result.newArticles).toEqual(["2026-03-05", "2026-03-08"]);
 
-      // Then: JSON に2件書き出される
+      // Then: JSON に2件書き出される（古い順）
       const entries = JSON.parse(
         readFileSync(resolve(HTML_CURRENT_DIR, "jules-changelog.json"), "utf-8"),
       ) as JulesChangelogCurrentEntry[];
       expect(entries).toHaveLength(2);
-      expect(entries[0].dateSlug).toBe("2026-03-08");
-      expect(entries[1].dateSlug).toBe("2026-03-05");
+      expect(entries[0].dateSlug).toBe("2026-03-05");
+      expect(entries[1].dateSlug).toBe("2026-03-08");
     });
   });
 
@@ -177,9 +177,9 @@ describe("fetchHtmlJulesChangelog", () => {
       // When: 取得スクリプトを実行する
       const result = await fetchHtmlJulesChangelog(deps);
 
-      // Then: 最新3件が通知対象として返される
+      // Then: 最新3件が通知対象として返される（古い順）
       expect(result.hasChanges).toBe(true);
-      expect(result.newArticles).toEqual(["2026-03-08", "2026-03-05", "2026-02-28"]);
+      expect(result.newArticles).toEqual(["2026-02-28", "2026-03-05", "2026-03-08"]);
 
       // Then: 全5件の dateSlug が knownSlugs に登録される
       const savedState = (deps.saveState as ReturnType<typeof vi.fn>).mock

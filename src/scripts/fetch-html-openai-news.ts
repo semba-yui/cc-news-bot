@@ -90,11 +90,11 @@ export async function fetchHtmlOpenAINews(
 
   if (isFirstRun) {
     // 初回: 最新3件を通知対象、全 slug を knownSlugs に登録
-    newArticles = allArticles.slice(0, MAX_INITIAL_ARTICLES);
+    newArticles = allArticles.slice(0, MAX_INITIAL_ARTICLES).reverse();
     allSlugsForState = allArticles.map((a) => a.slug);
   } else {
     // 以降: knownSlugs にない slug が新着
-    newArticles = allArticles.filter((a) => !knownSlugs.has(a.slug));
+    newArticles = allArticles.filter((a) => !knownSlugs.has(a.slug)).reverse();
     allSlugsForState = [...knownSlugs];
   }
 
