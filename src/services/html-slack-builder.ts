@@ -110,7 +110,12 @@ export function buildOpenAINewsBlocks(article: TranslatedArticle): SlackBlock[] 
 
   blocks.push({
     type: "context",
-    elements: [{ type: "mrkdwn", text: `🔗 <${HTML_SOURCE_URLS["openai-news"].articleBaseUrl}${article.slug}/|記事を読む>` }],
+    elements: [
+      {
+        type: "mrkdwn",
+        text: `🔗 <${HTML_SOURCE_URLS["openai-news"].articleBaseUrl}${article.slug}/|記事を読む>`,
+      },
+    ],
   });
 
   return blocks;
@@ -141,7 +146,12 @@ export function buildAnthropicNewsBlocks(article: TranslatedArticle): SlackBlock
 
   blocks.push({
     type: "context",
-    elements: [{ type: "mrkdwn", text: `🔗 <${HTML_SOURCE_URLS["anthropic-news"].articleBaseUrl}${article.slug}|記事を読む>` }],
+    elements: [
+      {
+        type: "mrkdwn",
+        text: `🔗 <${HTML_SOURCE_URLS["anthropic-news"].articleBaseUrl}${article.slug}|記事を読む>`,
+      },
+    ],
   });
 
   return blocks;

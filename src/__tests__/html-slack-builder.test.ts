@@ -415,7 +415,10 @@ describe("buildOpenAINewsBlocks", () => {
     // Then: 末尾のブロックが context 型で、記事 URL リンクを含む
     const lastBlock = blocks[blocks.length - 1];
     expect(lastBlock.type).toBe("context");
-    const contextBlock = lastBlock as { type: "context"; elements: Array<{ type: string; text: string }> };
+    const contextBlock = lastBlock as {
+      type: "context";
+      elements: Array<{ type: string; text: string }>;
+    };
     expect(contextBlock.elements).toHaveLength(1);
     expect(contextBlock.elements[0].type).toBe("mrkdwn");
     expect(contextBlock.elements[0].text).toContain(
@@ -582,7 +585,10 @@ describe("buildAnthropicNewsBlocks", () => {
     // Then: 末尾のブロックが context 型で、記事 URL リンクを含む
     const lastBlock = blocks[blocks.length - 1];
     expect(lastBlock.type).toBe("context");
-    const contextBlock = lastBlock as { type: "context"; elements: Array<{ type: string; text: string }> };
+    const contextBlock = lastBlock as {
+      type: "context";
+      elements: Array<{ type: string; text: string }>;
+    };
     expect(contextBlock.elements).toHaveLength(1);
     expect(contextBlock.elements[0].type).toBe("mrkdwn");
     expect(contextBlock.elements[0].text).toContain(
