@@ -72,7 +72,7 @@ async function main(): Promise<void> {
     htmlSummariesDir: DATA_DIR.htmlSummaries,
     getChannels: getChannelsForSource,
     slackToken,
-    botProfile: { name: "Anthropic News", emoji: ":anthropic:" },
+    botProfile: { name: "Anthropic News", emoji: ":claude-white:" },
     buildBlocks: buildAnthropicNewsBlocks,
     postBlocks: postBlocksImpl,
     postThreadReplies: postThreadRepliesImpl,

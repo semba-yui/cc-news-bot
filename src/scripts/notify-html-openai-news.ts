@@ -72,7 +72,7 @@ async function main(): Promise<void> {
     htmlSummariesDir: DATA_DIR.htmlSummaries,
     getChannels: getChannelsForSource,
     slackToken,
-    botProfile: { name: "OpenAI News", emoji: ":openai:" },
+    botProfile: { name: "OpenAI News", emoji: ":openai-chatgpt-white:" },
     buildBlocks: buildOpenAINewsBlocks,
     postBlocks: postBlocksImpl,
     postThreadReplies: postThreadRepliesImpl,

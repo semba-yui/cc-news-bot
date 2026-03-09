@@ -37,7 +37,7 @@ function makeDeps(
     htmlSummariesDir: resolve(TEST_ROOT, "html-summaries"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
-    botProfile: { name: "Jules Changelog", emoji: ":jules:" },
+    botProfile: { name: "Jules Changelog", emoji: ":google-jules:" },
     postBlocks: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,
       ts: "1234567890.123456",
@@ -88,7 +88,7 @@ describe("notifyHtmlJulesChangelog", () => {
         MOCK_BLOCKS,
         "Jules Changelog: New features",
         "xoxb-test",
-        { name: "Jules Changelog", emoji: ":jules:" },
+        { name: "Jules Changelog", emoji: ":google-jules:" },
       );
     });
   });

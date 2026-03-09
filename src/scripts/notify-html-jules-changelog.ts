@@ -58,7 +58,7 @@ async function main(): Promise<void> {
     htmlSummariesDir: DATA_DIR.htmlSummaries,
     getChannels: getChannelsForSource,
     slackToken,
-    botProfile: { name: "Jules Changelog", emoji: ":jules:" },
+    botProfile: { name: "Jules Changelog", emoji: ":google-jules:" },
     postBlocks: postBlocksImpl,
   });
 

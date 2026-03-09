@@ -39,7 +39,7 @@ function makeDeps(
     htmlSummariesDir: resolve(TEST_ROOT, "html-summaries"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
-    botProfile: { name: "Anthropic News", emoji: ":anthropic:" },
+    botProfile: { name: "Anthropic News", emoji: ":claude-white:" },
     buildBlocks: vi.fn().mockReturnValue(MOCK_BLOCKS),
     postBlocks: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,
@@ -103,7 +103,7 @@ describe("notifyHtmlAnthropicNews", () => {
         MOCK_BLOCKS,
         "Anthropic News: Claude 4 リリース",
         "xoxb-test",
-        { name: "Anthropic News", emoji: ":anthropic:" },
+        { name: "Anthropic News", emoji: ":claude-white:" },
       );
 
       // Then: スレッド返信に全文が投稿される
@@ -112,7 +112,7 @@ describe("notifyHtmlAnthropicNews", () => {
         "1234567890.123456",
         "全文テキスト...",
         "xoxb-test",
-        { botProfile: { name: "Anthropic News", emoji: ":anthropic:" } },
+        { botProfile: { name: "Anthropic News", emoji: ":claude-white:" } },
       );
     });
   });

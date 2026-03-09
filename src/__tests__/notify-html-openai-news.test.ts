@@ -32,7 +32,7 @@ function makeDeps(overrides: Partial<NotifyHtmlOpenAINewsDeps> = {}): NotifyHtml
     htmlSummariesDir: resolve(TEST_ROOT, "html-summaries"),
     getChannels: () => ["C_TEST"],
     slackToken: "xoxb-test",
-    botProfile: { name: "OpenAI News", emoji: ":openai:" },
+    botProfile: { name: "OpenAI News", emoji: ":openai-chatgpt-white:" },
     buildBlocks: vi.fn().mockReturnValue(MOCK_BLOCKS),
     postBlocks: vi.fn<() => Promise<PostResult>>().mockResolvedValue({
       success: true,
@@ -94,7 +94,7 @@ describe("notifyHtmlOpenAINews", () => {
         MOCK_BLOCKS,
         "OpenAI News: 新しいモデル",
         "xoxb-test",
-        { name: "OpenAI News", emoji: ":openai:" },
+        { name: "OpenAI News", emoji: ":openai-chatgpt-white:" },
       );
 
       // Then: スレッド返信に全文が投稿される
@@ -103,7 +103,7 @@ describe("notifyHtmlOpenAINews", () => {
         "1234567890.123456",
         "全文テキスト...",
         "xoxb-test",
-        { botProfile: { name: "OpenAI News", emoji: ":openai:" } },
+        { botProfile: { name: "OpenAI News", emoji: ":openai-chatgpt-white:" } },
       );
     });
   });
