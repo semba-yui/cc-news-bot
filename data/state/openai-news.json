@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-03-09T18:20:12.119Z",
+  "lastCheckedAt": "2026-03-10T18:19:54.402Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -13,6 +13,8 @@
     "extending-single-minus-amplitudes-to-gravitons",
     "gpt-5-3-instant-system-card",
     "gpt-5-3-instant",
-    "openai-to-acquire-promptfoo"
+    "openai-to-acquire-promptfoo",
+    "new-ways-to-learn-math-and-science-in-chatgpt",
+    "instruction-hierarchy-challenge"
   ]
 }
