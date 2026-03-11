@@ -1,137 +1,59 @@
-## rust-v0.113.0 (2026-03-10T05:24:30Z)
+## rust-v0.114.0 (2026-03-11T00:28:42Z)
 ## New Features
-- Added a built-in `request_permissions` tool so running turns can request additional permissions at runtime, with new TUI rendering for those approval calls. (#13092, #14004)
-- Expanded plugin workflows with curated marketplace discovery, richer `plugin/list` metadata, install-time auth checks, and a `plugin/uninstall` endpoint. (#13712, #13540, #13685, #14111)
-- Upgraded app-server command execution with streaming stdin/stdout/stderr plus TTY/PTY support, and wired `exec` to the new in-process app server path. (#13640, #14005)
-- Web search settings now support full tool configuration (for example filters and location), not just on/off. (#13675)
-- Added the new permission-profile config language and split filesystem/network sandbox policy plumbing for more precise policy control. (#13434, #13439, #13440, #13448, #13449, #13453)
-- Image generation now saves output files into the current working directory. (#13607)
+- Added an experimental code mode for more isolated coding workflows. (#13418)
+- Added an experimental hooks engine with `SessionStart` and `Stop` hook events. (#13276)
+- WebSocket app-server deployments now expose `GET /readyz` and `GET /healthz` on the same listener for easier health checks. (#13782)
+- Added a config switch to disable bundled system skills entirely. (#13792)
+- Handoffs now carry realtime transcript context, which improves continuity when work is transferred between turns. (#14132)
+- Improved the `$` mention picker by clearly labeling Skills, Apps, and Plugins, and by surfacing plugins first. (#14147, #14163)
 
 ## Bug Fixes
-- Fixed auth error handling for cloud requirements fetch so 401s trigger the normal auth-recovery messaging instead of a generic workspace-config failure. (#14049)
-- Fixed trust bootstrap to avoid running `git` commands before project trust is established. (#13804)
-- Fixed Windows execution edge cases, including incorrect PTY `TerminateProcess` success handling and stricter sandbox startup cwd validation. (#13989, #13833, #13742)
-- Fixed plugin startup behavior so curated plugins are loaded in TUI sessions as expected. (#14050)
-- Hardened network proxy policy parsing by rejecting global wildcard (`*`) domains while preserving scoped wildcard support. (#13789)
-- Fixed approval payload compatibility for macOS automation permissions by accepting both supported input shapes. (#13683)
-
-## Documentation
-- Clarified `js_repl` guidance for persistent bindings and redeclaration recovery to reduce avoidable REPL errors. (#13803)
+- Fixed a Linux `tmux` crash caused by concurrent user-shell lookups. (#13900)
+- Fixed apps being enabled in unsupported sessions by tightening the enablement check. (#14011)
+- Fixed reopened threads getting stuck as in-progress after quitting mid-run and then resuming later. (#14125)
+- Fixed permission handling so legacy `workspace-write` behavior is preserved and newer permission profiles degrade more safely on older builds. (#13957, #14107)
+- Fixed approval flows so granted permissions persist across turns, work with reject-style configs, and are honored by `apply_patch`. (#14009, #14055, #14118, #14165)
 
 ## Chores
-- Reduced log/storage overhead by moving logs to a dedicated SQLite DB, adding timestamps to feedback logs, pruning old data, and tightening retention/row limits. (#13645, #13688, #13734, #13763, #13772, #13781)
-- Improved Windows distribution automation by publishing CLI releases to winget. (#12943)
+- Laid the groundwork for the Python SDK’s generated v2 schema types and pinned platform-specific runtime binaries. (#13953)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.112.0...rust-v0.113.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.113.0...rust-v0.114.0
 
-- #13626 feat(otel): safe tracing @owenlin0
-- #13560 Refine realtime startup context formatting @aibrahim-oai
-- #13615 Replay thread rollback from rollout history @aibrahim-oai
-- #13642 fix(tui): clean up pending steer preview wrapping @charley-oai
-- #13645 Add timestamped SQLite /feedback logs without schema changes @charley-oai
-- #13654 tui: sort resume picker by last updated time @charley-oai
-- #13540 support plugin/list. @xl-openai
-- #13677 chore: remove unused legacy macOS permission types @celia-oai
-- #13683 fix: accept two macOS automation input shapes  for approval payload compatibility @celia-oai
-- #13687 refactor: remove proxy admin endpoint @viyatb-oai
-- #13669 copy current exe to CODEX_HOME/.sandbox-bin for apply_patch @iceweasel-oai
-- #11874 fix(tui) remove config check for trusted setting @dylan-hurd-oai
-- #13685 check app auth in plugin/install @sayan-oai
-- #13697 change sound @aibrahim-oai
-- #13607 Enabling CWD Saving for Image-Gen @won-openai
-- #13621 [elicitations] Switch to use MCP style elicitation payload for mcp tool approvals. @mzeng-openai
-- #13619 feat: status line with real data @jif-oai
-- #13734 feat: prune old memories in DB @jif-oai
-- #13688 Add timestamps to feedback log lines @etraut-openai
-- #13742 fix: windows normalization @jif-oai
-- #13514 [rmcp-client] Recover from streamable HTTP 404 sessions @caseychow-oai
-- #13750 feat: drop sqlite db feature flag @jif-oai
-- #13753 feat: drop discrepency metrics @jif-oai
-- #13763 feat: limit number of rows per log @jif-oai
-- #13703 Clarify sandbox permission override helper semantics @charley-oai
-- #13770 fix(app-server): fix turn_start_shell_zsh_fork_executes_command_v2 flake @owenlin0
-- #13630 feat(otel, core): record turn TTFT and TTFM metrics in codex-core @owenlin0
-- #13674 app-server: Emit `thread/name/updated` event globally @euroelessar
-- #13772 Move sqlite logs to a dedicated database @charley-oai
-- #13620 chore: improve DB flushing @jif-oai
-- #13711 feat: structured plugin parsing @sayan-oai
-- #13781 Reduce SQLite log retention to 10 days @charley-oai
-- #13780 fix: move unit tests in codex-rs/core/src/config/mod.rs into their own file @bolinfest
-- #13783 fix: move unit tests in codex-rs/core/src/codex.rs into their own file @bolinfest
-- #13787 fix bazel build @bolinfest
-- #13789 fix: reject global wildcard network proxy domains @viyatb-oai
-- #12943 Codex/winget auto update @iceweasel-oai
-- #13800 chore(otel): reorganize codex-otel crate @owenlin0
-- #13797 feat: add auth login diagnostics @joshka-oai
-- #13695 utils/pty: add streaming spawn and terminal sizing primitives @euroelessar
-- #13803 Clarify js_repl binding reuse guidance @fjord-oai
-- #13810 docs: remove auth login logging plan @joshka-oai
-- #13434 config: add initial support for the new permission profile config language in config.toml @bolinfest
-- #13796 Add realtime startup context override @aibrahim-oai
-- #13814 fix: include libcap-dev dependency when creating a devcontainer for building Codex @bolinfest
-- #13808 chore(otel): rename OtelManager to SessionTelemetry @owenlin0
-- #13712 feat: Add curated plugin marketplace + Metadata Cleanup. @xl-openai
-- #13791 fix(core): skip exec approval for permissionless skill scripts @celia-oai
-- #13675 Allow full web search tool config @rm-openai
-- #13640 app-server: Add streaming and tty/pty capabilities to `command/exec` @euroelessar
-- #13819 feat(app-server-protocol): address naming conflicts in json schema exporter @owenlin0
-- #13804 fix: avoid invoking git before project trust is established @viyatb-oai
-- #12752 fix: support managed network allowlist controls @viyatb-oai
-- #13439 sandboxing: plumb split sandbox policies through runtime @bolinfest
-- #13440 protocol: derive effective file access from filesystem policies @bolinfest
-- #13816 fix(core): respect reject policy by approval source for skill scripts @celia-oai
-- #13833 app-server: require absolute cwd for windowsSandbox/setupStart @iceweasel-oai
-- #13670 Add Fast mode status-line indicator @etraut-openai
-- #13445 safety: honor filesystem policy carveouts in apply_patch @bolinfest
-- #13771 feat: simplify DB further @jif-oai
-- #13692 Add guardian approval MVP @charley-oai
-- #13851 tmp: drop artifact skills @jif-oai
-- #13910 fix(core) rm guardian snapshot test @dylan-hurd-oai
-- #13911 fix(ci) fix guardian ci @dylan-hurd-oai
-- #13896 Fix TUI context window display before first TokenCount @etraut-openai
-- #13448 seatbelt: honor split filesystem sandbox policies @bolinfest
-- #13921 chore: use @plugin instead of $plugin for plaintext mentions @sayan-oai
-- #13807 [elicitations] Support always allow option for mcp tool calls. @mzeng-openai
-- #13449 linux-sandbox: plumb split sandbox policies through helper @bolinfest
-- #13451 sandboxing: preserve denied paths when widening permissions @bolinfest
-- #13452 protocol: keep root carveouts sandboxed @bolinfest
-- #13874 Stabilize abort task follow-up handling @aibrahim-oai
-- #13453 linux-sandbox: honor split filesystem policies in bwrap @bolinfest
-- #13989 Fix inverted Windows PTY `TerminateProcess` handling @etraut-openai
-- #13912 fix(ci): restore guardian coverage and bazel unit tests @charley-oai
-- #13877 Stabilize shell serialization tests @aibrahim-oai
-- #13839 [app-server] Support hot-reload user config when batch writing config. @mzeng-openai
-- #14005 Add in-process app server and wire up exec to use it @etraut-openai
-- #13929 app-server: include experimental skill metadata in exec approval requests @celia-oai
-- #14014 fix(core) patch otel test @dylan-hurd-oai
-- #13841 tui: clarify pending steer follow-ups @charley-oai
-- #13092 Add request permissions tool @mousseau-oai
-- #14027 fix(bazel) add missing app-server-client BUILD.bazel @dylan-hurd-oai
-- #14004 feat(tui) render request_permissions calls @dylan-hurd-oai
-- #14052 Stabilize app list update ordering test @aibrahim-oai
-- #13897 guardian initial feedback / tweaks @charley-oai
-- #13884 Reduce app-server test timeout pressure @aibrahim-oai
-- #13872 Stabilize zsh fork app-server tests @aibrahim-oai
-- #13881 Stabilize RMCP pid file cleanup test @aibrahim-oai
-- #13883 Stabilize PTY Python REPL test @aibrahim-oai
-- #14058 Stabilize plan item app-server tests @aibrahim-oai
-- #13943 Order websocket initialize after handshake @aibrahim-oai
-- #13885 Stabilize thread resume replay tests @aibrahim-oai
-- #13878 Serialize shell snapshot stdin test @aibrahim-oai
-- #13876 Stabilize realtime startup context tests @aibrahim-oai
-- #14050 fix(plugin): Also load curated plugins for TUI. @xl-openai
-- #14049 fix: properly handle 401 error in clound requirement fetch. @xl-openai
-- #14101 Stabilize shell approval MCP test @aibrahim-oai
-- #14102 Stabilize interrupted task approval cleanup @aibrahim-oai
-- #14103 Stabilize guardian approval coverage @aibrahim-oai
-- #14060 Stabilize resumed rollout messages @aibrahim-oai
-- #14114 fix(ci) Faster shell_command::unicode_output test @dylan-hurd-oai
-- #14111 chore: plugin/uninstall endpoint @sayan-oai
-- #14117 feat(otel): Centralize OTEL metric names and shared tag builders @owenlin0
-- #13880 Stabilize RMCP streamable HTTP readiness tests @aibrahim-oai
-- #14123 pass on save info to model + ui tweaks @won-openai
-- #13886 Stabilize protocol schema fixture generation @aibrahim-oai
+- #14009 feat(core) Persist request_permission data across turns @dylan-hurd-oai
+- #14136 fix(core): use dedicated types for responsesapi web search tool config @owenlin0
+- #13782 codex-rs/app-server: add health endpoints for --listen websocket server @maxj-oai
+- #14055 fix(core) RequestPermissions + ApplyPatch @dylan-hurd-oai
+- #14118 feat(approvals) RejectConfig for request_permissions @dylan-hurd-oai
+- #13957 fix(protocol): preserve legacy workspace-write semantics @viyatb-oai
+- #14107 fix: keep permissions profiles forward compatible @viyatb-oai
+- #14147 make dollar-mention always clarify item category (skill, app, plugin) @sayan-oai
+- #14152 Refactor tool output into trait implementations @pakrym-oai
+- #14163 sort plugins first in  menu @sayan-oai
+- #13418 Add code_mode experimental feature @pakrym-oai
+- #13276 start of hooks engine @eternal-openai
+- #14135 tui: only show fast status for gpt-5.4 @pash-openai
+- #14157 Enforce single tool output type in codex handlers @pakrym-oai
+- #14165 fix(core) default RejectConfig.request_permissions @dylan-hurd-oai
+- #14167 Export tools module into code mode runner @pakrym-oai
+- #13792 feat: support disabling bundled system skills @xl-openai
+- #14169 Move exec command truncation into ExecCommandToolOutput @pakrym-oai
+- #14011 [apps] Fix apps enablement condition. @mzeng-openai
+- #14000 Delay pending cleanup until task aborts @aibrahim-oai
+- #12296 Implemented thread-level atomic elicitation counter for stopwatch pausing @cconger
+- #14132 Use realtime transcript for handoff context @aibrahim-oai
+- #13879 Stabilize incomplete SSE retry test @aibrahim-oai
+- #14184 Fix unified exec test output assertion @aibrahim-oai
+- #14002 Stabilize websocket test server binding @aibrahim-oai
+- #13939 Stabilize app-server notify initialize test @aibrahim-oai
+- #13953 python-sdk: generated type foundation (all v2 schemas) @shaqayeq-oai
+- #13603 Fix release-mode integration test compiler failure @etraut-openai
+- #13900 Fix Linux tmux segfault in user shell lookup @etraut-openai
+- #13901 Log ChatGPT user ID for feedback tags @etraut-openai
+- #14183 Expose strongly-typed result for exec_command @pakrym-oai
+- #14003 Stabilize split PTY output on Windows @aibrahim-oai
+- #14229 Reuse McpToolOutput in McpHandler @pakrym-oai
+- #14125 Mark incomplete resumed turns interrupted when idle @guinness-oai
 
 
