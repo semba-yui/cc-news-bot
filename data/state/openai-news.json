@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-03-19T00:31:44.276Z",
+  "lastCheckedAt": "2026-03-19T18:21:06.665Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -20,6 +20,8 @@
     "designing-agents-to-resist-prompt-injection",
     "why-codex-security-doesnt-include-sast",
     "introducing-gpt-5-4-mini-and-nano",
-    "japan-teen-safety-blueprint"
+    "japan-teen-safety-blueprint",
+    "openai-to-acquire-astral",
+    "how-we-monitor-internal-coding-agents-misalignment"
   ]
 }
