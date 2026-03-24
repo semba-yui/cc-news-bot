@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-03-23T18:20:43.125Z",
+  "lastCheckedAt": "2026-03-24T18:24:01.378Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -23,6 +23,9 @@
     "japan-teen-safety-blueprint",
     "openai-to-acquire-astral",
     "how-we-monitor-internal-coding-agents-misalignment",
-    "creating-with-sora-safely"
+    "creating-with-sora-safely",
+    "update-on-the-openai-foundation",
+    "powering-product-discovery-in-chatgpt",
+    "teen-safety-policies-gpt-oss-safeguard"
   ]
 }
