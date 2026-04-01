@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-03-25T18:23:34.293Z",
+  "lastCheckedAt": "2026-04-01T00:37:19.575Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -28,6 +28,7 @@
     "powering-product-discovery-in-chatgpt",
     "teen-safety-policies-gpt-oss-safeguard",
     "safety-bug-bounty",
-    "our-approach-to-the-model-spec"
+    "our-approach-to-the-model-spec",
+    "accelerating-the-next-phase-ai"
   ]
 }
