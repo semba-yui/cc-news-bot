@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-02T18:21:18.017Z",
+  "lastCheckedAt": "2026-04-06T18:22:37.504Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -31,6 +31,7 @@
     "our-approach-to-the-model-spec",
     "accelerating-the-next-phase-ai",
     "codex-flexible-pricing-for-teams",
-    "openai-acquires-tbpn"
+    "openai-acquires-tbpn",
+    "introducing-openai-safety-fellowship"
   ]
 }
