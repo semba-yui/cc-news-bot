@@ -1,3 +1,11 @@
+## 1.0.20 - 2026-04-07
+
+- Add `copilot help monitoring` topic with OpenTelemetry configuration details and examples
+- Spinner stays active until background agents and shell commands finish, and user input remains available throughout
+- Azure OpenAI BYOK defaults to the GA versionless v1 route when no API version is configured
+- Reduce UI sluggishness during live response streaming
+- /yolo and --yolo now behave identically and /yolo state persists across /restart
+
 ## 1.0.19 - 2026-04-06
 
 - /mcp enable and /mcp disable now persist across sessions
