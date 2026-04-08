@@ -1,3 +1,14 @@
+## 1.0.21 - 2026-04-07
+
+- Add `copilot mcp` command for managing MCP servers
+- Spinner no longer appears stuck when a long-running async shell command is active
+- Enterprise GitHub URL input in the login flow now accepts keyboard input and submits on Enter
+- Slash command picker no longer flickers or shifts the input while filtering
+- Timeline no longer goes blank when content shrinks (e.g., after cancelling or tool completion)
+- Plan mode timeline display shows user text without a redundant "Plan" prefix
+- Reduce memory usage by automatically shutting down shell sessions that are no longer needed
+- Hooks configured with PascalCase event names now receive VS Code-compatible snake_case payloads with hook_event_name, session_id, and ISO 8601 timestamps
+
 ## 1.0.20 - 2026-04-07
 
 - Add `copilot help monitoring` topic with OpenTelemetry configuration details and examples
