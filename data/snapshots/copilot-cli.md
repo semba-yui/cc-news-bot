@@ -1,3 +1,22 @@
+## 1.0.22 - 2026-04-09
+
+- MCP tools with non-standard JSON schemas are now sanitized for compatibility with all model providers
+- Better handling of large images from MCP and extension tools
+- Improved rendering performance with a new simplified inline renderer
+- Show a clear message to contact your organization administrator when remote sessions are blocked by policy
+- Sub-agent activity no longer shows duplicated tool names (e.g. "view view the file...")
+- Permission checks and other hooks now work correctly when using Anthropic models via BYOM/BYOK configuration
+- Slash command picker appears above the text input for a more stable layout
+- Custom agents can now declare a `skills` field to eagerly load skill content into agent context at startup
+- Plugins can now display a post-install message with setup instructions after installation
+- Remove .vscode/mcp.json and .devcontainer/devcontainer.json as MCP server config sources; CLI now only reads .mcp.json. A migration hint appears when .vscode/mcp.json is detected without .mcp.json.
+- Plugins remain enabled across sessions and auto-install on startup based on user config
+- Add sub-agent depth and concurrency limits to prevent runaway agent spawning
+- Warn when resuming a session that is already in use by another CLI or application
+- CLI no longer crashes on systems affected by a V8 engine bug in grapheme segmentation
+- sessionStart and sessionEnd hooks fire once per session in interactive mode instead of once per prompt
+- Plugin agents respect the model specified in their frontmatter
+
 ## 1.0.21 - 2026-04-07
 
 - Add `copilot mcp` command for managing MCP servers
