@@ -1,3 +1,11 @@
+## 1.0.24 - 2026-04-10
+
+- preToolUse hooks now respect modifiedArgs/updatedInput, and additionalContext fields
+- Custom agent model field now accepts display names and vendor suffixes from VS Code (e.g., "Claude Sonnet 4.5", "GPT-5.4 (copilot)")
+- Terminal state (alt screen, cursor, raw mode) is restored correctly after CLI crashes like OOM or segfaults
+- The --remote flag is respected when the session sync prompt appears on first run in a GitHub repo
+- Redesign exit screen with Copilot mascot and cleaner usage summary layout
+
 ## 1.0.23 - 2026-04-10
 
 - Add --mode, --autopilot, and --plan flags to start the CLI directly in a specific agent mode
