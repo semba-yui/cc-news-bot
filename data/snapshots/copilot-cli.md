@@ -1,3 +1,24 @@
+## 1.0.26 - 2026-04-14
+
+- Escape key reliably dismisses ask_user and elicitation prompts without getting stuck
+- Spurious directory access prompts no longer appear for arguments inside find -exec blocks
+- Agent sessions no longer fail with unrecoverable errors when context compaction splits a tool call across a checkpoint boundary
+- Single-segment slash-prefixed tokens (e.g. /help, /start) no longer treated as file paths in bash commands
+- Anthropic BYOM correctly includes image data when viewing image files
+- Permission prompt notification hook only fires when a prompt is actually shown to the user
+- ctrl+o now expands all timeline entries, same as ctrl+e
+- Remote tab correctly shows Copilot coding agent tasks and supports steering without requiring a pull request
+- Rename "steering" to "remote control" in --remote flag and /remote command help text
+- Avoid sending duplicate custom instruction files (e.g. copilot-instructions.md and CLAUDE.md with identical content) to reduce wasted tokens per turn
+- Plugin hooks receive PLUGIN_ROOT, COPILOT_PLUGIN_ROOT, and CLAUDE_PLUGIN_ROOT env vars with the plugin's installation directory
+- ACP server binds to localhost only, preventing unintended network exposure
+- Installing a plugin named 'git' from a marketplace no longer fails due to incorrect URL parsing
+- Enterprise login accepts hostnames without a URL scheme (e.g. 'github.example.com')
+- LSP language servers correctly initialize on Windows using proper file URI paths
+- Relative paths in file edit operations resolve against the session working directory
+- Session scope selector in sync prompt is now more prominent and keyboard-navigable with left/right arrow keys
+- Instruction files with specific applyTo patterns are consolidated into a table instead of inlining full content, reducing context window usage
+
 ## 1.0.25 - 2026-04-13
 
 - Install MCP servers from the registry with guided configuration directly in the CLI
