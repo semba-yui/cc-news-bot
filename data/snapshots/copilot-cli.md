@@ -1,3 +1,11 @@
+## 1.0.27 - 2026-04-15
+
+- Show a clear message when Copilot Pro trial is paused instead of a generic policy error
+- Status bar shows @files and #issues hints while typing, and /help hint when the slash command picker is open
+- Clipboard copy on WSL no longer leaks an invisible BOM character into pasted text
+- Add /ask command to ask a quick question without affecting conversation history
+- Add `copilot plugin marketplace update` command to refresh plugin catalogs
+
 ## 1.0.26 - 2026-04-14
 
 - Escape key reliably dismisses ask_user and elicitation prompts without getting stuck
