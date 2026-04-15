@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-11T06:26:46.228Z",
+  "lastCheckedAt": "2026-04-15T00:40:26.722Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -35,6 +35,7 @@
     "introducing-openai-safety-fellowship",
     "introducing-child-safety-blueprint",
     "next-phase-of-enterprise-ai",
-    "axios-developer-tool-compromise"
+    "axios-developer-tool-compromise",
+    "scaling-trusted-access-for-cyber-defense"
   ]
 }
