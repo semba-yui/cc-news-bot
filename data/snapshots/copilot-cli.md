@@ -1,3 +1,15 @@
+## 1.0.28 - 2026-04-16
+
+- Permission prompts show correct repository path when working inside git submodules
+- Background agent completion notifications are not sent redundantly when read_agent is already waiting for the result
+- MCP migration hint now links to documentation with platform-specific instructions instead of embedding shell commands inline
+- Azure resource IDs no longer trigger false path security warnings when running az CLI commands
+- Rewind picker navigation simplified to arrow keys and Enter, removing the confusing 1-9 quick-select shortcut
+- A clear error message is displayed when the configured editor cannot be launched
+- Mascot plays a short blink sequence on startup instead of blinking continuously
+- Connect to CLI remote control sessions from the —resume picker
+- Support COPILOT_DISABLE_TERMINAL_TITLE environment variable to opt out of terminal title updates
+
 ## 1.0.27 - 2026-04-15
 
 - Show a clear message when Copilot Pro trial is paused instead of a generic policy error
