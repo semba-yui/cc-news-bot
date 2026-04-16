@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-14T18:24:31.338Z",
+  "lastCheckedAt": "2026-04-16T18:24:11.060Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -20,6 +20,7 @@
     "claude-opus-4-6",
     "australia-MOU",
     "google-broadcom-partnership-compute",
-    "narasimhan-board"
+    "narasimhan-board",
+    "claude-opus-4-7"
   ]
 }
