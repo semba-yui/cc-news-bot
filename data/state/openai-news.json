@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-16T12:28:10.253Z",
+  "lastCheckedAt": "2026-04-16T18:29:36.101Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -38,6 +38,7 @@
     "axios-developer-tool-compromise",
     "scaling-trusted-access-for-cyber-defense",
     "the-next-evolution-of-the-agents-sdk",
-    "accelerating-cyber-defense-ecosystem"
+    "accelerating-cyber-defense-ecosystem",
+    "codex-for-almost-everything"
   ]
 }
