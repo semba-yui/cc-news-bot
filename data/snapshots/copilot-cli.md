@@ -1,3 +1,13 @@
+## 1.0.30 - 2026-04-16
+
+- Feedback form links to the correct GitHub repository
+- /undo shows an explanatory message when rewind is unavailable (e.g., not in a git repository or no commits yet)
+- Plugin skills and commands are correctly discovered when using skills.discover
+- Add /statusline command (with /footer alias) to customize which items appear in the status bar (directory, branch, effort, context window, quota)
+- Remove --list-env flag that logged loaded plugins, agents, skills, and MCP servers in prompt mode
+- Image paste from clipboard works again after regression in bracketed paste handling
+- Both Ctrl+V and Meta+V trigger image paste on all platforms
+
 ## 1.0.29 - 2026-04-16
 
 - Remote MCP server config now allows omitting the type field, defaulting to http
