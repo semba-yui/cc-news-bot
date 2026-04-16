@@ -1,3 +1,13 @@
+## 1.0.29 - 2026-04-16
+
+- Remote MCP server config now allows omitting the type field, defaulting to http
+- Blinking cursor maintains stable width so text does not shift during blink
+- Add --list-env flag to log loaded plugins, agents, skills, and MCP servers when running in prompt mode, helping verify environment configuration in CI pipelines
+- Add support for Claude Opus 4.7
+- Shell commands and MCP servers now receive COPILOT_AGENT_SESSION_ID as an environment variable
+- Agent correctly identifies repository owner from git remote URL rather than local username
+- Terminal state correctly restored after a crash exit on Windows
+
 ## 1.0.28 - 2026-04-16
 
 - Permission prompts show correct repository path when working inside git submodules
