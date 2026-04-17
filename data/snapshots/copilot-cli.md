@@ -1,3 +1,7 @@
+## 1.0.31 - 2026-04-16
+
+- Prompt frame no longer causes rendering issues on Windows and Ubuntu terminals
+
 ## 1.0.30 - 2026-04-16
 
 - Feedback form links to the correct GitHub repository
