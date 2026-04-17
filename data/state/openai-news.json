@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-16T18:29:36.101Z",
+  "lastCheckedAt": "2026-04-17T00:38:46.630Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -39,6 +39,7 @@
     "scaling-trusted-access-for-cyber-defense",
     "the-next-evolution-of-the-agents-sdk",
     "accelerating-cyber-defense-ecosystem",
-    "codex-for-almost-everything"
+    "codex-for-almost-everything",
+    "introducing-gpt-rosalind"
   ]
 }
