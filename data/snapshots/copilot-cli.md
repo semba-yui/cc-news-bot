@@ -1,3 +1,7 @@
+## 1.0.34 - 2026-04-20
+
+- Rate limit error message now says "session rate limit" instead of "global rate limit"
+
 ## 1.0.33 - 2026-04-20
 
 - Resuming a remote session with --resume or --continue automatically inherits the --remote flag without needing to re-specify it
