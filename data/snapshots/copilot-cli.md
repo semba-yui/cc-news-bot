@@ -1,3 +1,18 @@
+## 1.0.33 - 2026-04-20
+
+- Resuming a remote session with --resume or --continue automatically inherits the --remote flag without needing to re-specify it
+- Add /bug, /continue, /release-notes, /export, and /reset as command aliases
+- Slash command picker suggests similar commands when you type an unrecognized or misspelled slash command
+- Add /upgrade as an alias for the /update command
+- Grep no longer times out on large repositories when content exclusion policies are enabled
+- Non-interactive mode waits for all background agents to finish before exiting
+- Skill picker correctly truncates CJK/Japanese descriptions and long skill names without wrapping
+- Slash command picker selects the highlighted command when pressing Enter
+- ctrl+t to toggle reasoning display is now listed in the /help and ? overlay
+- Sub-agents in auto mode now inherit the session model
+- Show usage limit warnings at 50% and 95% capacity, giving earlier notice before hitting rate limits
+- Use j/k for vim-style navigation and x to kill tasks in the tasks dialog
+
 ## 1.0.32 - 2026-04-17
 
 - Allow short session ID prefixes (7+ hex chars) with --resume and /resume instead of the full ID
