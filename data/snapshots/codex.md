@@ -1,111 +1,108 @@
-## rust-v0.123.0 (2026-04-23T01:26:06Z)
+## rust-v0.124.0 (2026-04-23T18:29:40Z)
 ## New Features
-- Added a built-in `amazon-bedrock` model provider with configurable AWS profile support (#18744).
-- Added `/mcp verbose` for full MCP server diagnostics, resources, and resource templates while keeping plain `/mcp` fast (#18610).
-- Made plugin MCP loading accept both `mcpServers` and top-level server maps in `.mcp.json` (#18780).
-- Improved realtime handoffs so background agents receive transcript deltas and can explicitly stay silent when appropriate (#18597, #18761, #18635).
-- Added host-specific `remote_sandbox_config` requirements for remote environments (#18763).
-- Refreshed bundled model metadata, including the current `gpt-5.4` default (#18586, #18388, #18719).
+- The TUI now has quick reasoning controls: `Alt+,` lowers reasoning, `Alt+.` raises it, and accepted model upgrades now reset reasoning to the new model’s default instead of carrying over stale settings. (#18866, #19085)
+- App-server sessions can now manage multiple environments and choose an environment and working directory per turn, which makes multi-workspace and remote setups easier to target precisely. (#18401, #18416)
+- Added first-class Amazon Bedrock support for OpenAI-compatible providers, including AWS SigV4 signing and AWS credential-based auth. (#17820)
+- Remote plugin marketplaces can now be listed and read directly, with more reliable detail lookups and larger result pages. (#18452, #19079)
+- Hooks are now stable, can be configured inline in `config.toml` and managed `requirements.toml`, and can observe MCP tools as well as `apply_patch` and long-running Bash sessions. (#18893, #18385, #18391, #18888, #19012)
+- Eligible ChatGPT plans now default to the Fast service tier unless you explicitly opt out. (#19053)
 
 ## Bug Fixes
-- Fixed `/copy` after rollback so it copies the latest visible assistant response, not a pre-rollback response (#18739).
-- Queued normal follow-up text submitted while a manual shell command is running, preventing stuck `Working` states (#18820).
-- Fixed Unicode/dead-key input in VS Code WSL terminals by disabling the enhanced keyboard mode there (#18741).
-- Prevented stale proxy environment variables from being restored from shell snapshots (#17271).
-- Made `codex exec` inherit root-level shared flags such as sandbox and model options (#18630).
-- Removed leaked review prompts from TUI transcripts (#18659).
-
-## Documentation
-- Added and tightened the Code Review skill instructions used by Codex-driven reviews (#18746, #18818).
-- Documented intentional await-across-lock cases and enabled Clippy linting for them (#18423, #18698).
-- Updated app-server protocol docs for threadless MCP resource reads and namespaced dynamic tools (#18292, #18413).
-
-## Chores
-- Fixed high-severity dependency alerts by pinning patched JS and Rust dependencies (#18167).
-- Reduced Rust dev build debug-info overhead while preserving useful backtraces (#18844).
-- Refreshed generated Python app-server SDK types from the current schema (#18862).
+- Preserved Cloudflare cookies across approved ChatGPT hosts, reducing auth breakage in HTTP-backed ChatGPT flows. (#17783)
+- Fixed remote app-server reliability issues so websocket events keep draining under load and shutdown no longer fails when the remote worker exits during cleanup. (#18932, #18936)
+- Fixed permission-mode drift so `/permissions` changes survive side conversations and updated Full Access state is correctly reflected in MCP approval handling. (#18924, #19033)
+- Fixed `wait_agent` so it returns promptly when mailbox work is already queued instead of waiting for a fresh notification or timing out. (#18968)
+- Fixed local stdio MCP launches for relative commands without an explicit `cwd`, bringing fallback path resolution in line with CLI behavior. (#19031)
+- Startup now fails less often on managed config edge cases: unknown feature requirements warn instead of aborting, and cloud-requirements errors are clearer about what failed. (#19038, #19078)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.122.0...rust-v0.123.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.123.0...rust-v0.124.0
 
-- #18662 feat: add metric to track the number of turns with memory usage @jif-oai
-- #18659 chore: drop review prompt from TUI UX @jif-oai
-- #18661 feat: log client use min log level @jif-oai
-- #18094 [codex] Use background agent task auth for backend calls @adrian-openai
-- #18441 Avoid false shell snapshot cleanup warnings @etraut-openai
-- #18260 [codex] Use background task auth for additional backend calls @adrian-openai
-- #18657 fix: auth.json leak in tests @jif-oai
-- #18610 Add verbose diagnostics for /mcp @etraut-openai
-- #18633 Use app server thread names in TUI picker @etraut-openai
-- #18591 Surface parent thread status in side conversations @etraut-openai
-- #18361 codex: move thread/name/set and thread/memoryModeSet into ThreadStore @wiltzius-openai
-- #18274 protocol: canonicalize file system permissions @bolinfest
-- #18403 refactor: use semaphores for async serialization gates @bolinfest
-- #18586 Update models.json @aibrahim-oai
-- #18289 Wire the PatchUpdated events through app_server @akshaynathan
-- #18631 Remove simple TUI legacy_core reexports @etraut-openai
-- #18697 [codex] Fix agent identity auth test fixture @adrian-openai
-- #18388 Update models.json @github-actions
-- #18167 [codex] Fix high severity dependency alerts @caseysilver-oai
-- #17692 [codex-analytics] guardian review analytics schema polishing @rhan-oai
-- #18722 chore(guardian) disable mcps and plugins @dylan-hurd-oai
-- #18597 Update realtime handoff transcript handling @guinness-oai
-- #18627 Surface TUI skills refresh failures @etraut-openai
-- #18719 Fix stale model test fixtures @aibrahim-oai
-- #18714 Add experimental remote thread store config @wiltzius-openai
-- #18739 fix(tui): keep /copy aligned with rollback @fcoury-oai
-- #18701 [codex] prefer inherited spawn agent model @tibo-openai
-- #18632 Use app server metadata for fork parent titles @etraut-openai
-- #18112 feat: cascade thread archive @jif-oai
-- #18716 Read conversation summaries through thread store @wiltzius-openai
-- #18635 Add realtime silence tool @guinness-oai
-- #18254 uds: add async Unix socket crate @euroelessar
-- #18746 Add Code Review skill @pakrym-oai
-- #18208 Add session config loader interface @rasmusrygaard
-- #18753 Refactor TUI app module into submodules @etraut-openai
-- #18630 Fix exec inheritance of root shared flags @etraut-openai
-- #18027 [6/6] Fail exec client operations after disconnect @aibrahim-oai
-- #17271 fix: fix stale proxy env restoration after shell snapshots @viyatb-oai
-- #18602 Warn when trusting Git subdirectories @etraut-openai
-- #18761 [codex] Send realtime transcript deltas on handoff @guinness-oai
-- #18435 /statusline & /title - Shared preview values @canvrno-oai
-- #18744 feat: add a built-in Amazon Bedrock model provider @celia-oai
-- #18581 [1/4] Add executor HTTP request protocol @aibrahim-oai
-- #18418 refactor: narrow async lock scopes @bolinfest
-- #18780 feat: Support more plugin MCP file shapes. @xl-openai
-- #18713 protocol: preserve glob scan depth in permission profiles @bolinfest
-- #18795 fix(guardian) Dont hard error on feature disable @dylan-hurd-oai
-- #18292 Make MCP resource read threadless @mzeng-openai
-- #18786 Fallback display names for TUI skill mentions @canvrno-oai
-- #18807 chore(app-server) linguist-generated @dylan-hurd-oai
-- #18393 feat(auto-review) Handle request_permissions calls @dylan-hurd-oai
-- #18763 Add remote_sandbox_config to our config requirements @abhinav-oai
-- #18794 Organize context fragments  @pakrym-oai
-- #18423 chore: document intentional await-holding cases @bolinfest
-- #18698 chore: enable await-holding clippy lints @bolinfest
-- #18413 [tool search] support namespaced deferred dynamic tools @pash-openai
-- #18818 [codex] Tighten code review skill wording @pakrym-oai
-- #18271 show bash mode in the TUI @abhinav-oai
-- #18741 fix(tui): disable enhanced keys for VS Code WSL @fcoury-oai
-- #18850 Move external agent config out of core @pakrym-oai
-- #18844 build: reduce Rust dev debuginfo @bolinfest
-- #18848 feat: baseline lib @jif-oai
-- #18846 core: make test-log a dev dependency @bolinfest
-- #18428 app-server: define device key v2 protocol @euroelessar
-- #18093 Propagate thread id in MCP tool metadata @rennie-openai
-- #17836 [codex] Add tmux-aware OSC 9 notifications @caseychow-oai
-- #18820 Queue follow-up input during user shell commands @etraut-openai
-- #18858 Stabilize debug clear memories integration test @jif-oai
-- #18799 Move TUI app tests to modules they cover @etraut-openai
-- #18442 Refactor app-server config loading into ConfigManager @pakrym-oai
-- #18813 Split DeveloperInstructions into individual fragments. @pakrym-oai
-- #18275 sandboxing: intersect permission profiles semantically @bolinfest
-- #18862 Refresh generated Python app-server SDK types @sdcoffey
-- #15578 Add Windows sandbox unified exec runtime support @iceweasel-oai
-- #18429 app-server: add codex-device-key crate @euroelessar
-- #18872 app-server: fix Bazel clippy in tracing tests @euroelessar
-- #18885 skip busted tests while I fix them @iceweasel-oai
-- #18873 chore: default multi-agent v2 fork to all @jif-oai
+- #18870 Load app-server config through ConfigManager @pakrym-oai
+- #18866 feat(tui): shortcuts to change reasoning level temporarily @fcoury-oai
+- #18430 app-server: implement device key v2 methods @euroelessar
+- #18757 fix: fully revert agent identity runtime wiring @efrazer-oai
+- #17783 Preserve Cloudfare HTTP cookies in codex @shijie-oai
+- #18876 [rollout_trace] Add rollout trace crate @cassirer-openai
+- #18401 Support multiple managed environments @starr-openai
+- #18797 Allow guardian bare allow output @maja-openai
+- #18886 Normalize /statusline & /title items @canvrno-oai
+- #18768 [codex] Tighten external migration prompt tests @alexsong-oai
+- #18909 Update /statusline and /title snapshots @canvrno-oai
+- #18867 sandboxing: materialize cwd-relative permission globs @bolinfest
+- #18915 fix: windows snapshot for external_agent_config_migration::tests::prompt_snapshot did not match windows output @bolinfest
+- #18416 Add turn-scoped environment selections @starr-openai
+- #18391 fix(core): emit hooks for apply_patch edits @fcoury-oai
+- #18916 test(core): move prompt debug coverage to integration suite @bolinfest
+- #17820 feat: add AWS SigV4 auth for OpenAI-compatible model providers @celia-oai
+- #18913 bazel: run wrapped Rust unit test shards @bolinfest
+- #18452 feat: Support remote plugin list/read. @xl-openai
+- #18936 Fix remote app-server shutdown race @bolinfest
+- #18871 refactor: add agent identity crate @efrazer-oai
+- #18276 exec-server: carry filesystem sandbox profiles @bolinfest
+- #18926 ci: keep argument comment lint checks materialized @bolinfest
+- #18935 Keep TUI status surfaces in sync @etraut-openai
+- #18923 chore(tui) debug-config guardian_policy_config @dylan-hurd-oai
+- #18943 tests: serialize process-heavy Windows CI suites @bolinfest
+- #18934 [codex] Clean guardian instructions @dylan-hurd-oai
+- #18948 chore: remove unused Bedrock auth lazy loading @celia-oai
+- #18277 core: derive active permission profiles @bolinfest
+- #18785 feat: add explicit AgentIdentity auth mode @efrazer-oai
+- #18953 use long-lived sessions for codex sandbox windows @iceweasel-oai
+- #18278 app-server: expose thread permission profiles @bolinfest
+- #17693 [codex-analytics] guardian review analytics events emission @rhan-oai
+- #17695 [codex-analytics] guardian review truncation @rhan-oai
+- #17696 [codex-analytics] guardian review TTFT plumbing and emission @rhan-oai
+- #18962 nit: expose lib @jif-oai
+- #18502 Support multiple cwd filters for thread list @acrognale-oai
+- #18968 fix: wait_agent timeout for queued mailbox mail @jif-oai
+- #18971 fix: cargo deny @jif-oai
+- #18973 chore: prep memories for AB @jif-oai
+- #18852 [codex] Update imagegen system skill @vb-openai
+- #18865 Stage publishable Python runtime wheels @sdcoffey
+- #18932 TUI: Keep remote app-server events draining @etraut-openai
+- #18877 [rollout_trace] Record core session rollout traces @cassirer-openai
+- #18959 feat(auto-review) policy config @dylan-hurd-oai
+- #18955 Add plumbing to approve stored Auto-Review denials @won-openai
+- #18999 arg0: keep dispatch aliases alive during async main @bolinfest
+- #18925 feat: Fairly trim skill descriptions within context budget @xl-openai
+- #18890 feat(auto-review) short-circuit @dylan-hurd-oai
+- #18279 app-server: accept permission profile overrides @bolinfest
+- #18582 [2/4] Implement executor HTTP request runner @aibrahim-oai
+- #18197 feat: add guardian network approval trigger context @viyatb-oai
+- #19033 Fix MCP permission policy sync @leoshimo-oai
+- #19016 exec-server: expose arg0 alias root to fs sandbox @bolinfest
+- #19036 Overlay state DB git metadata for filtered thread lists @joeytrasatti-openai
+- #18956 [Codex] Register browser requirements feature keys @khoi-oai
+- #19043 Update bundled OpenAI Docs skill freshness check @kkahadze-oai
+- #18504 Rebrand approvals reviewer config to auto-review @won-openai
+- #19046 exec-server: require explicit filesystem sandbox cwd @bolinfest
+- #18280 clients: send permission profiles to app-server @bolinfest
+- #18281 rollout: persist turn permission profiles @bolinfest
+- #18888 hooks: emit Bash PostToolUse when exec_command completes via write_stdin @eternal-openai
+- #19056 Rename approvals reviewer variant to auto-review @won-openai
+- #18583 [3/4] Add executor-backed RMCP HTTP client @aibrahim-oai
+- #19059 core: box multi-agent wrapper futures @bolinfest
+- #19031 Fix relative stdio MCP cwd fallback @mzeng-openai
+- #19063 chore(auto-review) feature => stable @dylan-hurd-oai
+- #19050 feat(request-permissions) approve with strict review @dylan-hurd-oai
+- #19067 test: set Rust test thread stack size @bolinfest
+- #19072 tui: fix approvals popup disabled shortcut test @bolinfest
+- #18893 codex: support hooks in config.toml and requirements.toml @eternal-openai
+- #18282 protocol: report session permission profiles @bolinfest
+- #19053 Default Fast service tier for eligible ChatGPT plans @shijie-oai
+- #19055 Add safety check notification and error handling @etraut-openai
+- #18283 app-server: accept command permission profiles @bolinfest
+- #19012 Mark codex_hooks stable @abhinav-oai
+- #18924 TUI: preserve permission state after side conversations @etraut-openai
+- #19071 Add computer_use feature requirement key @leoshimo-oai
+- #19079 Use remote plugin IDs for detail reads and enlarge list pages @xl-openai
+- #19038 feat: Warn and continue on unknown feature requirements @xl-openai
+- #19078 Clarify cloud requirements error messages @gverma-openai
+- #19085 Persist target default reasoning on model upgrade @shijie-oai
+- #19086 app-server: include filesystem entries in permission requests @bolinfest
+- #18385 Support MCP tools in hooks @abhinav-oai
+- #19113 Fix auto-review config compatibility across protocol and SDK @won-openai
 
 
