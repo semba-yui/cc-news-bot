@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-23T00:41:09.501Z",
+  "lastCheckedAt": "2026-04-23T18:28:40.778Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -46,6 +46,8 @@
     "introducing-workspace-agents-in-chatgpt",
     "speeding-up-agentic-workflows-with-websockets",
     "introducing-chatgpt-images-2-0",
-    "making-chatgpt-better-for-clinicians"
+    "making-chatgpt-better-for-clinicians",
+    "gpt-5-5-bio-bug-bounty",
+    "introducing-gpt-5-5"
   ]
 }
