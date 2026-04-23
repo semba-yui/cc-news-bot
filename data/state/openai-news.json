@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-22T18:27:34.203Z",
+  "lastCheckedAt": "2026-04-23T00:41:09.501Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -44,6 +44,8 @@
     "scaling-codex-to-enterprises-worldwide",
     "introducing-openai-privacy-filter",
     "introducing-workspace-agents-in-chatgpt",
-    "speeding-up-agentic-workflows-with-websockets"
+    "speeding-up-agentic-workflows-with-websockets",
+    "introducing-chatgpt-images-2-0",
+    "making-chatgpt-better-for-clinicians"
   ]
 }
