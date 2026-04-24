@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-17T18:17:29.849Z",
+  "lastCheckedAt": "2026-04-24T06:38:22.318Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -22,6 +22,7 @@
     "google-broadcom-partnership-compute",
     "narasimhan-board",
     "claude-opus-4-7",
-    "claude-design-anthropic-labs"
+    "claude-design-anthropic-labs",
+    "anthropic-nec"
   ]
 }
