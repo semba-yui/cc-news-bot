@@ -1,108 +1,88 @@
-## rust-v0.124.0 (2026-04-23T18:29:40Z)
+## rust-v0.125.0 (2026-04-24T18:00:38Z)
 ## New Features
-- The TUI now has quick reasoning controls: `Alt+,` lowers reasoning, `Alt+.` raises it, and accepted model upgrades now reset reasoning to the new model’s default instead of carrying over stale settings. (#18866, #19085)
-- App-server sessions can now manage multiple environments and choose an environment and working directory per turn, which makes multi-workspace and remote setups easier to target precisely. (#18401, #18416)
-- Added first-class Amazon Bedrock support for OpenAI-compatible providers, including AWS SigV4 signing and AWS credential-based auth. (#17820)
-- Remote plugin marketplaces can now be listed and read directly, with more reliable detail lookups and larger result pages. (#18452, #19079)
-- Hooks are now stable, can be configured inline in `config.toml` and managed `requirements.toml`, and can observe MCP tools as well as `apply_patch` and long-running Bash sessions. (#18893, #18385, #18391, #18888, #19012)
-- Eligible ChatGPT plans now default to the Fast service tier unless you explicitly opt out. (#19053)
+
+- App-server integrations now support Unix socket transport, pagination-friendly resume/fork, sticky environments, and remote thread config/store plumbing. (#18255, #18892, #18897, #18908, #19008, #19014)
+- App-server plugin management can install remote plugins and upgrade configured marketplaces. (#18917, #19074)
+- Permission profiles now round-trip across TUI sessions, user turns, MCP sandbox state, shell escalation, and app-server APIs. (#18284, #18285, #18286, #18287, #19231)
+- Model providers now own model discovery, with AWS/Bedrock account state exposed to app clients. (#18950, #19048)
+- `codex exec --json` now reports reasoning-token usage for programmatic consumers. (#19308)
+- Rollout tracing now records tool, code-mode, session, and multi-agent relationships, with a debug reducer command for inspection. (#18878, #18879, #18880)
 
 ## Bug Fixes
-- Preserved Cloudflare cookies across approved ChatGPT hosts, reducing auth breakage in HTTP-backed ChatGPT flows. (#17783)
-- Fixed remote app-server reliability issues so websocket events keep draining under load and shutdown no longer fails when the remote worker exits during cleanup. (#18932, #18936)
-- Fixed permission-mode drift so `/permissions` changes survive side conversations and updated Full Access state is correctly reflected in MCP approval handling. (#18924, #19033)
-- Fixed `wait_agent` so it returns promptly when mailbox work is already queued instead of waiting for a fresh notification or timing out. (#18968)
-- Fixed local stdio MCP launches for relative commands without an explicit `cwd`, bringing fallback path resolution in line with CLI behavior. (#19031)
-- Startup now fails less often on managed config edge cases: unknown feature requirements warn instead of aborting, and cloud-requirements errors are clearer about what failed. (#19038, #19078)
+
+- Interrupting `/review` and exiting the TUI no longer leaves the interface wedged on delegate startup or unsubscribe. (#18921)
+- Exec-server no longer drops buffered output after process exit and now waits correctly for stream closure. (#18946, #19130)
+- App-server now respects explicitly untrusted project config instead of auto-persisting trust. (#18626)
+- WebSocket app-server clients are less likely to disconnect during bursts of turn and tool-output notifications. (#19246)
+- Windows sandbox startup handles multiple CLI versions and installed app directories better, and background `Start-Process` calls avoid visible PowerShell windows. (#19044, #19180, #19214)
+- Config/schema handling now rejects conflicting MultiAgentV2 thread limits, resolves relative agent-role config paths, hides unsupported MCP bearer-token fields, and rejects invalid `js_repl` image MIME types. (#19129, #19261, #19294, #19292)
+
+## Documentation
+
+- App-server docs and generated schemas were refreshed for the new transport, thread, marketplace, sticky environment, and permission-profile APIs. (#18255, #18897, #19014, #19074, #19231)
+- Rollout-trace documentation now covers the debug trace reduction workflow. (#18880)
+
+## Chores
+
+- Refreshed `models.json` and related core, app-server, SDK, and TUI fixtures for the latest model catalog and reasoning defaults. (#19323)
+- Windows Bazel CI now uses a stable PATH and shared query startup path for better cache reuse. (#19161, #19232)
+- Plugin marketplace add/remove/startup-sync internals moved out of `codex-core`, and curated plugin cache versions now use short SHAs. (#19099, #19095)
+- Reverted a macOS signing entitlement change after it caused alpha startup failures. (#19167, #19350)
+- Stabilized flaky approval-popup and plugin MCP tool-discovery tests. (#19178, #19191)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.123.0...rust-v0.124.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.124.0...rust-v0.125.0
 
-- #18870 Load app-server config through ConfigManager @pakrym-oai
-- #18866 feat(tui): shortcuts to change reasoning level temporarily @fcoury-oai
-- #18430 app-server: implement device key v2 methods @euroelessar
-- #18757 fix: fully revert agent identity runtime wiring @efrazer-oai
-- #17783 Preserve Cloudfare HTTP cookies in codex @shijie-oai
-- #18876 [rollout_trace] Add rollout trace crate @cassirer-openai
-- #18401 Support multiple managed environments @starr-openai
-- #18797 Allow guardian bare allow output @maja-openai
-- #18886 Normalize /statusline & /title items @canvrno-oai
-- #18768 [codex] Tighten external migration prompt tests @alexsong-oai
-- #18909 Update /statusline and /title snapshots @canvrno-oai
-- #18867 sandboxing: materialize cwd-relative permission globs @bolinfest
-- #18915 fix: windows snapshot for external_agent_config_migration::tests::prompt_snapshot did not match windows output @bolinfest
-- #18416 Add turn-scoped environment selections @starr-openai
-- #18391 fix(core): emit hooks for apply_patch edits @fcoury-oai
-- #18916 test(core): move prompt debug coverage to integration suite @bolinfest
-- #17820 feat: add AWS SigV4 auth for OpenAI-compatible model providers @celia-oai
-- #18913 bazel: run wrapped Rust unit test shards @bolinfest
-- #18452 feat: Support remote plugin list/read. @xl-openai
-- #18936 Fix remote app-server shutdown race @bolinfest
-- #18871 refactor: add agent identity crate @efrazer-oai
-- #18276 exec-server: carry filesystem sandbox profiles @bolinfest
-- #18926 ci: keep argument comment lint checks materialized @bolinfest
-- #18935 Keep TUI status surfaces in sync @etraut-openai
-- #18923 chore(tui) debug-config guardian_policy_config @dylan-hurd-oai
-- #18943 tests: serialize process-heavy Windows CI suites @bolinfest
-- #18934 [codex] Clean guardian instructions @dylan-hurd-oai
-- #18948 chore: remove unused Bedrock auth lazy loading @celia-oai
-- #18277 core: derive active permission profiles @bolinfest
-- #18785 feat: add explicit AgentIdentity auth mode @efrazer-oai
-- #18953 use long-lived sessions for codex sandbox windows @iceweasel-oai
-- #18278 app-server: expose thread permission profiles @bolinfest
-- #17693 [codex-analytics] guardian review analytics events emission @rhan-oai
-- #17695 [codex-analytics] guardian review truncation @rhan-oai
-- #17696 [codex-analytics] guardian review TTFT plumbing and emission @rhan-oai
-- #18962 nit: expose lib @jif-oai
-- #18502 Support multiple cwd filters for thread list @acrognale-oai
-- #18968 fix: wait_agent timeout for queued mailbox mail @jif-oai
-- #18971 fix: cargo deny @jif-oai
-- #18973 chore: prep memories for AB @jif-oai
-- #18852 [codex] Update imagegen system skill @vb-openai
-- #18865 Stage publishable Python runtime wheels @sdcoffey
-- #18932 TUI: Keep remote app-server events draining @etraut-openai
-- #18877 [rollout_trace] Record core session rollout traces @cassirer-openai
-- #18959 feat(auto-review) policy config @dylan-hurd-oai
-- #18955 Add plumbing to approve stored Auto-Review denials @won-openai
-- #18999 arg0: keep dispatch aliases alive during async main @bolinfest
-- #18925 feat: Fairly trim skill descriptions within context budget @xl-openai
-- #18890 feat(auto-review) short-circuit @dylan-hurd-oai
-- #18279 app-server: accept permission profile overrides @bolinfest
-- #18582 [2/4] Implement executor HTTP request runner @aibrahim-oai
-- #18197 feat: add guardian network approval trigger context @viyatb-oai
-- #19033 Fix MCP permission policy sync @leoshimo-oai
-- #19016 exec-server: expose arg0 alias root to fs sandbox @bolinfest
-- #19036 Overlay state DB git metadata for filtered thread lists @joeytrasatti-openai
-- #18956 [Codex] Register browser requirements feature keys @khoi-oai
-- #19043 Update bundled OpenAI Docs skill freshness check @kkahadze-oai
-- #18504 Rebrand approvals reviewer config to auto-review @won-openai
-- #19046 exec-server: require explicit filesystem sandbox cwd @bolinfest
-- #18280 clients: send permission profiles to app-server @bolinfest
-- #18281 rollout: persist turn permission profiles @bolinfest
-- #18888 hooks: emit Bash PostToolUse when exec_command completes via write_stdin @eternal-openai
-- #19056 Rename approvals reviewer variant to auto-review @won-openai
-- #18583 [3/4] Add executor-backed RMCP HTTP client @aibrahim-oai
-- #19059 core: box multi-agent wrapper futures @bolinfest
-- #19031 Fix relative stdio MCP cwd fallback @mzeng-openai
-- #19063 chore(auto-review) feature => stable @dylan-hurd-oai
-- #19050 feat(request-permissions) approve with strict review @dylan-hurd-oai
-- #19067 test: set Rust test thread stack size @bolinfest
-- #19072 tui: fix approvals popup disabled shortcut test @bolinfest
-- #18893 codex: support hooks in config.toml and requirements.toml @eternal-openai
-- #18282 protocol: report session permission profiles @bolinfest
-- #19053 Default Fast service tier for eligible ChatGPT plans @shijie-oai
-- #19055 Add safety check notification and error handling @etraut-openai
-- #18283 app-server: accept command permission profiles @bolinfest
-- #19012 Mark codex_hooks stable @abhinav-oai
-- #18924 TUI: preserve permission state after side conversations @etraut-openai
-- #19071 Add computer_use feature requirement key @leoshimo-oai
-- #19079 Use remote plugin IDs for detail reads and enlarge list pages @xl-openai
-- #19038 feat: Warn and continue on unknown feature requirements @xl-openai
-- #19078 Clarify cloud requirements error messages @gverma-openai
-- #19085 Persist target default reasoning on model upgrade @shijie-oai
-- #19086 app-server: include filesystem entries in permission requests @bolinfest
-- #18385 Support MCP tools in hooks @abhinav-oai
-- #19113 Fix auto-review config compatibility across protocol and SDK @won-openai
+- #19129 Reject agents.max_threads with multi_agent_v2 @jif-oai
+- #19130 exec-server: wait for close after observed exit @jif-oai
+- #19149 Update safety check wording @etraut-openai
+- #18284 tui: sync session permission profiles @bolinfest
+- #18710 [codex] Fix plugin marketplace help usage @xli-oai
+- #19127 feat: drop spawned-agent context instructions @jif-oai
+- #18892 Add remote thread config loader protos @rasmusrygaard
+- #19014 Add excludeTurns parameter to thread/resume and thread/fork @ddr-oai
+- #18882 [codex] Route live thread writes through ThreadStore @wiltzius-openai
+- #19008 [codex] Implement remote thread store methods @wiltzius-openai
+- #18626 Respect explicit untrusted project config @etraut-openai
+- #18255 app-server: add Unix socket transport @euroelessar
+- #19167 ci: add macOS keychain entitlements @euroelessar
+- #19099 Move marketplace add/remove and startup sync out of core. @xl-openai
+- #19168 Use Auto-review wording for fallback rationale @maja-openai
+- #18908 Add remote thread config endpoint @rasmusrygaard
+- #18285 tui: carry permission profiles on user turns @bolinfest
+- #18286 mcp: include permission profiles in sandbox state @bolinfest
+- #18878 [rollout_trace] Trace tool and code-mode boundaries @cassirer-openai
+- #18287 shell-escalation: carry resolved permission profiles @bolinfest
+- #18946 fix(exec-server): retain output until streams close @bolinfest
+- #19074 Add app-server marketplace upgrade RPC @xli-oai
+- #19180 use a version-specific suffix for command runner binary in .sandbox-bin @iceweasel-oai
+- #19178 Stabilize approvals popup disabled-row test @etraut-openai
+- #18921 Fix /review interrupt and TUI exit wedges @etraut-openai
+- #19191 Stabilize plugin MCP tools test @etraut-openai
+- #19194 Mark hooks schema fixtures as generated @abhinav-oai
+- #18288 tests: isolate approval fixtures from host rules @bolinfest
+- #19044 guide Windows to use -WindowStyle Hidden for Start-Process calls @iceweasel-oai
+- #19214 do not attempt ACLs on installed codex dir @iceweasel-oai
+- #19161 ci: derive cache-stable Windows Bazel PATH @bolinfest
+- #18811 refactor: route Codex auth through AuthProvider @efrazer-oai
+- #19246 Increase app-server WebSocket outbound buffer @etraut-openai
+- #19048 feat: expose AWS account state from account/read @celia-oai
+- #18880 [rollout_trace] Add debug trace reduction command @cassirer-openai
+- #18897 Add sticky environment API and thread state @starr-openai
+- #18879 [rollout_trace] Trace sessions and multi-agent edges @cassirer-openai
+- #19095 feat: Use short SHA versions for curated plugin cache entries @xl-openai
+- #18950 feat: let model providers own model discovery @celia-oai
+- #19206 app-server: persist device key bindings in sqlite @euroelessar
+- #18917 [codex] Support remote plugin install writes @xli-oai
+- #19231 permissions: make profiles represent enforcement @bolinfest
+- #19261 Resolve relative agent role config paths from layers @etraut-openai
+- #19232 ci: reuse Bazel CI startup for target-discovery queries @bolinfest
+- #19292 Reject unsupported js_repl image MIME types @etraut-openai
+- #19247 chore: apply truncation policy to unified_exec @sayan-oai
+- #19294 Hide unsupported MCP bearer_token from config schema @etraut-openai
+- #19308 Surface reasoning tokens in exec JSON usage @etraut-openai
+- #19323 Update models.json and related fixtures @sayan-oai
+- #19350 fix alpha build @jif-oai
 
 
