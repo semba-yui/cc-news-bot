@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-27T00:41:07.731Z",
+  "lastCheckedAt": "2026-04-27T18:32:39.067Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -50,6 +50,8 @@
     "gpt-5-5-bio-bug-bounty",
     "introducing-gpt-5-5",
     "gpt-5-5-system-card",
-    "our-principles"
+    "our-principles",
+    "open-source-codex-orchestration-symphony",
+    "next-phase-of-microsoft-partnership"
   ]
 }
