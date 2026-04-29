@@ -1,3 +1,13 @@
+## 1.0.39 - 2026-04-28
+
+- Allow ACP clients to toggle allow-all permission mode via session configuration
+- Add /compact, /context, /usage, and /env slash commands for ACP sessions
+- Press ctrl+x → b to move the current running task or shell command to the background
+- Transient pipe errors on child process stdio streams no longer cause crashes or trigger false crash reports
+- `/remote` status output now shows actionable hints for each connection state
+- Improve --resume session picker with better tab layout, status display, and progressive loading
+- Slash command argument picker opens immediately at exact command boundaries without requiring a trailing space
+
 ## 1.0.37 - 2026-04-27
 
 - Location-based permission persistence is now enabled by default, so approvals carry over across sessions for the same directory
