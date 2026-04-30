@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-29T06:55:11.142Z",
+  "lastCheckedAt": "2026-04-30T18:34:25.249Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -54,6 +54,7 @@
     "open-source-codex-orchestration-symphony",
     "next-phase-of-microsoft-partnership",
     "openai-on-aws",
-    "our-commitment-to-community-safety"
+    "our-commitment-to-community-safety",
+    "advanced-account-security"
   ]
 }
