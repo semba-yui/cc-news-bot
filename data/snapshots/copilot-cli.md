@@ -1,3 +1,38 @@
+## 1.0.40 - 2026-05-01
+
+- PR branch decoration displays correctly in the footer regardless of model name length
+- /clear and /new reset the active custom agent selection
+- Assistant responses stream with smoother text output
+- `copilot plugin list` shows the correct version after running `copilot plugin update`
+- Add support for `client_credentials` OAuth grant type for MCP servers, enabling fully headless authentication without a browser
+- Subagents correctly evaluate tool search support for their own model instead of inheriting the parent session's settings
+- Switching sessions with /new or /resume no longer carries over pending messages to the new session
+- CLI no longer hangs at 100% CPU when sending a large file attachment
+- Resume session picker no longer shows duplicate entries for the same Mission Control-backed session
+- Session resume selector displays summaries on a single line, truncated to fit the column width
+- Print "Exiting…" to stderr immediately on Ctrl+C during prompt mode so shutdown progress is visible
+- /research uses an orchestrator/subagent model for more thorough and reliable deep research results
+- Autopilot mode now limits continuation messages to 5 by default (configurable with --max-autopilot-continues)
+- Automatically clean up old CLI package versions from disk during auto-update
+- Remote session statusline shows the remote working directory and branch instead of local context
+- /update no longer re-submits the original -i prompt after restarting
+- Detect Azure DevOps repositories and auto-disable the GitHub MCP server
+- Session history, file tracking, and the /chronicle command are now available to all users
+- Skills are available as slash commands in ACP clients, matching the CLI experience
+- Resuming a session no longer falsely reports it as in use after a previous CLI process exited unexpectedly
+- --config-dir now propagates correctly to plugin subcommands; --config-dir is deprecated in favor of COPILOT_HOME
+- Mouse selection works while the /ask response dialog is open, so its content can be highlighted and copied
+- Improve CLI startup speed by loading custom CA certificates asynchronously
+- Remote control link shows the full URL in the timeline instead of 'Open in browser'
+- ACP clients (e.g. Zed) now display the agent's live plan as it works through multi-step tasks
+- Add toggle for custom statusLine.command visibility in the statusline picker
+- ACP clients can now list and switch custom agents via the agent config option
+- MCP OAuth tokens cache correctly when multiple servers share the same URL but use different static OAuth client IDs
+- MCP tool names with dots or other invalid characters are now sanitized correctly
+- Ctrl+C and double-Esc remove pending queued messages one at a time instead of all at once
+- Slash command suggestions rank prefix matches above fuzzy matches
+- Prompt mode (-p) now gates repo hooks and workspace MCP behind opt-in env vars (GITHUB_COPILOT_PROMPT_MODE_REPO_HOOKS and GITHUB_COPILOT_PROMPT_MODE_WORKSPACE_MCP) for secure-by-default behavior
+
 ## 1.0.39 - 2026-04-28
 
 - Allow ACP clients to toggle allow-all permission mode via session configuration
@@ -1658,7 +1693,7 @@ To commemorate GitHub Copilot CLI reaching general availability last week, we're
 
 ## 0.0.332 - 2025-10-01
 
-- Switched to using per-subscription Copilot API endpoints in accordance with [GitHub's docs](https://docs.github.com/en/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-access/manage-network-access) (fixes https://github.com/github/copilot-cli/issues/76)
+- Switched to using per-subscription Copilot API endpoints in accordance with [GitHub's docs](https://docs.github.com/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-access/manage-network-access) (fixes https://github.com/github/copilot-cli/issues/76)
 - Fixed a bug where `/user [list | show | switch]` did not include users signed in from all authentication modes (fixes https://github.com/github/copilot-cli/issues/58)
 - Fixed a bug where switching to another user with `/user switch` did not take effect in the GitHub MCP server
 - Improved the screenreader experience by disabling the scrollbar in the `@` file picker, the `--resume` session picker, and the `/` command picker
