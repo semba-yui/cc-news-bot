@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-05T00:41:39.272Z",
+  "lastCheckedAt": "2026-05-05T18:35:30.483Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -56,6 +56,9 @@
     "openai-on-aws",
     "our-commitment-to-community-safety",
     "advanced-account-security",
-    "delivering-low-latency-voice-ai-at-scale"
+    "delivering-low-latency-voice-ai-at-scale",
+    "new-ways-to-buy-chatgpt-ads",
+    "gpt-5-5-instant",
+    "gpt-5-5-instant-system-card"
   ]
 }
