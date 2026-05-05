@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-04-30T18:34:25.249Z",
+  "lastCheckedAt": "2026-05-05T00:41:39.272Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -55,6 +55,7 @@
     "next-phase-of-microsoft-partnership",
     "openai-on-aws",
     "our-commitment-to-community-safety",
-    "advanced-account-security"
+    "advanced-account-security",
+    "delivering-low-latency-voice-ai-at-scale"
   ]
 }
