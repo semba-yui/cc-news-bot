@@ -1,3 +1,16 @@
+## 1.0.42 - 2026-05-06
+
+- MCP server failure warning now suggests a directly runnable `/mcp show` command when the server name contains whitespace
+- MCP server failure warnings include stderr output to help diagnose connection errors
+- Add -C <directory> flag to change working directory before starting, similar to git -C
+- Exit message resume command shows session ID instead of auto-generated name when session has not been renamed
+- Remote session export now supports non-GitHub repositories and repo-less directories
+- Resuming a session no longer shows a false "session in use" warning after choosing "Go back"
+- Enter key no longer gets permanently stuck after cancelling a request
+- Suppress the exit summary when the session has no user messages and no saved session to resume
+- CLI updates on Windows no longer fail with ENOENT when a transient EPERM occurs during package extraction
+- Add rubber-duck agent for GPT sessions, powered by Claude (available in /experimental)
+
 ## 1.0.41 - 2026-05-05
 
 - CLI starts faster by rendering the UI immediately while authentication resolves in the background
