@@ -1,3 +1,12 @@
+## 1.0.43 - 2026-05-06
+
+- Add username toggle to /statusline picker to display the active account in the footer
+- Auto mode uses server-side model routing for improved real-time model selection
+- Resume prompt shows correct session name when multiple sessions are active
+- Protect against RCE from malicious bare repositories nested inside a project
+- MCP server child processes (e.g. started via npx or uvx) are now fully terminated when a session ends
+- Show download progress when running the update command
+
 ## 1.0.42 - 2026-05-06
 
 - MCP server failure warning now suggests a directly runnable `/mcp show` command when the server name contains whitespace
