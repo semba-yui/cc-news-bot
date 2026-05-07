@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-06T18:38:39.258Z",
+  "lastCheckedAt": "2026-05-07T18:38:55.259Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -62,6 +62,8 @@
     "gpt-5-5-instant-system-card",
     "mrc-supercomputer-networking",
     "introducing-b2b-signals",
-    "introducing-chatgpt-futures-class-of-2026"
+    "introducing-chatgpt-futures-class-of-2026",
+    "introducing-trusted-contact-in-chatgpt",
+    "advancing-voice-intelligence-with-new-models-in-the-api"
   ]
 }
