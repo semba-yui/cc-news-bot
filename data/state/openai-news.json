@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-08T00:45:05.927Z",
+  "lastCheckedAt": "2026-05-09T00:44:58.539Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -66,6 +66,7 @@
     "introducing-trusted-contact-in-chatgpt",
     "advancing-voice-intelligence-with-new-models-in-the-api",
     "testing-ads-in-chatgpt",
-    "gpt-5-5-with-trusted-access-for-cyber"
+    "gpt-5-5-with-trusted-access-for-cyber",
+    "running-codex-safely"
   ]
 }
