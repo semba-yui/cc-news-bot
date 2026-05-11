@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-09T00:44:58.539Z",
+  "lastCheckedAt": "2026-05-11T07:18:50.966Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -67,6 +67,7 @@
     "advancing-voice-intelligence-with-new-models-in-the-api",
     "testing-ads-in-chatgpt",
     "gpt-5-5-with-trusted-access-for-cyber",
-    "running-codex-safely"
+    "running-codex-safely",
+    "openai-campus-network-student-club-interest-form"
   ]
 }
