@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-14T00:49:19.253Z",
+  "lastCheckedAt": "2026-05-14T07:06:18.421Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -71,6 +71,7 @@
     "openai-campus-network-student-club-interest-form",
     "openai-launches-the-deployment-company",
     "what-parameter-golf-taught-us",
-    "building-codex-windows-sandbox"
+    "building-codex-windows-sandbox",
+    "our-response-to-the-tanstack-npm-supply-chain-attack"
   ]
 }
