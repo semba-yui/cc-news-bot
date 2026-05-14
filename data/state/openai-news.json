@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-13T00:47:38.948Z",
+  "lastCheckedAt": "2026-05-14T00:49:19.253Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -70,6 +70,7 @@
     "running-codex-safely",
     "openai-campus-network-student-club-interest-form",
     "openai-launches-the-deployment-company",
-    "what-parameter-golf-taught-us"
+    "what-parameter-golf-taught-us",
+    "building-codex-windows-sandbox"
   ]
 }
