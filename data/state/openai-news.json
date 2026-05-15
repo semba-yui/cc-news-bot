@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-14T18:41:47.989Z",
+  "lastCheckedAt": "2026-05-15T00:46:44.570Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -73,6 +73,7 @@
     "what-parameter-golf-taught-us",
     "building-codex-windows-sandbox",
     "our-response-to-the-tanstack-npm-supply-chain-attack",
-    "chatgpt-recognize-context-in-sensitive-conversations"
+    "chatgpt-recognize-context-in-sensitive-conversations",
+    "work-with-codex-from-anywhere"
   ]
 }
