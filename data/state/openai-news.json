@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-18T18:40:46.163Z",
+  "lastCheckedAt": "2026-05-19T18:41:33.564Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -76,6 +76,7 @@
     "chatgpt-recognize-context-in-sensitive-conversations",
     "work-with-codex-from-anywhere",
     "personal-finance-chatgpt",
-    "dell-codex-enterprise-partnership"
+    "dell-codex-enterprise-partnership",
+    "advancing-content-provenance"
   ]
 }
