@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-05-21T00:52:00.916Z",
+  "lastCheckedAt": "2026-05-22T18:40:14.343Z",
   "knownSlugs": [
     "codex-security-now-in-research-preview",
     "reasoning-models-chain-of-thought-controllability",
@@ -78,6 +78,7 @@
     "personal-finance-chatgpt",
     "dell-codex-enterprise-partnership",
     "advancing-content-provenance",
-    "model-disproves-discrete-geometry-conjecture"
+    "model-disproves-discrete-geometry-conjecture",
+    "gartner-2026-agentic-coding-leader"
   ]
 }
