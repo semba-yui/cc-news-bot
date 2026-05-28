@@ -1,95 +1,118 @@
-## rust-v0.134.0 (2026-05-26T19:13:26Z)
+## rust-v0.135.0 (2026-05-28T17:31:35Z)
 ## New Features
-- Added search across local conversation history, including case-insensitive content matches with result previews. (#23519, #23921)
-- Made `--profile` the primary profile selector across CLI, TUI permissions, and sandbox flows, with legacy profile configs rejected through migration guidance. (#23708, #23883, #23890, #24051, #24055, #24059, #24067, #24110)
-- Improved MCP setup with per-server environment targeting and OAuth options for streamable HTTP servers. (#23583, #24120)
-- Made connector tool schemas more reliable by preserving local `$ref`/`$defs` structures and compacting oversized schemas before exposure. (#23357, #23904)
-- Let read-only MCP tools run concurrently when they advertise `readOnlyHint`. (#23750)
-- Added richer extension and hook context, including conversation history for extension tools and subagent identity in hook inputs. (#22882, #23963)
+- `codex doctor` now reports richer environment, Git, terminal, app-server, and thread inventory diagnostics for support cases. (#24261, #24311, #24305)
+- `/status` shows remote connection details and server version when the TUI is connected over a remote transport. (#24420)
+- Vim mode gained text-object editing, improved word/line-end behavior, and a configurable interrupt-turn binding. (#24382, #24380, #24766)
+- `/permissions` now understands named permission profiles and displays configured custom profiles. (#21559)
+- Packaged Codex builds can discover and use the bundled patched zsh helper across supported macOS and Linux targets. (#23756, #24171)
+- The Python SDK now exposes friendly `Sandbox` presets for thread and turn APIs. (#24772)
 
 ## Bug Fixes
-- Improved remote reliability by reconnecting stale exec-server websocket clients, retrying remote control immediately after auth recovery, and retrying remote compaction v2 streams. (#23867, #23775, #23951)
-- Fixed Windows TUI rendering corruption by restoring virtual terminal mode before drawing. (#24082)
-- Displayed workspace-specific usage-limit messages for credit and spend-cap failures. (#24114)
-- Allowed plugin skills to reuse shared plugin-level icon assets. (#23776)
-- Preserved active permission profile metadata when syncing auto-review runtime settings. (#23956)
-- Ensured Node-based tools honor Codex’s managed network proxy environment. (#23905)
+- Markdown tables and multiline lists render more readably in the TUI, with better column sizing and app-style table formatting. (#24489, #24346, #24351)
+- TUI output is more stable on macOS and Zellij, avoiding stderr/composer corruption and raw-output overlap. (#24459, #24479, #24593)
+- Slash-command completion now preserves existing draft text for commands that accept inline arguments. (#23950)
+- Older tmux/iTerm control-mode sessions no longer lose normal `Ctrl-C` handling from unsupported keyboard enhancement setup. (#24371)
+- App mentions now exclude inaccessible or disabled apps instead of offering unusable `$` suggestions. (#24625)
+- Resume flows now include non-interactive exec sessions when requested and honor cwd overrides for idle cached threads. (#24503, #24528)
 
 ## Documentation
-- Documented the curl and PowerShell installer paths in the README. (#24106)
-- Updated developer docs to prefer `just test` over direct `cargo test` for repo-local test runs. (#23910)
-- Added profile migration documentation links to relevant config errors. (#23879)
+- Clarified image-viewing tool detail behavior and removed stale TUI composer documentation references. (#23949, #24641)
+- Updated Python SDK docs, examples, and notebook content to use the new sandbox preset API. (#24772)
 
 ## Chores
-- Simplified release packaging around canonical native artifacts, reusable DotSlash fetching, and a new macOS x64 zsh artifact. (#23833, #23836, #24129, #24165)
-- Added release-build support for Codex-produced V8 artifacts. (#23934)
-- Added image re-encoding benchmarks and connector-style JSON schema policy fixtures. (#23935, #24152)
-- Improved tracing and analytics for websocket requests, turn starts, and remote compaction v2. (#23581, #23980, #24146)
+- Updated Rust toolchain pins and SQLx/SQLite dependencies. (#24684, #24728)
+- Moved memory runtime state into a dedicated SQLite database. (#24591)
+- Removed remaining legacy config-profile consumers and routed more TUI config/plugin state through app-server-owned APIs. (#24076, #24254, #24255, #24265, #24266, #24257)
+- Centralized Responses retry handling and MCP tool naming logic to reduce duplicated internal plumbing. (#24131, #21576)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.133.0...rust-v0.134.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.134.0...rust-v0.135.0
 
-- #23581 Trace logical websocket request after untraced warmup @jif-oai
-- #23718 [codex] Steer budget-limited goal extension turns @jif-oai
-- #23861 fix: cargo lock @jif-oai
-- #23728 feat: retain remote compaction truncation parity in v2 @jif-oai
-- #23870 Make tool executor specs mandatory @jif-oai
-- #23882 [codex] Stabilize subagent start hook test @jif-oai
-- #23876 refactor: centralize tool exposure planning @jif-oai
-- #23879 chore: link doc in profile error messages @jif-oai
-- #23883 cli: rename profile v2 flag to --profile @jif-oai
-- #23835 docs: add description to codex-cli/package.json @bolinfest
-- #23583 Route MCP servers through explicit environments @starr-openai
-- #23886 cli: remove legacy profile v1 plumbing @jif-oai
-- #23708 tui: plumb permission profile selection @viyatb-oai
-- #23833 packaging: move rg manifest out of npm bin @bolinfest
-- #23796 Improve `/goal` error messages for ephemeral sessions @etraut-openai
-- #23867 Reconnect disconnected exec-server websocket clients with fresh sessions @starr-openai
-- #23792 TUI: skip goal replace prompt for completed goals @etraut-openai
-- #23519 [codex] Add rollout-backed thread content search @fc-oai
-- #22552 Remove plugin hooks feature flag @abhinav-oai
-- #23836 npm: remove legacy package artifact synthesis @bolinfest
-- #23921 [codex] Make thread search case-insensitive @fc-oai
-- #23775 fix(remote-control): retry after auth recovery @apanasenko-oai
-- #22882 Add subagent identity to hook inputs @abhinav-oai
-- #22915 [3 of 4] tui: route feature and memory toggles through app server @etraut-openai
-- #23776 fix: Allow plugin skills to share plugin-level icon assets @xl-openai
-- #23860 Add Bedrock Mantle GovCloud region @CHARLESPALEN-OAI
-- #23956 Fix auto-review permission profile override @etraut-openai
-- #23357 feat: support local refs and defs in tool input schemas @celia-oai
-- #23963 Expose conversation history to extension tools @sayan-oai
-- #23904 feat: best-effort compact large tool schemas @celia-oai
-- #23750 Allow parallel MCP tool calls when annotated readOnly @anp-oai
-- #23905 [codex] Enable Node env proxy for managed network proxy @rreichel3-oai
-- #23890 mcp: surface profile migration guidance under --profile @jif-oai
-- #24051 config: remove legacy profile v1 resolution @jif-oai
-- #24055 config: remove legacy profile write paths @jif-oai
-- #24057 Avoid config snapshots in live agent subtree traversal @jif-oai
-- #24061 otel: drop legacy profile usage telemetry @jif-oai
-- #24059 fix: reject legacy profile selectors @jif-oai
-- #23934 ci: Use codex produced v8 artifacts for release builds @cconger
-- #24099 fix(app-server): fix optional bool annotations @owenlin0
-- #23910 Prefer `just test` over `cargo test` in docs @anp-oai
-- #23951 retry remote compaction v2 requests @rhan-oai
-- #24081 tui: make `codex-tui.log` opt-in @jif-oai
-- #24102 cli: infer host sandbox backend @bolinfest
-- #24067 app-server: drop legacy profile config surface @jif-oai
-- #23736 Add new enterprise requirement gate @adams-oai
-- #24117 [codex] Use rolling files for Windows sandbox logs @iceweasel-oai
-- #24106 docs: update README.md to mention curl-based installer @bolinfest
-- #24082 fix(tui): restore Windows VT before TUI renders @fcoury-oai
-- #24110 cli: support --profile for codex sandbox @bolinfest
-- #23980 Add trace_id to TurnStartedEvent @mchen-oai
-- #24120 Support OAuth options in codex mcp add @mzeng-openai
-- #23989 Add typed Images client to codex-api @won-openai
-- #24146 [codex-analytics] split compaction v2 analytics implementation @rhan-oai
-- #24129 package: factor DotSlash executable fetching @bolinfest
-- #24151 [codex] Use TurnInput for session task input @pakrym-oai
-- #23935 [codex] Add image re-encoding benchmarks @anp-oai
-- #24152 chore: add JSON schema policy fixture coverage @celia-oai
-- #24157 [codex] Remove external client session reset plumbing @pakrym-oai
-- #24114 Display workspace usage limit error copy from response header @dhruvgupta-oai
-- #24165 release: build macOS x64 zsh artifact @bolinfest
+- #24164 fix(remote-control): cap reconnect backoff @apanasenko-oai
+- #23756 package: include zsh fork in Codex package @bolinfest
+- #23757 Default function tools into tool hooks @abhinav-oai
+- #24171 package: add x64 macOS codex-zsh artifact @bolinfest
+- #24159 code-mode: merge stored values by key @cconger
+- #23983 fix: plugin bundle archive handling for upload and install @xl-openai
+- #24261 feat(doctor): add environment diagnostics @fcoury-oai
+- #24311 Report app-server version in codex doctor @etraut-openai
+- #24314 tui: label compact rate-limit percentages @etraut-openai
+- #24420 Show remote connection details in /status @etraut-openai
+- #24317 Respect hook trust bypass during TUI startup @etraut-openai
+- #24254 TUI config cleanup: oss_provider @etraut-openai
+- #24255 TUI config cleanup: trusted projects @etraut-openai
+- #24265 TUI config cleanup: MCP inventory @etraut-openai
+- #24305 Add doctor thread inventory audit @etraut-openai
+- #24346 fix(tui): improve markdown table column allocation @fcoury-oai
+- #24351 fix(tui): improve multiline markdown list readability @fcoury-oai
+- #24459 fix(tui): prevent macos stderr from corrupting composer @fcoury-oai
+- #24479 fix(process-hardening): preserve macos malloc diagnostics @fcoury-oai
+- #24474 Log rollout writer OS errors @etraut-openai
+- #24076 chore: stop consuming legacy config profiles @jif-oai
+- #24131 centralize Responses retry policy @rhan-oai
+- #23858 [wip] goal shift @jif-oai
+- #24555 chore: drop orphaned codex memories MCP crate @jif-oai
+- #24558 chore: move memory prompt builder into extension @jif-oai
+- #24562 Add ad-hoc memory note tool @jif-oai
+- #24567 Wire metrics client into memories extension @jif-oai
+- #24588 fix: drop flake @jif-oai
+- #24583 Add memory tool call metrics to memories extension @jif-oai
+- #24586 Wire app-server extension event sink @jif-oai
+- #24532 Use thread config for TUI MCP inventory @etraut-openai
+- #24105 [codex] Make active turn task singular @pakrym-oai
+- #21576 Move MCP tool naming mode into manager @pakrym-oai
+- #24503 tui: include exec sessions in resume list @etraut-openai
+- #24600 feat: gate dedicated memories tools in config @jif-oai
+- #21559 tui: add named permission profile picker @viyatb-oai
+- #24608 feat: add manual and remote_v2 tags to compaction metric @jif-oai
+- #24611 test: clean up apply_patch allow-session artifact @jif-oai
+- #24609 Remove reserved namespaces dedup @pakrym-oai
+- #23964 Move slash input logic out of chat composer @canvrno-oai
+- #24615 Add goal extension telemetry parity @jif-oai
+- #24371 fix(tui): avoid modifyOtherKeys for unknown tmux formats @fcoury-oai
+- #24626 fix: restore goal accounting after thread resume @jif-oai
+- #24591 Move memory state to a dedicated SQLite DB @jif-oai
+- #23823 standalone websearch extension @sayan-oai
+- #24593 fix(tui): keep raw output above composer in zellij @fcoury-oai
+- #24625 tui: keep inaccessible apps out of mentions @canvrno-oai
+- #24154 Add experimental turn additional context @pakrym-oai
+- #24473 fix(remote-control): surface websocket task stalls @apanasenko-oai
+- #24528 Respect resume cwd overrides for idle cached threads @etraut-openai
+- #24160 Add forked_from_thread_id turn metadata @owenlin0
+- #24646 make direct only allowed caller for standalone websearch @sayan-oai
+- #23949 Clarify view_image tool description @fjord-oai
+- #24266 TUI config cleanup: plugin mentions @etraut-openai
+- #24320 Avoid repeated marketplace upgrades for alternate layouts @etraut-openai
+- #23813 windows-sandbox: remove SandboxPolicy runner plumbing @bolinfest
+- #24652 [codex] remove plain image wrapper spans @pakrym-oai
+- #24623 Attach Windows sandbox log to feedback reports @iceweasel-oai
+- #24644 Restore legacy image detail values @rhan-oai
+- #24655 [codex-analytics] add grouped session id to runtime events @marksteinbrick-oai
+- #24658 [codex] Remove obsolete goal continuation turn marker @pakrym-oai
+- #24660 fix: dont compact standalone websearch schema @sayan-oai
+- #24667 fix(core): instrument stalled tool-listing handoff @apanasenko-oai
+- #24684 Uprev Rust toolchain pins to 1.95.0 @anp-oai
+- #21567 fix: add noninteractive install script mode @efrazer-oai
+- #24707 Allow runtime enablement for remote plugins @xl-openai
+- #24714 fix(auto-review) skip legacy notify for auto review threads @dylan-hurd-oai
+- #24690 Revert "Add Bedrock Mantle GovCloud region (#23860)" @celia-oai
+- #24628 feat: handle goal usage limits in goal extension @jif-oai
+- #24746 Fix guardian review test user input @jif-oai
+- #24744 feat: add thread idle lifecycle hook @jif-oai
+- #24751 Drop startup context when truncating forked rollouts @jif-oai
+- #24257 TUI config cleanup: plugin marketplace @etraut-openai
+- #24380 fix(tui): complete vim word-end and line-end behavior @fcoury-oai
+- #24728 Bump SQLx to pick up newer bundled SQLite @jif-oai
+- #24637 fix: run standalone updates noninteractively @efrazer-oai
+- #24778 make vercel webhook url an env secret @sayan-oai
+- #23950 fix: Preserve draft text when completing argument-taking slash commands @canvrno-oai
+- #24641 [codex] Remove stale composer narrative doc references @canvrno-oai
+- #24368 [codex] add compaction metadata to turn headers @ningyi-oai
+- #24772 [codex] Add friendly Python SDK sandbox presets @aibrahim-oai
+- #24382 feat(tui): add vim text object bindings @fcoury-oai
+- #24766 feat(tui): make turn interruption keybind configurable @fcoury-oai
+- #24489 feat(tui): render markdown tables in app style [1 of 2] @fcoury-oai
+- #24713 chore: enable namespace tools for Bedrock @celia-oai
 
 
