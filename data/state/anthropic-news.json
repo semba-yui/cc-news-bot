@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-06-02T13:13:57.962Z",
+  "lastCheckedAt": "2026-06-03T13:35:08.096Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -43,6 +43,8 @@
     "series-h",
     "claude-opus-4-8",
     "confidential-draft-s1-sec",
-    "expanding-project-glasswing"
+    "expanding-project-glasswing",
+    "AI-enabled-cyber-threats-mitre-attack",
+    "services-track-partner-hub"
   ]
 }
