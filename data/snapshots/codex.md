@@ -1,148 +1,151 @@
-## rust-v0.136.0 (2026-06-01T17:49:22Z)
+## rust-v0.137.0 (2026-06-04T01:17:20Z)
 ## New Features
-
-- TUI markdown now keeps web links clickable with OSC 8 metadata, and cramped tables switch to readable key/value records without losing link targets. (#24472, #24636, #24825)
-- Sessions can now be archived from the TUI with `/archive` or from the CLI with `codex archive` / `codex unarchive`; archived sessions are protected from resume/fork until restored. (#25027, #25021)
-- App-server integrations can resume a thread with its initial turns page, see richer MCP server status, and launch stdio mode with `codex app-server --stdio`. (#23534, #24698, #24940)
-- Remote execution setup now supports `CODEX_API_KEY` registration for approved OpenAI hosts, while remote-control websockets use short-lived server tokens instead of ChatGPT access tokens. (#24666, #24141)
-- Windows admins get an alpha `codex sandbox setup --elevated` provisioning path, plus requirements support for allowed Windows sandbox implementations. (#24831, #23766)
-- A feature-gated standalone image generation extension can run through the native Codex image artifact completion pipeline. (#24723, #24972)
+- TUI controls now support F13-F24 keybindings, paste in searchable menus, and a compact reasoning-only status/title item (#25329, #25400, #25504).
+- Enterprise/admin flows now show monthly credit limits and can apply cloud-managed config bundles, including EDU workspaces (#24812, #24617, #24619, #24620, #24622, #25963).
+- Remote-control clients can start pairing and list or revoke controller grants through app-server v2 RPCs (#25675, #25785).
+- Plugin workflows gained machine-readable `codex plugin list --json` output and cached remote catalog suggestions (#25330, #25457).
+- Hosted web and image tools are available in more code-mode flows, with standalone web searches able to run in parallel (#25176, #25702, #25890, #25923).
+- Multi-agent v2 keeps runtime choice with each thread and exposes cleaner follow-up and metadata defaults for spawned agents (#25266, #25636, #25720, #25721, #25722, #25841, #26114).
 
 ## Bug Fixes
-
-- ChatGPT auth refreshes tokens before the five-minute expiry window and shows a relogin-required path for reused refresh tokens instead of collapsing into a generic cloud error. (#23546, #24830)
-- Command-safety hardening prevents `/diff` from running repository-provided Git helpers/hooks, avoids PowerShell parser execution on non-Windows hosts, and rejects browser-origin exec-server websocket handshakes. (#24954, #24946, #24947)
-- Sandboxed commands clean up more reliably after interruptions or denied Windows network attempts, and `deny` read rules stay enforced for safe-command and approval-bypass paths. (#22729, #19880, #23943)
-- Resumed TUI sessions seed prompt history from the session transcript, multiline hook output renders as separate rows, and Vim normal-mode editing behaves correctly. (#24298, #24965, #25022)
-- App-server filesystem watchers debounce later batches correctly, and standalone web search calls now show and restore completed search activity. (#24716, #24693)
-- Bedrock auth now falls back to `AWS_REGION` / `AWS_DEFAULT_REGION`, and unsupported Bedrock GPT service tiers are no longer advertised or sent. (#25171, #25318)
+- Cancelling a submitted prompt before visible output now restores the draft, attachments, and collaboration mode for editing (#25316).
+- Slash-command filtering and footer shortcut hints now reset or render according to the current UI state (#25492, #25625).
+- Platform reliability improved for macOS app launches and Windows SQLite startup, thread resume, and sandbox setup refreshes (#25485, #25490, #25509, #25949).
+- Plugin loading preserves app manifest order, deduplicates local/remote curated installs, and treats malformed `skills` fields as warnings (#25491, #25681, #25717, #25782).
+- Permission requests and approvals now carry environment identity, and managed MITM proxying exports readable CA bundles to child commands (#25850, #25858, #25862, #22668).
+- Local session history is safer for compressed rollouts, renamed titles, pathless side-chat reloads, and stack-heavy startup/config rebuilds (#25087, #25624, #25661, #25814, #25844, #25847).
 
 ## Documentation
-
-- Python SDK beta docs and package metadata now present the standard `pip install openai-codex` path, refreshed quickstarts, API reference, FAQ, and examples. (#24836, #24866, #24868, #24870)
-- Python SDK examples and docs now use the public `CodexConfig` name for configuring `Codex` / `AsyncCodex`. (#24800)
-- The bundled OpenAI Docs skill was updated with current Codex manual routing and a cached manual fetch helper. (#24914)
-- Built-in tool schema descriptions now clarify defaults, optional fields, bounds, and enums across shell, Code Mode, MCP, image, goal, plan, multi-agent, and related tools. (#24794)
-- App-server and exec-server docs now cover API-key remote registration, `--stdio`, runtime extra skill roots, and remote-control server-token behavior. (#24666, #24940, #24977, #24141)
+- Added app-server docs and generated schema updates for monthly credit limits, remote-control RPCs, and environment-scoped permission approvals (#24812, #25675, #25785, #25862).
+- Moved repo review rules and contributor conventions into `AGENTS.md`, including Rust test-module layout and Python 3 compatibility guidance (#25682, #25690, #25738).
 
 ## Chores
-
-- Python SDK releases can now be staged and published independently from runtime releases using `python-v*` tags while preserving the reviewed runtime dependency pin. (#24828, #24872)
-- Updated MCP dependencies to `rmcp` 1.7.0 and refreshed compatibility code. (#24763)
-- Refreshed Amazon Bedrock catalog metadata, including GPT-5.5, removal of unsupported OSS entries, and default-tier-only GPT model behavior. (#24701, #24960, #25318)
-- Removed the stale app-server debug-client pieces and cleaned up the workspace after deletion. (#25063, #25064, #25065, #25066, #25067, #25068, #25069, #25070, #25075)
-- Trimmed CI/build maintenance by moving Bazel Windows jobs to Codex runners, removing the libubsan workaround, and reverting the startup benchmark that broke musl builders. (#24952, #24782, #24937)
+- Root formatting and Justfile workflows are more complete and Windows-aware (#24983, #25165, #25683).
+- Rust CI and release workflows use the git CLI for Cargo fetches to avoid intermittent libgit2/submodule failures (#25644, #25775).
+- Python SDK releases now publish runtime wheels from the SDK workflow and pin to a glibc-compatible runtime package (#25906, #25907).
+- Bazel CI’s BuildBuddy wrapper was reintroduced with Windows-safe process handling and validation (#25915).
+- Shared prompts, context fragments, and skills plumbing moved into dedicated crates/extension paths to reduce `codex-core` coupling (#25151, #25953, #25959, #26106, #26122, #26167).
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.135.0...rust-v0.136.0
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.136.0...rust-v0.137.0
 
-- #22729 fix(linux-sandbox): preserve shell cleanup on interruption @viyatb-oai
-- #24472 feat(tui): add OSC 8 web links to rich content @fcoury-oai
-- #24636 feat(tui): render cramped markdown tables as key-value records [2 of 2] @fcoury-oai
-- #24666 Allow API-key auth for remote exec-server registration @sdcoffey
-- #24763 Update rmcp to 1.7.0 @anp-oai
-- #24825 [codex] Fix hyperlink-aware key-value table rendering @sayan-oai
-- #24800 [codex] Rename Python SDK AppServerConfig to CodexConfig @aibrahim-oai
-- #24819 [codex] Remove redundant SQLite dynamic tool storage @sayan-oai
-- #24828 [codex] Add independent beta release for the Python SDK @aibrahim-oai
-- #24836 [codex] Prepare Python SDK beta documentation and package metadata @aibrahim-oai
-- #24830 Treat refresh_token_reused 400s as relogin-required @alexsong-oai
-- #24866 [codex] Simplify Python SDK install guidance @aibrahim-oai
-- #24868 [codex] Remove Python SDK language classifiers @aibrahim-oai
-- #24870 [codex] Remove Python SDK beta warning note @aibrahim-oai
-- #24872 [codex] Stage Python SDK beta versions from release tags @aibrahim-oai
-- #24758 Move memories root setup out of core config @jif-oai
-- #24891 Stabilize Guardian client cache key handling @jif-oai
-- #24892 Export Guardian prompt cache key helper @jif-oai
-- #24893 Add Guardian review prompt cache key @jif-oai
-- #24894 Assert Guardian prompt cache key reuse @jif-oai
-- #24895 Thread Guardian cache key through session @jif-oai
-- #24803 Use stable Guardian prompt cache keys @jif-oai
-- #24902 [codex] Fix Guardian argument comment lint @jif-oai
-- #24898 Fix memories namespace for Responses API tools @jif-oai
-- #24897 Add Guardian review metrics @jif-oai
-- #23546 [codex-cli] Refresh near-expiry ChatGPT access tokens before requests @cooper-oai
-- #24915 Add thread start contributor facts @jif-oai
-- #24916 Add turn error lifecycle contributor @jif-oai
-- #24865 [codex] Store pending response items directly @pakrym-oai
-- #24914 [codex] Update OpenAI Docs skill @vb-openai
-- #24651 Add app-server startup benchmark crate @anp-oai
-- #24925 Gate goal tools by thread eligibility @jif-oai
-- #24782 Remove libubsan CI workaround @anp-oai
-- #24813 extension-api: add TurnItemEmitter to tool calls @sayan-oai
-- #23534 feat(app-server): include turns page on thread resume @btraut-openai
-- #24698 Expose MCP server info as part of server status @gpeal
-- #24903 Reap stale multi-agent slots @jif-oai
-- #24936 Fix extension turn item emitter test event ordering @bolinfest
-- #24700 [codex] Support ui visibility meta for tools @gpeal
-- #24701 chore: add GPT-5.5 to the Amazon Bedrock catalog @celia-oai
-- #23363 TUI: Unified mentions tweaks + polish mentions rendering @canvrno-oai
-- #24937 Revert "Add app-server startup benchmark crate" @anp-oai
-- #24928 Wire task completion into thread-idle lifecycle @jif-oai
-- #24723 Add feature-gated standalone image generation extension @won-openai
-- #24952 Move Bazel Windows jobs onto codex-runners @anp-oai
-- #24940 Add `codex app-server --stdio` alias @anp-oai
-- #24954 fix(tui): prevent repository-configured code execution in /diff @fcoury-oai
-- #24949 [codex] Handle PowerShell UTF-8 setup failures @iceweasel-oai
-- #24960 [codex] Remove Bedrock OSS models from catalog @celia-oai
-- #23768 runtime: prepend zsh fork bin dir to PATH @bolinfest
-- #19880 fix: cancel Windows sandbox on network denial @viyatb-oai
-- #24947 fix(exec-server): reject websocket requests with Origin headers @viyatb-oai
-- #24653 [codex] Add user input client ids @alexi-openai
-- #23924 Surface filesystem permission profiles in prompt context @bolinfest
-- #24108 windows-sandbox: pass workspace roots to runner @bolinfest
-- #24974 windows-sandbox: fix capture cancellation test roots @bolinfest
-- #24962 Tighten hook output event schemas @abhinav-oai
-- #24141 feat(app-server): migrate remote control to server tokens @apanasenko-oai
-- #24970 fix(config): use deny for Unix socket permissions @viyatb-oai
-- #24946 [codex] Avoid PowerShell safety parsing off Windows @adrian-openai
-- #24977 Add runtime extra skill roots API @xl-openai
-- #24298 Seed prompt history from resumed messages @etraut-openai
-- #23943 fix: preserve deny-read sandboxing for safe commands @bolinfest
-- #24716 Fix fs/watch debounce batching @etraut-openai
-- #24918 Use internal model context fragments for goal steering @jif-oai
-- #24924 Use inject_if_running for active goal steering @jif-oai
-- #25063 Drop the stale debug-client manifest @jif-oai
-- #25064 Remove the generated debug-client README @jif-oai
-- #25065 Delete debug-client app-server process plumbing @jif-oai
-- #25066 Retire debug-client interactive command parsing @jif-oai
-- #25067 Remove the debug-client CLI entrypoint @jif-oai
-- #25068 Delete debug-client JSONL output helper @jif-oai
-- #25069 Remove debug-client server event reader @jif-oai
-- #25070 Drop debug-client prompt state tracking @jif-oai
-- #25075 fix: main @jif-oai
-- #24794 [codex] Improve built-in tool schema docs @jif-oai
-- #25095 Handle goal usage limits from turn errors @jif-oai
-- #25106 Remove stale rollout TODO tests @jif-oai
-- #24965 Render multiline hook output in TUI @abhinav-oai
-- #25031 [codex] Add model tool mode selector @aibrahim-oai
-- #24693 Show activity for standalone web search calls @sayan-oai
-- #25110 Move config document helpers into their own module @jif-oai
-- #25013 feat: Add focused diagnostics for MCP HTTP send failures @xl-openai
-- #24964 [codex] Wait for MCP readiness in core integration tests @anp-oai
-- #24972 Route extension image generation through the native image completion pipeline @won-openai
-- #24831 Add Windows sandbox provisioning setup command @iceweasel-oai
-- #25017 Align TUI permissions labels with app @etraut-openai
-- #25027 Add `/archive` slash command @etraut-openai
-- #25035 Use session wording in `/rename` confirmation @etraut-openai
-- #24161 Add subagent lineage metadata for responsesapi @owenlin0
-- #25116 [exec-server] Kill dropped filesystem helpers @erichoracek
-- #24180 code-mode: introduce durable session interface @cconger
-- #23165 thread-store: store permission profiles @bolinfest
-- #25131 [codex] Require model for standalone web search @sayan-oai
-- #25134 ci: use issue triage environment for issue workflows @etraut-openai
-- #25118 exec-server: preserve fs helper CoreFoundation env @starr-openai
-- #25022 [codex] Fix Vim normal mode editing @jinghanx88
-- #25161 Recommend Bazel VSCode extension. @anp-oai
-- #24996 Filter plugin install suggestions by installed apps @nm-openai
-- #23766 Constrain Windows sandbox requirements @abhinav-oai
-- #25172 [codex] Update remote connector suggestions @ericning-o
-- #25171 fix: Bedrock API key region fallback @celia-oai
-- #24541 feat(config) experimental_request_user_input toggle @dylan-hurd-oai
-- #25021 Add thread archive CLI commands @etraut-openai
-- #25267 Rename multi-agent v2 assignment tool @jif-oai
-- #25318 fix: Limit Bedrock GPT models to default service tier @owenlin0
-- #25381 [codex] Avoid forced directory refresh during plugin install auth checks @xl-openai
+- #25329 feat(tui): allow function keys through f24 in keymaps @fcoury-oai
+- #24617 Add config bundle transport types @joeflorencio-openai
+- #25435 Add build_unsigned_archive release mode @shijie-oai
+- #24619 Compose requirements layers @joeflorencio-openai
+- #24620 Add cloud-managed config layer support @joeflorencio-openai
+- #25462 Revert "Add build_unsigned_archive release mode" @shijie-oai
+- #25113 store and expose parent_thread_id on Threads @owenlin0
+- #25266 Set multi-agent v2 dogfood defaults @jif-oai
+- #25060 Add goal extension idle continuation @jif-oai
+- #25576 Use templates for goal steering prompts @jif-oai
+- #25577 Remove Plan-mode gate from idle turn injection @jif-oai
+- #25096 Add goal extension GoalApi @jif-oai
+- #25087 Read compressed rollouts and materialize before append @jif-oai
+- #25628 [codex] fix compressed rollout fixture SessionMeta initialization @fcoury-oai
+- #25316 feat(tui): restore output-free cancelled prompts @fcoury-oai
+- #23763 Preserve auto-review approval policy in codex exec @won-openai
+- #25400 Allow paste in searchable selection menus @charliemarsh-oai
+- #25485 Use deep links for macOS codex app paths @etraut-openai
+- #25492 Reset slash popup selection when filter changes @etraut-openai
+- #25504 Add reasoning-only status surface item @etraut-openai
+- #25624 Preserve renamed thread titles during reconciliation @jif-oai
+- #25089 Compress cold local rollouts @jif-oai
+- #25490 Disable SQLite intrinsics for Windows x64 releases @etraut-openai
+- #25603 [codex] Inherit raw events for spawned child listeners @vivi
+- #25644 [codex] Use git CLI for release Cargo fetches @shijie-oai
+- #25655 nit: drop todo @jif-oai
+- #25654 Parallelize cold rollout compression @jif-oai
+- #25121 exec-server: add environment path refs @starr-openai
+- #25636 [codex] Rename multi-agent v2 assign_task to followup_task @jif-oai
+- #25491 Preserve plugin app manifest order @charlesgong-openai
+- #24983 [codex] Make justfile recipes Windows-aware @iceweasel-oai
+- #25151 [codex] Consolidate shared prompts in codex-prompts @anp-oai
+- #25659 Throttle repeated rollout compression runs @jif-oai
+- #25165 Check root Python script formatting in CI @anp-oai
+- #23767 [codex-rs] auto-review model override  @won-openai
+- #25149 exec-server: canonicalize bound filesystem paths @starr-openai
+- #25669 fix: deflake zsh-fork approval test @jif-oai
+- #24979 feat: gate unified exec zsh fork composition @bolinfest
+- #24980 refactor: hide shell override for zsh fork unified exec @bolinfest
+- #25679 Add rollout compression counters @jif-oai
+- #25682 [codex] document out-of-line test module convention @anp-oai
+- #25680 Add rollout compression histograms @jif-oai
+- #25689 [codex] Generalize deferred nested tool guidance @sayan-oai
+- #25690 Add Python version compatibility guidance @anp-oai
+- #25681 fix: Deduplicate installed local and remote curated plugins @xl-openai
+- #25701 fix: rename McpServer to TestAppServer @bolinfest
+- #25702 [codex] enable parallel standalone web search calls @sayan-oai
+- #25705 Fix stale TestAppServer rename in plugin_list test @bolinfest
+- #25684 Move tool search metadata onto ToolExecutor @jif-oai
+- #25625 fix(tui): clarify footer shortcut overlay hints @fcoury-oai
+- #25649 [codex] Publish release symbol artifacts @nornagon-openai
+- #25661 Reject directory rollout paths for pathless side chats @bolinfest
+- #22668 Wire managed MITM CA trust into child env @winston-openai
+- #25712 app-server: remove experimental persist_extended_history bool flag @owenlin0
+- #24621 Move cloud requirements crate to cloud config @joeflorencio-openai
+- #25717 Handle invalid plugin skills manifest field @xli-oai
+- #25675 feat(remote-control): add pairing start @apanasenko-oai
+- #25683 [codex] Add comprehensive root formatting check @anp-oai
+- #25738 Move code review rules into AGENTS @pakrym-oai
+- #24812 feat: show enterprise monthly credit limits in status @efrazer-oai
+- #25330 [codex] Add plugin list JSON output @xl-openai
+- #25457 [codex] Cache remote plugin catalog for suggestions @xl-openai
+- #25783 [codex] Move plugin discoverable logic into core-plugins @xl-openai
+- #25782 [codex] Validate plugin skill base names @xl-openai
+- #25814 feat: reuse compressed rollout search snippets @jif-oai
+- #25720 Add multi-agent runtime metadata types @jif-oai
+- #25721 Persist multi-agent runtime metadata @jif-oai
+- #25722 Resolve per-thread multi-agent runtime @jif-oai
+- #25841 session: keep startup prewarm aligned with resolved multi-agent runtime @jif-oai
+- #25840 fix: main oops @jif-oai
+- #25723 Test remote multi-agent runtime selector override @jif-oai
+- #25724 Test runtime selector before first turn @jif-oai
+- #25844 Reduce stack pressure in session startup and config rebuilds @jif-oai
+- #25857 flake: Keep plugin test homes alive @jif-oai
+- #25847 Run Codex async main on a sized stack @jif-oai
+- #25775 [codex] Use git CLI for Cargo fetches across Rust workflows @anp-oai
+- #25167 [app-server][core] Add connector-level Guardian reviewer overrides @zamoshchin-openai
+- #25868 Skip startup prewarm when websockets are disabled @jif-oai
+- #25156 Route Bazel CI through shared BuildBuddy remote config wrapper @anp-oai
+- #25739 core: derive built-in permission profiles from raw policies @bolinfest
+- #25909 [codex] Revert shared BuildBuddy Bazel wrapper @anp-oai
+- #25850 Key request-permission grants by environment @jif-oai
+- #25707 [codex-analytics] Track CodexErr details in turn analytics @rhan-oai
+- #25858 Add environmentId to request_permissions @jif-oai
+- #25176 Route standalone image generation through host finalization md @won-openai
+- #25916 Fix Windows release PDB staging @shijie-oai
+- #25862 Propagate permission approval environment id @jif-oai
+- #25907 [codex] Pin Python SDK to glibc-compatible runtime @aibrahim-oai
+- #24859 Use environment secrets for Azure signing @shijie-oai
+- #25509 Fix Windows running thread resume path normalization @etraut-openai
+- #25135 Populate workspace kind on Codex turn events @knittel-openai
+- #24622 Switch runtime to cloud config bundle @joeflorencio-openai
+- #25938 fix: update image generation test helper rename @joeflorencio-openai
+- #25911 core: stop passing legacy SandboxPolicy to guardian reviews @bolinfest
+- #25668 Split cloud config bundle service modules @joeflorencio-openai
+- #25890 [codex] Keep hosted tools visible in code-only mode @aibrahim-oai
+- #25867 Add remote request permissions integration coverage @jif-oai
+- #25943 config: remove dead profile sandbox fallback @bolinfest
+- #25948 Revert "Use environment secrets for Azure signing" @shijie-oai
+- #25923 Expose standalone image generation in code mode @won-openai
+- #25906 [codex] Publish Python runtime wheels with Python SDK releases @aibrahim-oai
+- #25953 feat: add skills extension scaffold @jif-oai
+- #25915 [codex] Fix Windows BuildBuddy Bazel wrapper execution @anp-oai
+- #25926 config: express implicit sandbox defaults as permission profiles @bolinfest
+- #25959 feat: add extension turn-input contributors @jif-oai
+- #25963 Allow EDU accounts to fetch cloud config bundles @joeflorencio-openai
+- #25785 feat(app-server): add remote control client management RPCs @apanasenko-oai
+- #25988 revert: publish release symbol artifacts @shijie-oai
+- #26114 feat: default hide_spawn_agent_metadata to true @jif-oai
+- #26122 chore: extract context fragments into dedicated crate @jif-oai
+- #26144 Reject MAv2 close_agent self-targets @jif-oai
+- #26106 skills: resolve per-turn catalogs from turn input context @jif-oai
+- #26155 fix: serialize goal progress accounting @jif-oai
+- #26156 chore: mechanical rename @jif-oai
+- #26167 Implement v1 skills extension prompt injection @jif-oai
+- #26176 fix: main @jif-oai
+- #25949 [codex] Restore setup helper UAC manifest @iceweasel-oai
 
 
