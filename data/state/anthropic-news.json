@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-06-26T07:16:47.595Z",
+  "lastCheckedAt": "2026-06-30T18:36:08.699Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -53,6 +53,8 @@
     "anthropic-public-record",
     "fable-mythos-access",
     "seoul-office-partnerships-korean-ai-ecosystem",
-    "introducing-claude-tag"
+    "introducing-claude-tag",
+    "claude-science-ai-workbench",
+    "claude-sonnet-5"
   ]
 }
