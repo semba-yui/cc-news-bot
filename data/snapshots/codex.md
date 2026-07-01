@@ -1,11 +1,12 @@
-## rust-v0.142.4 (2026-06-29T05:04:25Z)
-## Chores
+## rust-v0.142.5 (2026-07-01T01:15:44Z)
+## Bug Fixes
 
-- No user-facing changes were identified for this release.
+- Prevented full Responses WebSocket request payloads from being written to trace logs. (#30771)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.142.3...rust-v0.142.4
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.142.4...rust-v0.142.5
 
+- #30771 [codex] Backport websocket trace fix to release/0.142 @dylan-hurd-oai
 
 
