@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-07-01T07:28:37.513Z",
+  "lastCheckedAt": "2026-07-03T02:22:12.520Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -56,6 +56,7 @@
     "introducing-claude-tag",
     "claude-science-ai-workbench",
     "claude-sonnet-5",
-    "redeploying-fable-5"
+    "redeploying-fable-5",
+    "fable-safeguards-jailbreak-framework"
   ]
 }
