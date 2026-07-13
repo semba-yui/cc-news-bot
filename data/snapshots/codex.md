@@ -1,12 +1,11 @@
-## rust-v0.144.2 (2026-07-13T04:39:22Z)
-## Bug Fixes
+## rust-v0.144.3 (2026-07-13T06:12:19Z)
+## Chores
 
-- Restored the previous Guardian auto-review policy, request format, and tool behavior after rolling back a prompting regression. (#32672)
+- Published a version-only release with no merged pull request changes since `rust-v0.144.2`.
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.144.1...rust-v0.144.2
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.144.2...rust-v0.144.3
 
-- #32672 [release/0.144] Revert "Update auto review prompting" @dylan-hurd-oai
 
 
