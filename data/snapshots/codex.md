@@ -1,11 +1,11 @@
-## rust-v0.144.3 (2026-07-13T06:12:19Z)
+## rust-v0.144.4 (2026-07-14T05:08:11Z)
 ## Chores
 
-- Published a version-only release with no merged pull request changes since `rust-v0.144.2`.
+- No user-facing changes in this patch release.
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.144.2...rust-v0.144.3
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.144.3...rust-v0.144.4
 
 
 
