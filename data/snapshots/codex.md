@@ -1,12 +1,13 @@
-## rust-v0.144.5 (2026-07-16T02:54:48Z)
+## rust-v0.144.6 (2026-07-18T13:51:52Z)
 ## Bug Fixes
 
-- Improved dangerous-command detection, including more forced `rm` forms, and provides clearer rejection reasons when commands are denied. (#33455)
+- Refreshed bundled instructions for GPT-5.6 Sol, Terra, and Luna, and corrected their context windows to 272,000 tokens. (#33972, #34009)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.144.4...rust-v0.144.5
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.144.5...rust-v0.144.6
 
-- #33455 [release/0.144] fix(core) expand is_dangerous_command @dylan-hurd-oai
+- #33972 Backport refreshed bundled model metadata to 0.144 @sayan-oai
+- #34009 Narrow 0.144 hotfix to GPT-5.6 prompts and context @sayan-oai
 
 
