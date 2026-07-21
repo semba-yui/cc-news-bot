@@ -1,3 +1,8 @@
+## 1.0.73 - 2026-07-20
+
+- Anthropic subagents continue working when additional directories are configured
+- Resolve relative links in custom agent instructions from the agent file location
+
 ## 1.0.72 - 2026-07-20
 
 - An `agentStop` hook that always blocks no longer loops indefinitely: the CLI now ends the turn after 8 consecutive blocks, and `agentStop` hooks receive a `stop_hook_active` flag so they can detect a forced continuation and self-limit
