@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-07-27T19:16:55.864Z",
+  "lastCheckedAt": "2026-07-28T01:55:48.599Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -70,6 +70,7 @@
     "anthropic-economic-index-connector",
     "economic-futures-research-fund-agenda",
     "claude-opus-5",
-    "cognizant-anthropic"
+    "cognizant-anthropic",
+    "position-open-weights-models"
   ]
 }
