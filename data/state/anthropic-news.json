@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-08-07T07:03:40.983Z",
+  "lastCheckedAt": "2026-08-15T00:51:25.905Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -74,6 +74,7 @@
     "position-open-weights-models",
     "investigating-incidents-cybersecurity-evals",
     "tino-cuellar",
-    "improving-fable-5-s-biology-safeguards"
+    "improving-fable-5-s-biology-safeguards",
+    "claude-text-watermark"
   ]
 }
