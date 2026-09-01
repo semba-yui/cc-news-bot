@@ -1,7 +1,7 @@
 {
   "type": "slug_list",
   "hash": "",
-  "lastCheckedAt": "2026-08-29T05:07:31.374Z",
+  "lastCheckedAt": "2026-09-01T03:00:38.520Z",
   "knownSlugs": [
     "mozilla-firefox-security",
     "where-stand-department-war",
@@ -78,6 +78,7 @@
     "claude-text-watermark",
     "wellbeing-research-grants",
     "expanding-support-for-scientists",
-    "model-hardware-standard-research-preview"
+    "model-hardware-standard-research-preview",
+    "improving-alignment-security-efforts"
   ]
 }
