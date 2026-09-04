@@ -1,12 +1,15 @@
-## rust-v0.153.2 (2026-09-03T23:53:12Z)
-## Bug Fixes
+## rust-v0.153.3 (2026-09-04T19:01:32Z)
+## New Features
+- Added GPT-6-Astra to the Amazon Bedrock model picker for Mantle and Runtime global/US routes. (#42805)
 
-- Corrected the GPT-6-Astra Fast tier description to say “2x speed, increased usage” instead of “1.5x.” This changes only the displayed text, not how requests run. (#42632)
+## Bug Fixes
+- Corrected GPT-6-Astra’s guidance for asynchronous clarification questions to use the supported tool and recognize that it accepts text only. (#42809)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.153.1...rust-v0.153.2
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.153.2...rust-v0.153.3
 
-- #42632 Fix GPT-6-Astra Fast tier description for 0.153.2 @anp-oai
+- #42805 [0.153 hotfix] Add GPT-6-Astra to Amazon Bedrock catalogs @celia-oai
+- #42809 [0.153 hotfix] Update Astra async-question guidance @rhan-oai
 
 
