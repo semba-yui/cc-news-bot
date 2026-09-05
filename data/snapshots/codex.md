@@ -1,15 +1,14 @@
-## rust-v0.153.3 (2026-09-04T19:01:32Z)
-## New Features
-- Added GPT-6-Astra to the Amazon Bedrock model picker for Mantle and Runtime global/US routes. (#42805)
-
+## rust-v0.153.4 (2026-09-04T23:25:48Z)
 ## Bug Fixes
-- Corrected GPT-6-Astra’s guidance for asynchronous clarification questions to use the supported tool and recognize that it accepts text only. (#42809)
+
+- Fixed Astra’s visibility in the bundled model picker and made it the bundled default when no model is explicitly configured. (#42874)
+- Updated Astra’s guidance to use asynchronous questions only when the tool is available in the session. (#42878)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.153.2...rust-v0.153.3
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.153.3...rust-v0.153.4
 
-- #42805 [0.153 hotfix] Add GPT-6-Astra to Amazon Bedrock catalogs @celia-oai
-- #42809 [0.153 hotfix] Update Astra async-question guidance @rhan-oai
+- #42874 [0.153 hotfix] Show Astra in bundled model picker @rhan-oai
+- #42878 [0.153 hotfix] Qualify Astra async-question guidance by tool availability @rhan-oai
 
 
