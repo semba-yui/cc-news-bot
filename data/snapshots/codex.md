@@ -1,12 +1,12 @@
-## rust-v0.159.1 (2026-09-29T20:32:34Z)
-## New Features
-- Added GPT-6.1 Sol as the default model in the bundled catalog and Amazon Bedrock Mantle and Runtime catalogs. (#49323, #49342)
+## rust-v0.159.2 (2026-09-29T23:57:16Z)
+## Bug Fixes
+
+- Suppressed console windows flashing on Windows when Codex launches background processes and sandboxed commands. (#49385)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.159.0...rust-v0.159.1
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.159.1...rust-v0.159.2
 
-- #49323 [0.159] Prepare 0.159.1 release backports @andrewgu-oai
-- #49342 [0.159] Backport GPT-6.1 Sol Bedrock catalogs @celia-oai
+- #49385 [0.159] Backport Windows console suppression for 0.159.2 @andrewgu-oai
 
 
