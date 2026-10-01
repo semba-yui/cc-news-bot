@@ -1,12 +1,12 @@
-## rust-v0.159.2 (2026-09-29T23:57:16Z)
-## Bug Fixes
+## rust-v0.159.3 (2026-09-30T22:57:34Z)
+## New Features
 
-- Suppressed console windows flashing on Windows when Codex launches background processes and sandboxed commands. (#49385)
+- Eligible local sessions signed in with ChatGPT can now show optional reminders to complete account security setup. (#49744)
 
 ## Changelog
 
-Full Changelog: https://github.com/openai/codex/compare/rust-v0.159.1...rust-v0.159.2
+Full Changelog: https://github.com/openai/codex/compare/rust-v0.159.2...rust-v0.159.3
 
-- #49385 [0.159] Backport Windows console suppression for 0.159.2 @andrewgu-oai
+- #49744 [0.159] Backport account security setup reminders for 0.159.3 @andrewgu-oai
 
 
